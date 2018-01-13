@@ -1,0 +1,60 @@
+#!/bin/bash
+#SBATCH --mem=10G
+#SBATCH --time=2:00:00
+#SBATCH --ntasks=1
+module purge
+module load matlab gcc
+fdr='n'
+theme='ndi305-40'
+lgnfile='1xu-'$theme'-s911'
+TYPE='tf1'
+conmat=conMat-$theme'_'$TYPE
+coMa='coMa-60x60-'$lgnfile
+EPSPprofile='logNormal'
+edist='coGauss'
+eiSpecific='false'
+nbins=30
+spread='false'
+antiphase='false'
+reciprocal=0.0
+drawInh='true'
+ld='false'
+tw=0.25
+temper=0
+reverse=2
+p2s=40.0
+mu=0.45
+ieSpecific='false' # set I->E specific connection over oriention preference
+sig=1.16           # si
+mu0=0.45           # average value 0.45
+nsig=3               
+nbins=30
+lowestRatio=0.02
+ex=10
+ntheta=12
+if [ "$ld" == 'false' ]; then
+   matlab -nosplash -nodesktop -r "gMap2;exit"
+fi
+# pre copy
+cp generateConMat.m $fdr/generateConMat-$theme'_'$TYPE.m
+cp gg $fdr/gg-$theme'_'$TYPE
+cp $lgnfile.mat $fdr/
+cp lgnmap.out-$lgnfile $fdr/lgnmap.out-$lgnfile
+cp logNormalProfile.m $fdr/logNormalProfile-$theme'_'$TYPE.m
+cp lgn2v1map/$lgnfile/gMap2.m $fdr/gMap2-$theme'_'$TYPE.m
+cp lgn2v1map/$lgnfile/lgn2v1Map_beta.m $fdr/lgn2v1Map_beta-$theme'_'$TYPE.m
+
+date
+
+#cp RFcoeff_V.m $fdr/RFcoeff_O_beta-$theme'_'$TYPE.m
+#matlab -nosplash -nodesktop -r "dbstop if error;RFcoeff_V('$lgnfile',60,60,3,true,true,$tw,true,'png',$ld,$temper,$reverse);logNormalProfile(400,rand(400,1),$nbins,$mu,$sig,true);generateConMat('$lgnfile','t2','gauss',$reciprocal,'coGauss',911,true,'png','n','logNormal','$conmat',$eiSpecific,'$coMa');checkConnection_EI('mee-$conmat','$lgnfile','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh);checkConnection_EI('mee-$conmat','$lgnfile','$coMa',1:8640,8,'png',true,$ntheta,$drawInh);exit"
+#cp RFcoeff_O.m $fdr/RFcoeff_O-$theme'_'$TYPE.m
+cp RFcoeff_O_beta.m $fdr/RFcoeff_O_beta-$theme'_'$TYPE.m
+matlab -nosplash -nodesktop -r "dbstop if error;logP.nbins=$nbins;logP.mu=$mu;logP.sigma=$sig;logP.mu0=$mu0;logP.nsig=$nsig;logP.lR=$lowestRatio;logP.p2s=$p2s;logP.spread=$spread;RFcoeff_O_beta('$lgnfile',60,60,3,true,true,$tw,true,'png',$ld,$temper,$reverse,false,$ieSpecific,$antiphase);generateConMat('$lgnfile','t2','gauss',$reciprocal,'$edist',911,true,'png','n','$EPSPprofile','$conmat',$eiSpecific,$ieSpecific,'$coMa',logP);checkConnection_EI('mee-$conmat','$lgnfile','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh,$spread,'$TYPE');checkConnection_EI('mee-$conmat','$lgnfile','$coMa',1:8640,8,'png',true,$ntheta,$drawInh,$spread,'$TYPE');exit"
+
+cp $coMa'_more.mat' $fdr/coMat-$theme'_'$TYPE.mat
+cp $conmat.mat $fdr
+
+cp logNormalProfile.mat $fdr/logNormalProfile-$theme'_'$TYPE.mat
+cp logNormalProfile.out $fdr/profile-$theme'_'$TYPE.out
+date

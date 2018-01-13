@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -q adparallel
+#PBS -l mem=20GB
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=8:00:00
+#PBS -j oe
+#PBS -N V1
+#PBS -M wd554@nyu.edu
+#set -e
+
+. /etc/profile.d/modules.sh
+module load NYUAD/2.0
+module load gcc/4.9.1
+cd $PBS_O_WORKDIR
+echo $PBS_O_WORKDIR
+export OMP_NUM_THREADS=12
+export OMP_STACKSIZE=5G
+ulimit -s unlimited
+
+date
+./ompaSep1 4
+date

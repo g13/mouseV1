@@ -1,0 +1,73 @@
+#!/bin/bash
+#PBS -q s48
+#PBS -l mem=40GB
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=0:30:00
+#PBS -j oe
+#PBS -o localhost:${PBS_O_WORKDIR}/
+#PBS -e localhost:${PBS_O_WORKDIR}/
+#PBS -N V1
+#PBS -M wd554@nyu.edu
+#PBS -m ae
+#set -e
+
+. /etc/profile.d/modules.sh
+module load NYUAD/2.0
+module load matlab
+module load gcc/4.9.1
+cd $PBS_O_WORKDIR
+echo $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=12
+export OMP_STACKSIZE=1000M
+ulimit -s unlimited
+
+#NAME="4-M-21"
+NAME="sample-inh-a"
+#PRESET="1xu-nd35-35-s911.mat"
+PRESET="1xu-ndi305-50-s911.mat"
+#PRESET="1xu-nmLDoO-of32-test-s911.mat"
+CONTRASTS="4"
+FORMAT="png"
+NTHETA="12"
+thres=0.1
+individOnly="false"
+statsOnly="true"
+fit="true"
+rt=10
+ld="false"
+fit="false"
+
+date
+./assa
+
+if [ -d "processed" ]; then
+    cp generateConMat* gg-* profile.out conMat.mat processed
+    cp logNormalProfile.m fitOnly4 bash_sim4x3 cMatrix_summary adg_INPUT sample_id.dat processed
+    cp logNormalProfile.mat processed/EPSPsize.mat
+    
+    mv V1.* processed/
+    mv processed ../
+    
+    rm -r *
+    mv ../processed/* ./
+    cd ../
+    rm -r processed
+    
+    #matlab -nosplash -nodesktop -r "startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);exit"
+    #matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+    
+if [ "$fit" == 'true' ]; then
+    matlab -nosplash -nodesktop -r "startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt);exit"
+else
+    matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt);exit"
+fi
+    
+    ##matlab -nosplash -nodesktop -r "plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+    ##matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');exit"
+    #
+else
+    echo failed
+fi
+echo Folder = $NAME
+date

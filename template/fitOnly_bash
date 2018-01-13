@@ -1,0 +1,87 @@
+#!/bin/bash
+#PBS -q s48
+#PBS -l mem=10GB
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=4:00:00
+#PBS -o sim.log
+#PBS -o localhost:${PBS_O_WORKDIR}/
+#PBS -e localhost:${PBS_O_WORKDIR}/
+#PBS -N V1
+#PBS -M wd554@nyu.edu
+#PBS -m ae
+#PBS -j oe
+
+#. /etc/profile.d/modules.sh
+#module load NYUAD/2.0
+#module load matlab
+#module load gcc/4.9.1
+#module list
+#cd $PBS_O_WORKDIR
+#echo $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=12
+export OMP_STACKSIZE=1000M
+ulimit -s unlimited
+
+NAME="sample-inh"
+PRESET="1xu-ndi305-32-s911.mat"
+CONTRASTS="4"
+FORMAT="png"
+NTHETA="12"
+thres=0.45
+individOnly="false"
+statsOnly="true"
+rt=20
+#fit="true"
+fit="false"
+ld="true"
+
+#individOnly="true"
+#statsOnly="false"
+
+#if [ ! -d "$NAME" ]; then
+#	mkdir $NAME
+#else
+#	cd $NAME
+#	rm -rf *
+#	cd ../
+#fi
+#
+#cp ompa adg_INPUT lgnmap.out assa conMat.mat $NAME 
+#cp assa $NAME
+#cd $NAME
+
+#./ompa
+#./assa
+# 
+#cp cMatrix_summary adg_INPUT sample_id.dat processed
+#
+#mv processed ../
+#rm -r *
+#mv ../processed/* ./
+#cd ../
+#rm -r processed
+
+if [ "$fit" == 'true' ]; then 
+    matlab -nosplash -nodesktop -r "dbstop if error;startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt);exit"
+else
+    #matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt);exit"
+    matlab -nosplash -nodesktop -r "dbstop if error;plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt);exit"
+fi
+#matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');exit"
+#matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly);exit"
+#matlab -nosplash -nodesktop -r "dbstop in plotsample.m at 42;sample('$NAME','$PRESET',true,false);exit"
+#matlab -nosplash -nodesktop -r "startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly);exit"
+#matlab -nosplash -nodesktop -r "startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);ppp;exit"
+#matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly);exit"
+#matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+#matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+#matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');exit"
+
+#matlab -nosplash -nodesktop -r "startFit(10800,'$NAME',1:$CONTRASTS,12,12,true);exit"
+
+#matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+#matlab -nosplash -nodesktop -r "dbstop if error;plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+#matlab -nosplash -nodesktop -r "plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
+
+echo Folder = $NAME

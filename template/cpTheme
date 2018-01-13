@@ -1,0 +1,4 @@
+#!/bin/bash
+cp $1/adg_INPUT ./
+cp $1/bash_sim4x3 ./
+cp $1/fitOnly4 ./

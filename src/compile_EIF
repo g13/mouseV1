@@ -1,0 +1,75 @@
+#!/bin/bash
+FDR="n"
+MODES=(SepX3)
+#MODES=(4-1 1-12 SepX3)
+#MODES=(1-12 4-1 4-12 Sep SepX3)
+aMODE="c"
+##################################################################################################
+flags="-msse4.2 -march=westmere -funroll-loops"
+gfortran -O3 -c oADb_parameters.f -o p.o
+#gfortran -O3 -c $flags oADb_parameters.f -o p.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c EIF.f -o EIF.o
+#gfortran -O3 -Wall  -mcmodel=medium -fopenmp -c EIFSep.f -o EIFSep.o
+#gfortran -O3 -Wall  -mcmodel=medium -fopenmp -c EIFSep1.f -o EIFSep1.o
+#gfortran -O3 -Wall  -mcmodel=medium -fopenmp -c EIFSep2.f -o EIFSep2.o
+#gfortran -O3 -Wall  -mcmodel=medium -fopenmp -c EIFSep3.f -o EIFSep3.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c EIF4-1.f -o EIF4-1.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c EIF1-12.f -o EIF1-12.o
+#gfortran -O3 -Wall -c assemble_Angle_DG-beta.f -o aADG.o
+#gfortran -O3 -Wall -c assemble_Angle_DG-4.f -o aADG1eps.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c flags EIFSep.f -o EIFSep.o
+
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep1.f -o EIFSep1.o
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep2.f -o EIFSep2.o
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep3.f -o EIFSep3.o
+#
+gfortran -O3 -Wall -c -mcmodel=medium assemble_Angle_DG-all.f -o aADGa.o
+#################################################################################################
+for MODE in ${MODES[@]}
+do
+if [ "$MODE" == "4-12" ]; then
+    gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIF.o -o ../$FDR/ompa
+    if [ "$aMODE" == "c" ]; then
+        gfortran -O3 -Wall aADGa.o -o ../$FDR/assa
+    else
+        gfortran -O3 -Wall aADG.o -o ../$FDR/assa
+    fi
+else
+    if [ "$MODE" == "4-1" ]; then
+        gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIF4-1.o -o ../$FDR/ompa4_1
+    else 
+        if [ "$MODE" == "1-12" ]; then
+            gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIF1-12.o -o ../$FDR/ompa1_12
+            if [ "$aMODE" == "c" ]; then
+                gfortran -O3 -Wall aADGa.o -o ../$FDR/assa
+            else
+                gfortran -O3 -Wall aADG.o -o ../$FDR/assa
+            fi
+        else 
+            if [ "$MODE" == "Sep" ]; then
+                gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIFSep.o  -o ../$FDR/ompaSep
+                if [ "$aMODE" == "c" ]; then
+                    gfortran -O3 -Wall aADGa.o -o ../$FDR/assa
+                else
+                    gfortran -O3 -Wall aADG.o -o ../$FDR/assa
+                fi
+            else
+                if [ "$MODE" == "SepX3" ]; then
+                    gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIFSep1.o -o ../$FDR/ompaSep1
+                    gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIFSep2.o -o ../$FDR/ompaSep2
+                    gfortran -O3 -Wall -mcmodel=medium -fopenmp p.o  EIFSep3.o -o ../$FDR/ompaSep3
+                    if [ "$aMODE" == "c" ]; then
+                        gfortran -O3 -Wall aADGa.o -o ../$FDR/assa
+                    else
+                        gfortran -O3 -Wall aADG.o -o ../$FDR/assa
+                    fi
+                else
+                    echo no corresponding mode
+                fi
+            fi
+        fi
+    fi
+fi
+echo $MODE
+done
+################################################################################################

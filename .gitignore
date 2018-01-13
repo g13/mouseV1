@@ -1,0 +1,8 @@
+*.[oa]
+*.swp
+*.png
+*.eps
+*.fig
+*.bin
+*.mat
+*.out*
