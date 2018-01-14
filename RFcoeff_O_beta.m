@@ -26,6 +26,7 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format
             end
         end
     end
+    addpath(genpath('./matlab_Utilities'));
     pPosition = [0, 0, 1280, 720];
     if ~isempty(format)
         if strcmp(format,'psc2')

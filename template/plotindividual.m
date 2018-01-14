@@ -1,6 +1,7 @@
 function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,contrastLevel,ntheta,individOnly,outputfdr,ranking,thres,statsOnly,neuronlistOnly,dataRead,rt)
 % position =[500,150,1000,650];set(0, 'OuterPosition', position);
 % position = [50,50,1400,900];set(0, 'DefaultFigurePosition', position);
+addpath(genpath('../matlab_Utilities'));
 gL = 50;
 vrest = 0;
 vexcit = 35/11;

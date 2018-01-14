@@ -1,4 +1,5 @@
 function plotresult(theme,lgn,ntheta,contrastLevel,format,outputfdr,thres)
+addpath(genpath('../matlab_Utilities'));
 if nargin < 7
 	thres = 0.3;
 	if nargin < 6

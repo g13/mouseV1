@@ -2,6 +2,10 @@
 function generateConMat(suffix,theme,preMatProfile,reciprocal,eSpecific,seed,plotout,format,scType,heterogeneous,outputName,eiSpecific,ieSpecific,coMatfile,logP)
 %!!!!!!!!!!!!!!!!!! for scType == 'n' decide connection by relative
 %cortical strength vs lgn strength and portion in total excitation
+if ~exist('conMatFigures','dir')
+    mkdir('conMatFigures');
+end
+assert(exist('conMatFigures'));
 pPosition = [18, 180, 1200, 900];
 if nargin < 15
     disp('no logNormal, return');
@@ -80,7 +84,7 @@ load([suffix,'.mat']);
 %     etheta = reshape(etheta,[p.nv1e,1]);
 % end
 if strcmp(eSpecific,'coGauss')
-    eeSigCoeff = 0.50;
+    eeSigCoeff = 0.8;
     if eiSpecific
         eiSigCoeff = 1.00;
     end
@@ -89,6 +93,7 @@ if strcmp(eSpecific,'coGauss')
     end
     %coMatfile = ['coMa-60x60-1xu-nmLDoO-ff3-s911.mat'];
     load(coMatfile);
+    size(coMat)
 end
 if logP.spread
     logP.normDistance = p.enormDistance;
