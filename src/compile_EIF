@@ -1,11 +1,11 @@
 #!/bin/bash
-FDR="n"
-MODES=(SepX3)
+FDR="test" # change this to the name of the folder that you copied template files to.
+MODES=(SepX3) # you don't want to change this variable
 #MODES=(4-1 1-12 SepX3)
 #MODES=(1-12 4-1 4-12 Sep SepX3)
-aMODE="c"
+aMODE="c"   # don't change this variable
 ##################################################################################################
-flags="-msse4.2 -march=westmere -funroll-loops"
+flags="-msse4.2 -march=westmere -funroll-loops" # change this according to your cluster optimization
 gfortran -O3 -c oADb_parameters.f -o p.o
 #gfortran -O3 -c $flags oADb_parameters.f -o p.o
 #gfortran -O3 -Wall -mcmodel=medium -fopenmp -c EIF.f -o EIF.o

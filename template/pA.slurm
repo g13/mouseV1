@@ -14,7 +14,7 @@ module load gcc/4.9.1
 module list
 ulimit -s unlimited
     
-NAME="isample40-t62el"     # raw data folder
+NAME="sample40-6t"     # raw data folder
 PRESET="1xu-ndi305-40-s911.mat" # connection matrix and preset data file
 CONTRASTS="4"       # # of constrast used in simulation
 FORMAT="png"        # figure format for saving

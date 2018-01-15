@@ -5,7 +5,7 @@ function generateConMat(suffix,theme,preMatProfile,reciprocal,eSpecific,seed,plo
 if ~exist('conMatFigures','dir')
     mkdir('conMatFigures');
 end
-assert(exist('conMatFigures'));
+assert(exist('conMatFigures')==7);
 pPosition = [18, 180, 1200, 900];
 if nargin < 15
     disp('no logNormal, return');

@@ -42,7 +42,7 @@ if [ "$ld" == 'false' ]; then
 fi
 # pre copy
 cp generateConMat.m $fdr/generateConMat-$theme'_'$TYPE.m
-cp gg $fdr/gg-$theme'_'$TYPE
+cp gg.slurm $fdr/gg-$theme'_'$TYPE.slurm
 cp $lgnfile.mat $fdr/
 cp lgnmap.out-$lgnfile $fdr/lgnmap.out-$lgnfile
 cp logNormalProfile.m $fdr/logNormalProfile-$theme'_'$TYPE.m
