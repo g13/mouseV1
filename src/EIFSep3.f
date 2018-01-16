@@ -224,7 +224,8 @@
      1   gphi, tstart, gfail,cond0
       common / lgnConvol / gk2, taulgn, omega
       common / files / f1,f2,f3,f4,fn,fo,thetafdr,str
-      common / noises / ce0,ci0,frtinh,frtexc
+      common / noises / ce0_e,ci0_e,frtinh_e,frtexc_e,
+     1   ce0_i,ci0_i,frtinh_i,frtexc_i
       common / counters/ i,ii,iii,j,jj,ij,ijj,ncount
       common / stats / glgn,gexc,ginh,gtot,cond,vslave,vmem,gnexc,
      1   gninh,gpota
@@ -286,7 +287,7 @@
       read(13,*) dE,dI,denexc,axnexc,deninh,axninh,gIIc,gEIc
       read(13,*)
       read(13,*)
-      read(13,*)ignore,g0,gfail,rI0,tau0,tau1,frtexc,ce0,frtinh,ci0,rall
+      read(13,*)ignore,g0,gfail,rI0,tau0,tau1,rall
       read(13,*)
       read(13,*)
       read(13,*) omega,gk,ntheta,gphi,tstart,twindow,taulgn,xS,yS
@@ -313,6 +314,9 @@
       read(13,*)
       read(13,*) tau_e4,tau_i4,tnrise4,tndamp4,tau04,tau14,tau24,
      1  tau_a0, tau_a1
+      read(13,*)
+      read(13,*) frtexc_e,ce0_e,frtinh_e,ci0_e,frtexc_i,ce0_i,frtinh_i,
+     1  ci0_i
       close(13)
       phiVAS = DeltaT*dexp((vreset-vthres)/DeltaT)
       vreset = vreset - phiVAS
@@ -587,8 +591,10 @@
       endif
       print *,'--------------------------------------------'
       print *,'        noise parameters : '
-      print *,' poisson rate  = ',sngl(frtexc),'    str = ',sngl(ce0)
-      print *,'      (inhib)  = ',sngl(frtinh),'    str = ',sngl(ci0)
+      print *,' poisson rate  = ',sngl(frtexc_e),'    str = ',sngl(ce0_e)
+      print *,'      (inhib)  = ',sngl(frtinh_e),'    str = ',sngl(ci0_e)
+      print *,' poisson rate  = ',sngl(frtexc_i),'    str = ',sngl(ce0_i)
+      print *,'      (inhib)  = ',sngl(frtinh_i),'    str = ',sngl(ci0_i)
       print *,'--------------------------------------------'
       print *,'      grating parameters : '
       print *,'          freq  = ',sngl(omega), '      k = ',sngl(gk)
@@ -2221,11 +2227,14 @@
       common / lgnGain / tmpphi,conAmp,g0,frtlgn0,treflgn,
      1   gphi, tstart, gfail,cond0
       common / lgnpos / xlgn,ylgn,jlgn
-      common / noises / ce0,ci0,frtinh,frtexc
+      common / noises / ce0_e,ci0_e,frtinh_e,frtexc_e,
+     1   ce0_i,ci0_i,frtinh_i,frtexc_i
       common / tconst / tau_e,tau_i,tau0,tau1,tau2,tnrise,tndamp,
      1 tau_a0, tau_a1
       common /  NMDA  / fnmdatE,fnmdacE,fnmdatI,fnmdacI,
      1   fnmdanE, fnmdanI, fgaba
+      common / neuron / excite,nlgni,trefE,trefI,nr,
+     1   lgnmax,lgnmin,meanlgn
       common / lgnConvol / gk2, taulgn, omega
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi
@@ -2380,9 +2389,17 @@
       endif
       enddo
 !======================================== Exc noise units
-      if (frtexc.gt.0.D0.and.ce0.gt.0.D0)then
+      if (frtexc_e.gt.0.D0.and.ce0_e.gt.0.D0
+     1  .or.frtexc_i.gt.0.D0.and.ce0_i.gt.0.D0)then
       do i=1,nmax
         rannum = ran2(iseed)
+      if (excite(i)) then
+          frtexc = frtexc_e
+          ce0 = ce0_e
+      else
+          frtexc = frtexc_i
+          ce0 = ce0_i
+      endif
       if (rannum.lt.dt*frtexc.and.rannum.ge.0.D0) then
           dtt = rannum/frtexc
 !------------------------------------------------------------
@@ -2416,9 +2433,17 @@
       enddo
       endif
 !======================================= Inh noise units
-      if (frtinh.gt.0.D0.and.ci0.gt.0.D0)then
+      if (frtinh_e.gt.0.D0.and.ci0_e.gt.0.D0
+     1 .or.frtinh_i.gt.0.D0.and.ci0_i.gt.0.D0)then
       do i=1,nmax
           rannum = ran2(iseed)
+      if (excite(i)) then
+          frtinh = frtinh_e
+          ci0 = ci0_e
+      else
+          frtinh = frtinh_i
+          ci0 = ci0_i
+      endif
       if (rannum.lt.dt*frtinh.and.rannum.ge.0.D0) then
           dtt = rannum/frtinh
 !=============================================================
@@ -3516,7 +3541,8 @@
       common / lgnGain / tmpphi,conAmp,g0,frtlgn0,treflgn,
      1   gphi, tstart, gfail,cond0
       common / lgnpos / xlgn,ylgn,jlgn
-      common / noises / ce0,ci0,frtinh,frtexc
+      common / noises / ce0_e,ci0_e,frtinh_e,frtexc_e,
+     1   ce0_i,ci0_i,frtinh_i,frtexc_i
       common / tconst / tau_e,tau_i,tau0,tau1,tau2,tnrise,tndamp,
      1 tau_a0, tau_a1
       common /  NMDA  / fnmdatE,fnmdacE,fnmdatI,fnmdacI,
@@ -3759,7 +3785,8 @@
       endif
       enddo
 !======================================== Exc noise units
-      if (frtexc.gt.0.D0.and.ce0.gt.0.D0)then
+      if (frtexc_e.gt.0.D0.and.ce0_e.gt.0.D0
+     1  .or.frtexc_i.gt.0.D0.and.ce0_i.gt.0.D0)then
       do i=1,nmax
         g2x(i) = gx(i)
         s2x1(i)= sx1(i)
@@ -3769,6 +3796,13 @@
         s2y1(i)= sy1(i)
         s2y2(i)= sy2(i)
         s2y3(i)= sy3(i)
+        if (excite(i)) then
+            frtexc = frtexc_e
+            ce0 = ce0_e
+        else
+            frtexc = frtexc_i
+            ce0 = ce0_i
+        endif
         rannum = ran2(iseed)
       if (rannum.lt.dt*frtexc.and.rannum.ge.0.D0) then
         dtt = rannum/frtexc
@@ -3831,7 +3865,8 @@
       enddo
       endif
 !======================================= Inh noise units
-      if (frtinh.gt.0.D0.and.ci0.gt.0.D0)then
+      if (frtinh_e.gt.0.D0.and.ci0_e.gt.0.D0
+     1 .or.frtinh_i.gt.0.D0.and.ci0_i.gt.0.D0)then
       do i=1,nmax
          g2n(i) = gn(i)
          s2n1(i)= sn1(i)
@@ -3841,6 +3876,13 @@
          s2m1(i)= sm1(i)
          s2m2(i)= sm2(i)
          s2m3(i)= sm3(i)
+         if (excite(i)) then
+             frtinh = frtinh_e
+             ci0 = ci0_e
+         else
+             frtinh = frtinh_i
+             ci0 = ci0_i
+         endif
          rannum = ran2(iseed)
       if (rannum.lt.dt*frtinh.and.rannum.ge.0.D0) then
          dtt = rannum/frtinh
