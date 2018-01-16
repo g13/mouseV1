@@ -1,0 +1,44 @@
+#!/bin/bash
+theme='ndi305-40'
+TYPE='neo6'
+NAME='sample40-neo6'
+lgnfile='1xu-'$theme'-s911'
+walltime=0:15:00
+analysisTime=0:30:00
+
+if [ ! -d "$NAME" ]; then
+	mkdir $NAME
+else
+	cd $NAME
+	rm -rf *
+	cd ../
+fi
+cp conMat-$theme'_'$TYPE.mat conMat.mat
+cp profile-$theme'_'$TYPE.out $NAME/profile.out
+cp generateConMat-$theme'_'$TYPE.m gg-$theme'_'$TYPE.slurm $NAME
+cp logNormalProfile-$theme'_'$TYPE.m $NAME/logNormalProfile.m
+cp logNormalProfile-$theme'_'$TYPE.mat $NAME/logNormalProfile.mat
+cp lgnmap.out-$lgnfile $NAME/lgnmap.out
+
+cp sbatch_sim4x3 nextContrast.keys plotAll4.slurm sim4x1.slurm sim4x2.slurm sim4x3.slurm ompaSep1 ompaSep2 ompaSep3 assa adg_INPUT conMat.mat $NAME 
+cd $NAME
+date
+
+jobList=""
+i=1
+for gtheta in 1-4 5-8 9-12
+do
+    contrast=1
+    while [ $contrast -le 4 ]; do
+        jobID=`sbatch -p serial --time=$walltime -J sim --mem=20GB --nodes=1 --cpus-per-task=4 sim4x$i.slurm`
+        vim -s nextContrast.keys sim4x$i.slurm
+        echo $jobID = $contrast
+        jobList="$jobList:${jobID:20}"
+        ((contrast++))
+    done
+    echo $gtheta
+    echo $i
+    ((i++))
+done
+echo all contrasts done
+sbatch -p serial --time=$analysisTime --dependency=afterany$jobList plotAll4.slurm
