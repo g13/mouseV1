@@ -1,0 +1,19 @@
+#############################
+#    How to use the code    #
+#############################
+
+#  The original code was run on DALMA, HPC in New York University Abu Dhabi.
+
+0. Get to a HPC module environment that use SLURM scripts.
+    $ git clone git@github.com:g13/mouseV1.git
+1. Set parameters in gMap2.m for generating LGN to V1 mapping
+2. Set parameters in generate.m for generating connection and strength between V1 neurons
+3. Find other global parameters in gg.slurm
+4. Create a folder and copy the code in template/ to it.
+5. Set global name in sbatch_sim4x3, note that here 12 jobs were submitted, each with 4 cpus.
+    (If you want to use different number of cpus, and you are familiar with openmp in FORTRAN, go ahead and modify any of the EIFSep*.f in src/)
+6. Match global settings in plotAll4.slurm with sbatch_sim4x3 and set ploting parameters.
+7. Submit the simulation with $ ./sbatch_sim4x3
+
+# Most of the parameters are described in correspoding files, Dai et al. and its Supplementary Data.
+# For related issues pls send email to wd554@nyu.edu or submit issues on github.

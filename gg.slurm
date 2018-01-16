@@ -12,7 +12,7 @@ module load matlab
 fdr='test'              # target simulation folder
 theme='ndi305-40'       # simulation name
 lgnfile='1xu-'$theme'-s911' # data file name for lgn position and map to v1
-TYPE='l06'              # additional type name
+TYPE='neo6'              # additional type name
 conmat=conMat-$theme'_'$TYPE  # name for connection matrix
 coMa='coMa-60x60-'$lgnfile   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
@@ -21,10 +21,10 @@ eiSpecific='true'          # E<-I connection specificity over orientation prefer
 antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
 reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
 drawInh='true'      # if draw inhibitory example; 
-ld='false'          # re-generate lgn to v1 map
+ld='true'          # re-generate lgn to v1 map
 reverse=2           # different types weight contribution see RFcoeff_O_beta.m
 
-tw=0.25             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
+tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
 temper=30            # randomness to temper with the preset orientation of recruiting ellipses
 ntheta=12           # number of angles simulated
 ex=10               #  # of example plots

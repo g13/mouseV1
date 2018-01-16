@@ -84,9 +84,9 @@ load([suffix,'.mat']);
 %     etheta = reshape(etheta,[p.nv1e,1]);
 % end
 if strcmp(eSpecific,'coGauss')
-    eeSigCoeff = 0.8;
+    eeSigCoeff = 1.00;
     if eiSpecific
-        eiSigCoeff = 1.00;
+        eiSigCoeff = 0.64;
     end
     if ieSpecific
         ieSigCoeff = 0.50;
