@@ -287,7 +287,7 @@
       read(13,*) dE,dI,denexc,axnexc,deninh,axninh,gIIc,gEIc
       read(13,*)
       read(13,*)
-      read(13,*)ignore,g0,gfail,rI0,tau0,tau1,rall
+      read(13,*) ignore,g0,gfail,rI0,tau0,tau1,rall
       read(13,*)
       read(13,*)
       read(13,*) omega,gk,ntheta,gphi,tstart,twindow,taulgn,xS,yS
@@ -314,6 +314,7 @@
       read(13,*)
       read(13,*) tau_e4,tau_i4,tnrise4,tndamp4,tau04,tau14,tau24,
      1  tau_a0, tau_a1
+      read(13,*)
       read(13,*)
       read(13,*) frtexc_e,ce0_e,frtinh_e,ci0_e,frtexc_i,ce0_i,frtinh_i,
      1  ci0_i
@@ -591,10 +592,10 @@
       endif
       print *,'--------------------------------------------'
       print *,'        noise parameters : '
-      print *,' poisson rate  = ',sngl(frtexc_e),'    str = ',sngl(ce0_e)
-      print *,'      (inhib)  = ',sngl(frtinh_e),'    str = ',sngl(ci0_e)
-      print *,' poisson rate  = ',sngl(frtexc_i),'    str = ',sngl(ce0_i)
-      print *,'      (inhib)  = ',sngl(frtinh_i),'    str = ',sngl(ci0_i)
+      print *,' poisson rate  = ',sngl(frtexc_e),'   str = ',sngl(ce0_e)
+      print *,'      (inhib)  = ',sngl(frtinh_e),'   str = ',sngl(ci0_e)
+      print *,' poisson rate  = ',sngl(frtexc_i),'   str = ',sngl(ce0_i)
+      print *,'      (inhib)  = ',sngl(frtinh_i),'   str = ',sngl(ci0_i)
       print *,'--------------------------------------------'
       print *,'      grating parameters : '
       print *,'          freq  = ',sngl(omega), '      k = ',sngl(gk)
@@ -2187,6 +2188,8 @@
       dimension tsoffpoi(nlgn),ioffpoi(nlgn)
       dimension tsenoi(nmax),ienoi(nmax)
       dimension tsinoi(nmax),iinoi(nmax)
+      dimension nlgni(nmax)
+      logical excite(nmax)
       integer iseed
       data iword / 8 /
       common / chaino / glo,slo1,slo2,slo3
@@ -3493,6 +3496,8 @@
       dimension tsoffpoi(nlgn),ioffpoi(nlgn)
       dimension tsenoi(nmax),ienoi(nmax)
       dimension tsinoi(nmax),iinoi(nmax)
+      dimension nlgni(nmax)
+      logical excite(nmax)
       integer iseed
       data iword / 8 /
       common / chaino / glo, slo1, slo2, slo3
@@ -3521,6 +3526,8 @@
      1 tau_a0, tau_a1
       common /  NMDA  / fnmdatE,fnmdacE,fnmdatI,fnmdacI,
      1   fnmdanE, fnmdanI, fgaba
+      common / neuron / excite,nlgni,trefE,trefI,nr,
+     1   lgnmax,lgnmin,meanlgn
       common / lgnConvol / gk2, taulgn, omega
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi

@@ -11,7 +11,7 @@ p.h = 'png';
 p.esigma0 = [10.5,0.1];
 %p.isigma0 = [11.0,0.1];
 p.isigma0 = p.esigma0;
-p.eAspectR0 = [1.4;0.015];
+p.eAspectR0 = [1.2;0.012];
 %p.iAspectR0 = [1.5;0.015];
 p.iAspectR0 = p.eAspectR0;
 p.se = 1;  % boundary
@@ -56,7 +56,7 @@ p.profile = 'u'; % u for uniform, g for gaussian
 p.average = 3;
 % guassian end
 p.cbounde = sqrt(2);
-p.cboundi = p.cbounde*1.1;
+p.cboundi = p.cbounde*1.0;
 % p.cboundi = p.cbounde*1.0;
 p.sbounde = 1;
 p.sboundi = 1;

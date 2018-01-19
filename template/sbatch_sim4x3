@@ -1,9 +1,9 @@
 #!/bin/bash
 theme='ndi305-40'
 TYPE='neo6'
-NAME='sample40-neo6'
+NAME='sample40-neo6-01'
 lgnfile='1xu-'$theme'-s911'
-walltime=0:15:00
+walltime=0:40:00
 analysisTime=0:30:00
 
 if [ ! -d "$NAME" ]; then

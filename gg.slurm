@@ -21,7 +21,7 @@ eiSpecific='true'          # E<-I connection specificity over orientation prefer
 antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
 reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
 drawInh='true'      # if draw inhibitory example; 
-ld='true'          # re-generate lgn to v1 map
+ld='false'          # re-generate lgn to v1 map
 reverse=2           # different types weight contribution see RFcoeff_O_beta.m
 
 tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
