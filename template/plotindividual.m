@@ -184,8 +184,8 @@ if ~dataRead
        oC(i).gIstd(j,:)   =  aC.gIstd(j,:,thetaPick);
        oC(i).gEnstd(j,:)  =  aC.gEnstd(j,:,thetaPick);
        oC(i).gInstd(j,:)  =  aC.gInstd(j,:,thetaPick);
-       pC(i).gPstd(j,:)  =  aC.gPstd(j,:,thetaPick);
-       pC(i).Vstd(j,:)  =  aC.Vstd(j,:,thetaPick);
+       oC(i).gPstd(j,:)  =  aC.gPstd(j,:,thetaPick);
+       oC(i).Vstd(j,:)  =  aC.Vstd(j,:,thetaPick);
        oC(i).spikes(j,:)  =  aC.spikes(j,:,thetaPick);
        oC(i).gtot(j,:)    =  aC.gtot(j,:,thetaPick);
        oC(i).Itot(j,:)    =  aC.Itot(j,:,thetaPick);
