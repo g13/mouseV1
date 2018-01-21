@@ -15,7 +15,7 @@ module load gcc/4.9.1
 ulimit -s unlimited
 
 #NAME="4-M-21"
-NAME="sample40-6t"
+NAME="sample40-neo6-01"
 #PRESET="1xu-nd35-35-s911.mat"
 PRESET="1xu-ndi305-40-s911.mat"
 #PRESET="1xu-nmLDoO-of32-test-s911.mat"
@@ -24,9 +24,9 @@ FORMAT="png"
 NTHETA="12"
 thres=0.1
 individOnly="false"
-statsOnly="false"
+statsOnly="true"
 fit="true"
-rt=5
+rt=4
 ld="false"
 fit="false"
 
