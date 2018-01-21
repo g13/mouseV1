@@ -2419,20 +2419,23 @@ end
 %% width
 if tcReady
     hTCwidth = figure;
-    p2 = contrastLevel; p1 = contrastLevel-1;
+    p2 = contrastLevel; p1 = contrastLevel-2;
     width = sigfsq2*sqrt(log(2));
-    subplot(2,2,1); hold on;
-    %binCountsE = hist(width(contrastLevel,nP(3).ei>0.5 & nP(contrastLevel).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres),5:10:85);
-    %binCountsI = hist(width(contrastLevel,nP(3).ei<0.5 & nP(contrastLevel).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres),5:10:85);
-    edges = 0:5:90;
-    pickedWidth = width(contrastLevel,nP(3).ei>0.5 & nP(contrastLevel).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres);
-    histogram(pickedWidth,edges,'Normalization','probability');
-    %histogram(width(contrastLevel,nP(3).ei<0.5 & nP(contrastLevel).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres),edges);
-    title('half-width 100% Contrast');
-    xlabel('degree')
-    ylabel('% neurons')
-    %legend({'Exc','Inh'});
-    %legend({'Exc','Inh'});
+    subplot(2,4,1); hold on;
+        edges = 0:5:90;
+        pickedWidth = width(p1,nP(p1).ei>0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
+        title('half-width 25% Contrast');
+        xlabel('degree')
+        ylabel('% exc neurons')
+    xlim([0,90]);
+    subplot(2,4,2); hold on;
+        edges = 0:5:90;
+        pickedWidth = width(p2,nP(p2).ei>0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
+        title('half-width 100% Contrast');
+        xlabel('degree')
+        ylabel('% exc neurons')
     xlim([0,90]);
     subplot(2,2,2); hold on;
     for i=lgnmin_e:lgnmax_e
@@ -2445,11 +2448,33 @@ if tcReady
     ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
     xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
     xlim([0,180]); ylim([0,180]);
-    subplot(2,2,3)
-    hold on 
-    bar(1,mean(pickedWidth));
-    errorbar(1,mean(pickedWidth),0,std(pickedWidth));
-    set(gca,'XTick',1,'XTickLabel','L2/3,4');
+    subplot(2,4,5); hold on;
+        edges = 0:5:90;
+        pickedWidth = width(p1,nP(p1).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
+        title('half-width 25% Contrast');
+        xlabel('degree')
+        ylabel('% inh neurons')
+    xlim([0,90]);
+    subplot(2,4,6); hold on;
+        edges = 0:5:90;
+        pickedWidth = width(p2,nP(p2).ei<0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
+        title('half-width 100% Contrast');
+        xlabel('degree')
+        ylabel('% inh neurons')
+    xlim([0,90]);
+    subplot(2,2,4); hold on;
+    for i=lgnmin_i:lgnmax_i
+        pick= nP(p1).ei>0.5 & nLGN==i & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres;
+        if ~isempty(pick)
+            plot(width(p1,pick),width(p2,pick),'o','Color',[0,0,0.1+0.899*(i-lgnmin_i)/(lgnmax_i-lgnmin_i)]);
+        end
+    end
+    plot(0:90:180,0:90:180,'-.k','LineWidth',2);
+    ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
+    xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
+
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
         if strcmp(format,'fig')
