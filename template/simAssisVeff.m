@@ -1,12 +1,15 @@
-function simAssisVeff(theme,loadData,fitReady,format,dir)
-    if nargin < 5
-        dir = '.';
-        if nargin < 4
-            format = 'fig';
-            if nargin < 3
-                fitReady = false;
-                if nargin < 2
-                    loadData = true;
+function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
+    if nargin <6
+        npool = 6;
+        if nargin < 5
+            dir = '.';
+            if nargin < 4
+                format = 'fig';
+                if nargin < 3
+                    fitReady = false;
+                    if nargin < 2
+                        loadData = true;
+                    end
                 end
             end
         end
@@ -44,7 +47,7 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
             eps = 125*2^(i-1);
             conLabel(i) = {[num2str(eps/10,'%.1f'),'%']};
             DIR = [theme,'/',num2str(eps,'%04d')];
-            [nP(i),tC(i)] = readDataAll(DIR,ntheta,n,ndperiod);
+            [nP(i),tC(i)] = readSimple(DIR,ntheta,n,ndperiod);
             % tC [n,2*ntheta+1] //frate,stifr [n, 2*ntheta]
             % nP [n,1]
         end
@@ -56,10 +59,10 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
         Veff = zeros(n,2*ntheta,contrastLevel);
         prA = zeros(n,contrastLevel);
         for i=1:contrastLevel
-            Veff(:,:,i) = tC(i).Veff(:,1:2*ntheta);
+            Veff(:,:,i) = tC(i).Veff(:,1:2*ntheta).*tC(i).Veffsc(:,1:2*ntheta);
             prA(:,i) = nP(i).priA;
         end
-        [Veffmax, prefAngle, sigfsq2, lifted] = fitVeffTC(Veff,prA,contrastLevel,n,ntheta,4);
+        [Veffmax, prefAngle, sigfsq2, lifted] = fitVeffTC(Veff,prA,contrastLevel,n,ntheta,npool);
         save([theme,'VeffFit.mat'],'Veffmax','prefAngle','sigfsq2','lifted');
     else
         load([theme,'VeffFit.mat']);
@@ -127,6 +130,7 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
     Vs_f0 = zeros(n,2,contrastLevel);
     Vs_f0_f1_s = zeros(n,2,contrastLevel);
     Vs_f0_s = zeros(n,2,contrastLevel);
+    Vs_0_mat = ones(n,1) * Vs_0;
     for i=1:contrastLevel
         for j=1:n
             itheta = nP(i).indpo(j);
@@ -153,8 +157,8 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
     end
     subplot(2,4,1)
         hold on
-        osi_f0_f1_h = osi(Vs_f0_f1(:,1,4)*ones(1,nVs_0)-Vs_0,Vs_f0_f1(:,2,4)*ones(1,nVs_0)-Vs_0);
-        osi_f0_f1_l = osi(Vs_f0_f1(:,1,2)*ones(1,nVs_0)-Vs_0,Vs_f0_f1(:,2,2)*ones(1,nVs_0)-Vs_0);
+        osi_f0_f1_h = osi(Vs_f0_f1(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
+        osi_f0_f1_l = osi(Vs_f0_f1(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
         %errorbar(Vs_0,mean(osi_f0_f1_h(1:ne,:)),std(osi_f0_f1_h(1:ne,:)),'-r');
         %errorbar(Vs_0,mean(osi_f0_f1_l(1:ne,:)),std(osi_f0_f1_l(1:ne,:)),':r');
         %errorbar(Vs_0,mean(osi_f0_f1_h((ne+1):n,:)),std(osi_f0_f1_h((ne+1):n,:)),'-b');
@@ -171,8 +175,8 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
 
     subplot(2,4,2)
         hold on
-        osi_f0_h = osi(Vs_f0(:,1,4)*ones(1,nVs_0)-Vs_0,Vs_f0(:,2,4)*ones(1,nVs_0)-Vs_0);
-        osi_f0_l = osi(Vs_f0(:,1,2)*ones(1,nVs_0)-Vs_0,Vs_f0(:,2,2)*ones(1,nVs_0)-Vs_0);
+        osi_f0_h = osi(Vs_f0(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
+        osi_f0_l = osi(Vs_f0(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
         %errorbar(Vs_0,mean(osi_f0_h(1:ne,:)),std(osi_f0_h(1:ne,:)),'-r');
         %errorbar(Vs_0,mean(osi_f0_l(1:ne,:)),std(osi_f0_l(1:ne,:)),':r');
         %errorbar(Vs_0,mean(osi_f0_h((ne+1):n,:)),std(osi_f0_h((ne+1):n,:)),'-b');
@@ -187,8 +191,8 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
 
     subplot(2,4,3)
         hold on
-        osi_f0_f1_s_h = osi(Vs_f0_f1_s(:,1,4)*ones(1,nVs_0)-Vs_0,Vs_f0_f1_s(:,2,4)*ones(1,nVs_0)-Vs_0);
-        osi_f0_f1_s_l = osi(Vs_f0_f1_s(:,1,2)*ones(1,nVs_0)-Vs_0,Vs_f0_f1_s(:,2,2)*ones(1,nVs_0)-Vs_0);
+        osi_f0_f1_s_h = osi(Vs_f0_f1_s(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1_s(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
+        osi_f0_f1_s_l = osi(Vs_f0_f1_s(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1_s(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
         %errorbar(Vs_0,mean(osi_f0_f1_s_h(1:ne,:)),std(osi_f0_f1_s_h(1:ne,:)),'-r');
         %errorbar(Vs_0,mean(osi_f0_f1_s_l(1:ne,:)),std(osi_f0_f1_s_l(1:ne,:)),':r');
         %errorbar(Vs_0,mean(osi_f0_f1_s_h((ne+1):n,:)),std(osi_f0_f1_s_h((ne+1):n,:)),'-b');
@@ -203,8 +207,8 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
 
     subplot(2,4,4)
         hold on
-        osi_f0_s_h = osi(Vs_f0_s(:,1,4)*ones(1,nVs_0)-Vs_0,Vs_f0_s(:,2,4)*ones(1,nVs_0)-Vs_0);
-        osi_f0_s_l = osi(Vs_f0_s(:,1,2)*ones(1,nVs_0)-Vs_0,Vs_f0_s(:,2,2)*ones(1,nVs_0)-Vs_0);
+        osi_f0_s_h = osi(Vs_f0_s(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_s(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
+        osi_f0_s_l = osi(Vs_f0_s(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_s(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
         %errorbar(Vs_0,mean(osi_f0_s_h(1:ne,:)),std(osi_f0_s_h(1:ne,:)),'-r');
         %errorbar(Vs_0,mean(osi_f0_s_l(1:ne,:)),std(osi_f0_s_l(1:ne,:)),':r');
         %errorbar(Vs_0,mean(osi_f0_s_h((ne+1):n,:)),std(osi_f0_s_h((ne+1):n,:)),'-b');
@@ -269,61 +273,114 @@ function simAssisVeff(theme,loadData,fitReady,format,dir)
 
     figure;
     p2 = contrastLevel; p1 = contrastLevel-2;
+    thres = 0.0;
     width = sigfsq2*sqrt(log(2));
+    %pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
+    pick = nP(contrastLevel).ei>0.5 & sum(tC(p1).frate>0,2)>=ntheta;
     subplot(2,4,1); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p1,nP(p1).ei>0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        pickedWidth = width(pick,p1);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('Veff half-width 25% Contrast');
-        xlabel('degree')
+        title('25%');
+        xlabel('half width (\theta)')
         ylabel('% exc neurons')
     xlim([0,90]);
     subplot(2,4,2); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p2,nP(p2).ei>0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        pickedWidth = width(pick,p2);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('Veff half-width 100% Contrast');
-        xlabel('degree')
+        title('100%');
+        xlabel('half width (\theta)')
         ylabel('% exc neurons')
     xlim([0,90]);
-    subplot(2,2,2); hold on;
-    for i=lgnmin_e:lgnmax_e
-        pick= nP(p2).ei>0.5 & nLGN==i & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres;
-        if ~isempty(pick)
-            plot(width(p1,pick),width(p2,pick),'o','Color',[0.1+0.899*(i-lgnmin_e)/(lgnmax_e-lgnmin_e),0,0]);
+
+    hExcWidth = subplot(2,2,2);
+        hold on
+        idTick = 8;
+        ctrs = cell(2,1);
+        dTick = 30;
+        tickLim = [0,90];
+        if sum(pick) > 0
+            pair1 = width(pick,p1);
+            pair2 = width(pick,p2);
+            [tick,n0] = autoAxis(tickLim(1),tickLim(2),round(tickLim(2)/dTick),tickLim);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*idTick+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:idTick:(lctrsy-1+0.5);
+            tickPosX = 0.5:idTick:(lctrsx-1+0.5);
+            
+            dataPair = [pair1, pair2];
+            denPair = hist3(dataPair,ctrs);
+            maxDen = max(max(denPair));
+            denPair = denPair/maxDen;
+            denPair = denPair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[1,lctrsy-1],denPair');
+            plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            title([num2str(sum(pick)/sum(nP(contrastLevel).ei>0.5)*100,'%.1f'),'% qualified neurons']);
+            xlabel('half width(25%)')
+            ylabel('half width(100%)')
+            daspect([1,1,1]);
+            
+            set(gca,'YTickLabel',tickLabel,'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            colormap(hExcWidth,redOnly);
         end
-    end
-    plot(0:90:180,0:90:180,'-.k','LineWidth',2);
-    ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
-    xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
-    xlim([0,180]); ylim([0,180]);
+
+    pick = nP(contrastLevel).ei<0.5 & sum(tC(p1).frate>0,2)>=ntheta;
+    %pickedWidth = width(nP(p1).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres,p1);
     subplot(2,4,5); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p1,nP(p1).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        pickedWidth = width(pick,p1);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
-        title('Veff half-width 25% Contrast');
-        xlabel('degree')
+        title('25%');
+        xlabel('half width (\theta)')
         ylabel('% inh neurons')
-    xlim([0,90]);
+        xlim([0,90]);
     subplot(2,4,6); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p2,nP(p2).ei<0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        pickedWidth = width(pick,p2);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
-        title('Veff half-width 100% Contrast');
-        xlabel('degree')
+        title('100%');
+        xlabel('half width (\theta)')
         ylabel('% inh neurons')
-    xlim([0,90]);
-    subplot(2,2,4); hold on;
-    for i=lgnmin_i:lgnmax_i
-        pick= nP(p1).ei>0.5 & nLGN==i & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres;
-        if ~isempty(pick)
-            plot(width(p1,pick),width(p2,pick),'o','Color',[0,0,0.1+0.899*(i-lgnmin_i)/(lgnmax_i-lgnmin_i)]);
+        xlim([0,90]);
+
+    hInhWidth = subplot(2,2,4); 
+        hold on
+        idTick = 8;
+        ctrs = cell(2,1);
+        dTick = 30;
+        tickLim = [0,90];
+        if sum(pick) > 0
+            pair1 = width(pick,p1);
+            pair2 = width(pick,p2);
+            [tick,n0] = autoAxis(tickLim(1),tickLim(2),round(tickLim(2)/dTick),tickLim);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*idTick+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:idTick:(lctrsy-1+0.5);
+            tickPosX = 0.5:idTick:(lctrsx-1+0.5);
+            
+            dataPair = [pair1, pair2];
+            denPair = hist3(dataPair,ctrs);
+            maxDen = max(max(denPair));
+            denPair = denPair/maxDen;
+            denPair = denPair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[1,lctrsy-1],denPair');
+            plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            title([num2str(sum(pick)/sum(nP(contrastLevel).ei<0.5)*100,'%.1f'),'% qualified neurons']);
+            xlabel('half width(25%)')
+            ylabel('half width(100%)')
+            daspect([1,1,1]);
+            
+            set(gca,'YTickLabel',tickLabel,'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            colormap(hInhWidth,blueOnly);
         end
-    end
-    plot(0:90:180,0:90:180,'-.k','LineWidth',2);
-    ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
-    xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
-    
+
     filename = [dir,'VeffHalfWidth'];
     if strcmp(format,'fig')
         saveas(gcf,[filename,'.fig']);

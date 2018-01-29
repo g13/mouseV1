@@ -1,4 +1,4 @@
-function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,contrastLevel,ntheta,individOnly,outputfdr,ranking,thres,statsOnly,neuronlistOnly,dataRead,rt)
+function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,contrastLevel,ntheta,individOnly,outputfdr,ranking,thres,statsOnly,neuronlistOnly,dataRead,rt,fit,npool)
 % position =[500,150,1000,650];set(0, 'OuterPosition', position);
 % position = [50,50,1400,900];set(0, 'DefaultFigurePosition', position);
 addpath(genpath('../matlab_Utilities'));
@@ -19,30 +19,36 @@ set(groot,'defaultTextFontSize',FontSize);
 LegendOffset = 1;
 set(groot,'defaultLegendFontSize',FontSize-LegendOffset);
 pPosition = [0, 0, 1280, 720];
-if nargin < 14
-    rt = 5;
-    if nargin < 13
-        dataRead = false;
-        if nargin < 12
-            neuronlistOnly = false;
-            if nargin < 11
-                statsOnly = false;
-                if nargin < 10
-                    thres = 0.0; % gauge for active
-                    if nargin < 9
-                        ranking = {};
-                        if nargin < 8
-                            outputfdr = theme;
-                            if nargin < 7
-                                individOnly = false;
-                                if nargin < 6
-                                    ntheta = 12;      
-                                    if nargin < 5
-                                        contrastLevel = 4;
-                                        if nargin < 4                  
-                                            format = '';
-                                            if nargin < 3
-                                                neuronlist = [];
+if nargin < 16
+    npool = 12;
+    if nargin < 15
+        fit = true;
+        if nargin < 14
+            rt = 5;
+            if nargin < 13
+                dataRead = false;
+                if nargin < 12
+                    neuronlistOnly = false;
+                    if nargin < 11
+                        statsOnly = false;
+                        if nargin < 10
+                            thres = 0.0; % gauge for active
+                            if nargin < 9
+                                ranking = {};
+                                if nargin < 8
+                                    outputfdr = theme;
+                                    if nargin < 7
+                                        individOnly = false;
+                                        if nargin < 6
+                                            ntheta = 12;      
+                                            if nargin < 5
+                                                contrastLevel = 4;
+                                                if nargin < 4                  
+                                                    format = '';
+                                                    if nargin < 3
+                                                        neuronlist = [];
+                                                    end
+                                                end
                                             end
                                         end
                                     end
@@ -64,23 +70,12 @@ end
         end
         dpi = '-r100';
     end
-%dataRead = true;
-%dataRead = false;
-%individOnly = true;
-%individOnly = false;
-%statsOnly = true;
-%statsOnly = false;
-% dontUseFit = true;
-dontUseFit = false;
-%tcReady = false;
-tcReady = true;
-meanTimeLine = true;
-% meanTimeLine = false;
+%meanTimeLine = true;
+meanTimeLine = false;
 % current = true;
- current = false;
+current = false;
 ndperiod = 25;
 
-loadSubstract = false;
 polarplot = 0;
 pOSI = true;
 rng('shuffle');
@@ -90,15 +85,6 @@ rng('shuffle');
     ntotal = p.nv1;
     CVsortedID = zeros(ntotal,contrastLevel);
     PKsortedID = CVsortedID;
-%     figure;
-%     subplot(2,2,1);
-%     hist(postE); title('postE');
-%     subplot(2,2,2);
-%     hist(postI); title('postI');
-%     subplot(2,2,3);
-%     hist(preE); title('preE');
-%     subplot(2,2,4);
-%     hist(preI); title('preE');
     conLabel = cell(contrastLevel,1);
     load([theme,'/EPSPsize.mat']);
 if ~dataRead
@@ -311,43 +297,29 @@ else
     load([theme,'-tcData-x',num2str(contrastLevel),'.mat']);
 end
     nv1 = size(nP(1).ei,1);
-    orthf = @(rmax,sigfsq2,lifted) rmax.*exp(-(90./sigfsq2).^2)+lifted;
     LineScheme = {':','-.','--','-',':'};
     dtheta = 180/ntheta;
-if tcReady
-    rmax = zeros(contrastLevel,p.nv1);
-    smax = rmax;
-    sigfsq2 = rmax;
-    lifted = rmax;
-    for i=1:contrastLevel
-        if loadSubstract
-            if exist([theme,'/',theme,'-',num2str(i),'fitted_substracted.mat'],'file');
-                fitted = load([theme,'/',theme,'-',num2str(i),'fitted_substracted.mat']);
-                rmax(i,:) = fitted.rmax;
-                smax(i,:) = fitted.smax;
-                sigfsq2(i,:) = fitted.sigfsq2;
-                lifted(i,:) = fitted.lifted;
-                tcReady = true;
-                disp(['contrast ',num2str(i),' fitted curve loaded']);
-            else
-                disp(['contrast ',num2str(i),' fitted curve not ready']);
-                tcReady = false;
-            end
-        else
-            if exist([theme,'/',theme,'-',num2str(i),'fitted.mat'],'file');
-                fitted = load([theme,'/',theme,'-',num2str(i),'fitted.mat']);
-                rmax(i,:) = fitted.rmax;
-                smax(i,:) = fitted.smax;
-                sigfsq2(i,:) = fitted.sigfsq2;
-                lifted(i,:) = fitted.lifted;
-                tcReady = true;
-                disp(['contrast ',num2str(i),' fitted curve loaded']);
-            else
-                disp(['contrast ',num2str(i),' fitted curve not ready']);
-                tcReady = false;
-            end
-        end
+if ~fit 
+    if exist([theme,'/',theme,'-fitted.mat'],'file');
+        load([theme,'/',theme,'-fitted.mat']);
+        disp(['fitted TC loaded']);
+        tcReady = true;
+    else
+        tcReady = false;
     end
+else
+    tmpFr = zeros(p.nv1,2*ntheta,contrastLevel);
+    tmpPriA = zeros(p.nv1,contrastLevel);
+    for i=1:contrastLevel
+        tmpFr(:,:,i) = tC(i).rate(:,1:2*ntheta);
+        %tmpCV(:,i) = nP(i).cv;
+        tmpPriA(:,i) = nP(i).priA;
+    end
+    [rmax,smax,sigfsq2] = fitTuningCurve_Quick(tmpFr,tmpPriA,contrastLevel,p.nv1,theme,ntheta,npool,theme);
+    tcReady = true;
+end
+if tcReady
+    width = sigfsq2*sqrt(log(2));
 end
 disp('data loaded');
     if pOSI
@@ -357,35 +329,25 @@ disp('data loaded');
         aiOSI = zeros(contrastLevel,nv1);
         aeOSInB = aeOSI;
         aiOSInB = aiOSI;
-        if tcReady  && ~dontUseFit
-            rp = rmax+lifted;
-            ro = orthf(rmax,sigfsq2,lifted);
-            pick = nP(1).ei > 0.5;
-            aeOSI(:,pick) = (rp(:,pick)-ro(:,pick))./(ro(:,pick)+rp(:,pick));
-            aeOSInB(:,pick) = (rp(:,pick)-ro(:,pick))./(ro(:,pick)+rp(:,pick)- ones(contrastLevel,1)*(nP(1).br(pick))');
-            aiOSI(:,~pick) = (rp(:,~pick)-ro(:,~pick))./(ro(:,~pick)+rp(:,~pick));
-            aiOSInB(:,~pick) = (rp(:,~pick)-ro(:,~pick))./(ro(:,~pick)+rp(:,~pick)- ones(contrastLevel,1)*(nP(1).br(~pick))');
-        else
-            aiprefTheta = zeros(contrastLevel,nv1);
-            aiorthTheta = aiprefTheta;
-            for i = 1:contrastLevel
-                aiprefTheta(i,:) = (round(nP(i).prA*180/pi/dtheta)+1)';
-                aiorthTheta(i,:) = mod(aiprefTheta(i,:)+ntheta/2-1,ntheta)+1;
-                %bbb = aiprefTheta(i,:)>=ntheta/2+1;
-                %aiorthTheta(i,bbb) = aiprefTheta(i,bbb)-ntheta/2;
-                %aiorthTheta(i,~bbb) = aiprefTheta(i,~bbb)+ntheta/2;
-            end
-            for i = 1:contrastLevel
-                for j = 1:nv1
-                    nominator = tC(i).frate(j,aiprefTheta(i,j))-tC(i).frate(j,aiorthTheta(i,j));
-                    denorm = tC(i).frate(j,aiprefTheta(i,j))+tC(i).frate(j,aiorthTheta(i,j));
-                    if nP(1).ei(j) > 0.5
-                        aeOSI(i,j) = nominator/denorm;
-                        aeOSInB(i,j) = nominator/(denorm -2*nP(i).br(j));
-                    else
-                        aiOSI(i,j) = nominator/denorm;
-                        aiOSInB(i,j) = nominator/(denorm -2*nP(i).br(j));
-                    end
+        aiprefTheta = zeros(contrastLevel,nv1);
+        aiorthTheta = aiprefTheta;
+        for i = 1:contrastLevel
+            aiprefTheta(i,:) = (round(nP(i).prA*180/pi/dtheta)+1)';
+            aiorthTheta(i,:) = mod(aiprefTheta(i,:)+ntheta/2-1,ntheta)+1;
+            %bbb = aiprefTheta(i,:)>=ntheta/2+1;
+            %aiorthTheta(i,bbb) = aiprefTheta(i,bbb)-ntheta/2;
+            %aiorthTheta(i,~bbb) = aiprefTheta(i,~bbb)+ntheta/2;
+        end
+        for i = 1:contrastLevel
+            for j = 1:nv1
+                nominator = tC(i).frate(j,aiprefTheta(i,j))-tC(i).frate(j,aiorthTheta(i,j));
+                denorm = tC(i).frate(j,aiprefTheta(i,j))+tC(i).frate(j,aiorthTheta(i,j));
+                if nP(1).ei(j) > 0.5
+                    aeOSI(i,j) = nominator/denorm;
+                    aeOSInB(i,j) = nominator/(denorm -2*nP(i).br(j));
+                else
+                    aiOSI(i,j) = nominator/denorm;
+                    aiOSInB(i,j) = nominator/(denorm -2*nP(i).br(j));
                 end
             end
         end
@@ -427,20 +389,26 @@ if ~statsOnly || neuronlistOnly
 %             neuronlist(end-sn+1:end) = CVsortedID(candidates([length(candidates),floor(length(candidates)/2),1]),level);
 %         end
     %%  choose over types
+        [~,widthSortedID] = sort(sigfsq2);
+        [~,dWidthsortedID] = sort(sigfsq2(4,:)-sigfsq2(2,:));
+        sortedID = widthSortedID';
+        dsortedID = dWidthsortedID;
+        %sortedID = CVsortedID;
         level = contrastLevel;
-        efired = nP(level).pkrate(CVsortedID(:,level)) > nP(level).br(CVsortedID(:,level)) & nP(level).ei(CVsortedID(:,level)) > 0.5 &...
-                 nP(level).pkrate(CVsortedID(:,level)) > thres;
+        efired = nP(level).pkrate(sortedID(:,level)) > nP(level).br(sortedID(:,level)) & nP(level).ei(sortedID(:,level)) > 0.5 &...
+                 nP(level).pkrate(sortedID(:,level)) > thres;
         sn = 5;
         neuronlist = zeros(sn*(p.ntypeE + p.ntypeI + 8), 1);
         ranking = cell(length(neuronlist),1);
         for i = 1:p.ntypeE
             j = (i-1)*sn;
             type0 = [p.typeE == i; false(p.nv1i,1)];
-            types = type0(CVsortedID(:,level));
-            candidates = find(efired(CVsortedID(:,level)) & types);
+            types = type0(sortedID(:,level));
+            candidates = find(efired(sortedID(:,level)) & types);
             ncand = length(candidates);
             if ncand>=sn-2
-                neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),level);
+                %neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
+                neuronlist(j + (1:sn-2)) = sortedID(candidates([1, 2, 3]),level);
                 ranking(j + (1:sn-2)) = {'smallest CV','median CV','largest CV'};
             end
             types = type0(PKsortedID(:,level));
@@ -452,16 +420,16 @@ if ~statsOnly || neuronlistOnly
             end
         end
         
-        ifired = nP(level).pkrate(CVsortedID(:,level)) > nP(level).br(CVsortedID(:,level)) & nP(level).ei(CVsortedID(:,level)) < 0.5 &...
-                 nP(level).pkrate(CVsortedID(:,level)) > thres;
+        ifired = nP(level).pkrate(sortedID(:,level)) > nP(level).br(sortedID(:,level)) & nP(level).ei(sortedID(:,level)) < 0.5 &...
+                 nP(level).pkrate(sortedID(:,level)) > thres;
         for i = 1:p.ntypeI
             j = p.ntypeE*sn + (i-1)*sn;
             type0 = [false(p.nv1e,1); p.typeI == i];
-            types = type0(CVsortedID(:,4));
-            candidates = find(ifired(CVsortedID(:,4)) & types);
+            types = type0(sortedID(:,4));
+            candidates = find(ifired(sortedID(:,4)) & types);
             ncand = length(candidates);
             if ncand>=sn-2
-                neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),level);
+                neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
                 ranking(j + (1:sn-2)) = {'smallest CV','median CV','largest CV'};
             end
             types = type0(PKsortedID(:,4));
@@ -476,11 +444,12 @@ if ~statsOnly || neuronlistOnly
         otherType = ' Simple';
         j = sn*(p.ntypeE+p.ntypeI);
         type0 = nP(level).sc > 1.0 & nP(level).ei > 0.5;
-        types = type0(CVsortedID(:,level));
-        candidates = find(efired(CVsortedID(:,level)) & types);
+        types = type0(sortedID(:,level));
+        candidates = find(efired(sortedID(:,level)) & types);
         ncand = length(candidates);
         if ncand>=sn-2
-            neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),level);
+            %neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
+            neuronlist(j + (1:sn-2)) = sortedID(candidates([1, 2, 3]),level);
             ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},otherType);
         else
             disp(['no active exc',otherType,' is found']);
@@ -496,11 +465,12 @@ if ~statsOnly || neuronlistOnly
         otherType = ' Complex';
         j = sn*(p.ntypeE+p.ntypeI+1);
         type0 = nP(level).sc < 1.0 & nP(level).ei > 0.5; 
-        types = type0(CVsortedID(:,level));
-        candidates = find(efired(CVsortedID(:,level)) & types);
+        types = type0(sortedID(:,level));
+        candidates = find(efired(sortedID(:,level)) & types);
         ncand = length(candidates);
         if ncand>=sn-2
-            neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),level);
+            %neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
+            neuronlist(j + (1:sn-2)) = sortedID(candidates([1, 2, 3]),level);
             ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},otherType);
         else
             disp(['no active exc',otherType,' is found']);
@@ -521,12 +491,12 @@ if ~statsOnly || neuronlistOnly
         igE = tC(level).gE'+tC(level).gEstd';
         [~,gEsortedID] = sort(igE(iipA));
         type0 = (igLGN(iipA) < igE(iipA)) & nP(level).ei > 0.5; 
-        types = type0(CVsortedID(:,level));
-        candidates = find(efired(CVsortedID(:,level)) & types);
+        types = type0(sortedID(:,level));
+        candidates = find(efired(sortedID(:,level)) & types);
         ncand = length(candidates);
         disp([num2str(ncand),' neurons are cort.E dominated']);
         if ncand>=sn-2
-            neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),level);
+            neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
             ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},otherType);
         end
         if ncand > 0
@@ -547,11 +517,11 @@ if ~statsOnly || neuronlistOnly
         for i = 1:p.ntypeI
             j = sn*(p.ntypeE+p.ntypeI+3);
             type0 = [false(p.nv1e,1); p.typeI == i];
-            types = type0(dCVsortedID);
-            candidates = find(ifired(dCVsortedID) & types); 
+            types = type0(dsortedID);
+            candidates = find(ifired(dsortedID) & types); 
             ncand = length(candidates); 
             if ncand>=sn-2 
-                neuronlist(j + (1:sn-2)) = dCVsortedID(candidates([1, floor(ncand/2), ncand]));
+                neuronlist(j + (1:sn-2)) = dsortedID(candidates([1, floor(ncand/2), ncand]));
                 ranking(j + (1:sn-2)) = {'smallest dCV','median dCV','largest dCV'};
             end
         end
@@ -570,11 +540,11 @@ if ~statsOnly || neuronlistOnly
         for i = 1:p.ntypeI
             j = sn*(p.ntypeE+p.ntypeI+4+ii);
             type0 = [false(p.nv1e,1); p.typeI == i];
-            types = type0(CVsortedID(:,ii)); 
-            candidates = find(ifired(CVsortedID(:,ii)) & types);
+            types = type0(sortedID(:,ii)); 
+            candidates = find(ifired(sortedID(:,ii)) & types);
             ncand = length(candidates);
             if ncand>=sn-2
-                neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),ii);
+                neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),ii);
                 ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},num2str(ii));
             end
             types = type0(PKsortedID(:,ii));
@@ -590,11 +560,11 @@ if ~statsOnly || neuronlistOnly
         for i = 1:p.ntypeE
             j = sn*(p.ntypeE+p.ntypeI+6+ii);
             type0 = [p.typeE==i;false(p.nv1i,1)];
-            types = type0(CVsortedID(:,ii)); 
-            candidates = find(efired(CVsortedID(:,ii)) & types);
+            types = type0(sortedID(:,ii)); 
+            candidates = find(efired(sortedID(:,ii)) & types);
             ncand = length(candidates);
             if ncand>=sn-2
-                neuronlist(j + (1:sn-2)) = CVsortedID(candidates([1, floor(ncand/2), ncand]),ii);
+                neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),ii);
                 ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},num2str(ii));
             end
             types = type0(PKsortedID(:,ii));
@@ -667,9 +637,8 @@ for nn = 1:length(neuronlist)
     end
     ylabel('firing rate');
 
-    if tcReady && ~dontUseFit
+    if tcReady
         for il = 1:contrastLevel
-            %s = (smax(il,k)-90):1:(smax(il,k)+90);
             s = thetas(1):1:thetas(end);
             s0 = smax(il,k);
             if s0 < 90
@@ -677,7 +646,7 @@ for nn = 1:length(neuronlist)
             else 
                 s0 = s0 - 90;
             end
-            r = rmax(il,k)*exp(-((s-s0)./sigfsq2(il,k)).^2)+lifted(il,k);
+            r = rmax(il,k)*exp(-((s-s0)./sigfsq2(il,k)).^2);
             plot(s,r,LineScheme{il},'Color','g','LineWidth',2);
         end
     end
@@ -693,14 +662,9 @@ for nn = 1:length(neuronlist)
     end
     cvLevel = strjoin(cellstr(num2str(cvL,'%1.1f'))'); 
     cvNBLevel = strjoin(cellstr(num2str(cvLnB,'%1.1f'))');
-%     for i=1:contrastLevel
-%         cvLevel = [cvLevel,' ', num2str(nP(i).cv(k),'%1.2f')];
-%         cvNBLevel = [cvNBLevel,' ', num2str(nP(i).cvNoBack(k),'%1.2f')];
-%     end
-    % title({['frate',', CV =', cvLevel],['stimulated CV =',cvNBLevel],['\theta = ', num2str(ptheta(k)*180/pi),'^o']});
     title({['CV =', cvLevel],['evoked CV =',cvNBLevel]});
 
-   subplot(2,3,2); hold on;
+    subplot(2,3,2); hold on;
     for i=1:contrastLevel
         plot(thetas, tC(i).gLGN(k,half),'LineStyle',LineScheme{i},'Color','g');
         plot(thetas, tC(i).gLGN(k,half).*(1+tC(i).gLGNsc(k,half)),'LineStyle',LineScheme{i},'Color','k');
@@ -714,7 +678,13 @@ for nn = 1:length(neuronlist)
     else
         neuron_alias = [ranking{nn},' ',p.Itypes{p.typeI(k-p.nv1e)}];
     end
-    title({['No.', num2str(k)],neuron_alias} );
+    if tcReady
+        frWidth = width(:,k); 
+        strFrWidth = strjoin(cellstr(num2str(frWidth,'%f'))'); 
+        title({['No.', num2str(k),', ',neuron_alias],['fr HWHM = ', strFrWidth]});
+    else
+        title({'No.', num2str(k),', ',neuron_alias});
+    end
     yy = ylim();
     ylim([0,yy(2)*1.3]);
     ylabel('Conductance');
@@ -756,31 +726,19 @@ for nn = 1:length(neuronlist)
     OSInB = OSI;
     prefinTheta = OSI;
     prefoutTheta = OSI;
-    if tcReady && ~dontUseFit
-        for i = 1:contrastLevel
-            rp = rmax(i,k)+lifted(i,k);
-            ro = orthf(rmax(i,k),sigfsq2(i,k),lifted(i,k));
-            OSI(i) = (rp-ro)/(ro+rp);
-            OSInB(i) = (rp-ro)/(ro+rp- 2*nP(1).br(k));
-        end
-        pick = smax(i,:)>=90;
-        prefoutTheta(pick) = smax(i,pick)-90;
-        prefoutTheta(~pick) = smax(i,~pick)+90;
-    else
-        for i = 1:contrastLevel
-            prefoutTheta(i) = nP(i).prA(k)*180/pi;
-            iprefTheta = round(prefoutTheta(i)/dtheta+1);
-            iorthTheta = mod(iprefTheta+ntheta/2-1, ntheta)+1;
-            OSI(i) = (tC(i).frate(k,iprefTheta) - tC(i).frate(k,iorthTheta))/...
-                (tC(i).frate(k,iprefTheta) + tC(i).frate(k,iorthTheta));
-            OSInB(i) = (tC(i).frate(k,iprefTheta) - tC(i).frate(k,iorthTheta))/...
-                (tC(i).frate(k,iprefTheta) + tC(i).frate(k,iorthTheta) - 2*nP(1).br(k));
-            %oangles = [oangles,num2str(prefoutTheta,'%3.0f'),'^{o} '];
-        end
-        pick = prefoutTheta>=90;
-        prefoutTheta(pick) = prefoutTheta(pick)-90;
-        prefoutTheta(~pick) = prefoutTheta(~pick)+90;
+    for i = 1:contrastLevel
+        prefoutTheta(i) = nP(i).prA(k)*180/pi;
+        iprefTheta = round(prefoutTheta(i)/dtheta+1);
+        iorthTheta = mod(iprefTheta+ntheta/2-1, ntheta)+1;
+        OSI(i) = (tC(i).frate(k,iprefTheta) - tC(i).frate(k,iorthTheta))/...
+            (tC(i).frate(k,iprefTheta) + tC(i).frate(k,iorthTheta));
+        OSInB(i) = (tC(i).frate(k,iprefTheta) - tC(i).frate(k,iorthTheta))/...
+            (tC(i).frate(k,iprefTheta) + tC(i).frate(k,iorthTheta) - 2*nP(1).br(k));
+        %oangles = [oangles,num2str(prefoutTheta,'%3.0f'),'^{o} '];
     end
+    pick = prefoutTheta>=90;
+    prefoutTheta(pick) = prefoutTheta(pick)-90;
+    prefoutTheta(~pick) = prefoutTheta(~pick)+90;
     oangles = strjoin(cellstr(strcat(num2str(prefoutTheta,'%3.0f'),'^{o}'))');
     for i = 1:contrastLevel
         prefinTheta(i) = nP(i).priA(k)*180/pi;
@@ -1833,12 +1791,13 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 xlabel('gOSI(25%)')
 ylabel('gOSI(100%)')
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 colormap(hExc,redOnly);
+end
 
 hInh = subplot(1,2,2);
 pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
@@ -1862,7 +1821,8 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+%plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 xlabel('gOSI(25%)')
 ylabel('gOSI(100%)')
 
@@ -1876,7 +1836,6 @@ if ~isempty(format)
     else
         print(hCVheatPair,[outputfdr,'/','C',num2str(p1),'vsC',num2str(p2),'_CVheat-',theme,'.',format],printDriver,dpi);
     end
-end
 end
 hCVnLGN = figure;
 subplot(1,2,1); 
@@ -1937,46 +1896,36 @@ ioorate = zeros(contrastLevel,p.nv1i);
 iporate = zeros(contrastLevel,p.nv1i);
 ioirate = zeros(contrastLevel,p.nv1i);
 ipirate = zeros(contrastLevel,p.nv1i);
-if tcReady && ~dontUseFit
-    pick = nP(1).ei>0.5;
-    eporate = rmax(:,pick)+lifted(:,pick);
-    eoorate = orthf(rmax(:,pick),sigfsq2(:,pick),lifted(:,pick));
-    iporate = rmax(:,~pick)+lifted(:,~pick);
-    ioorate = orthf(rmax(:,~pick),sigfsq2(:,~pick),lifted(:,~pick));
-else
-
-
-    for j=1:contrastLevel
-        nntheta = size(tC(j).frate,2);
-        %pref
-        pick = false(ntotal * nntheta,1);
-        opPick = aiprefTheta(j,:) + (0:nntheta:((ntotal-1)*nntheta));
-        pick(opPick) = true;
-        pick = reshape(pick,[nntheta,ntotal])';
-        
-        eipick = pick;
-        eipick(nP(1).ei < 0.5,:) = false;
-        eporate(j,:) = tC(j).frate(eipick)';
-        
-        eipick = pick;
-        eipick(nP(1).ei > 0.5,:) = false;
-        iporate(j,:) = tC(j).frate(eipick)';
-        % orth
-        pick = false(ntotal * nntheta,1);
-        opPick = aiorthTheta(j,:) + (0:nntheta:((ntotal-1)*nntheta));
-        pick(opPick) = true;
-        pick = reshape(pick,[nntheta,ntotal])';
-        
-        eipick = pick;
-        eipick(nP(1).ei < 0.5,:) = false;
-        eoorate(j,:) = tC(j).frate(eipick)';
-        
-        eipick = pick;
-        eipick(nP(1).ei > 0.5,:) = false;
-        ioorate(j,:) = tC(j).frate(eipick)';
-        
-        clear eipick opPick
-    end
+for j=1:contrastLevel
+    nntheta = size(tC(j).frate,2);
+    %pref
+    pick = false(ntotal * nntheta,1);
+    opPick = aiprefTheta(j,:) + (0:nntheta:((ntotal-1)*nntheta));
+    pick(opPick) = true;
+    pick = reshape(pick,[nntheta,ntotal])';
+    
+    eipick = pick;
+    eipick(nP(1).ei < 0.5,:) = false;
+    eporate(j,:) = tC(j).frate(eipick)';
+    
+    eipick = pick;
+    eipick(nP(1).ei > 0.5,:) = false;
+    iporate(j,:) = tC(j).frate(eipick)';
+    % orth
+    pick = false(ntotal * nntheta,1);
+    opPick = aiorthTheta(j,:) + (0:nntheta:((ntotal-1)*nntheta));
+    pick(opPick) = true;
+    pick = reshape(pick,[nntheta,ntotal])';
+    
+    eipick = pick;
+    eipick(nP(1).ei < 0.5,:) = false;
+    eoorate(j,:) = tC(j).frate(eipick)';
+    
+    eipick = pick;
+    eipick(nP(1).ei > 0.5,:) = false;
+    ioorate(j,:) = tC(j).frate(eipick)';
+    
+    clear eipick opPick
 end
 
 
@@ -2325,11 +2274,7 @@ thetaRange = 180/ntheta*((0:ntheta)-0.5);
 for j = 1:contrastLevel
     pick = nP(contrastLevel).ei>0.5 & nP(j).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
     oriRate = zeros(ntheta,1);
-    if tcReady && ~dontUseFit
-        po1d = smax(j,pick);
-    else
-        po1d = nP(j).prA(pick)*180/pi;
-    end
+    po1d = nP(j).prA(pick)*180/pi;
     subplot(contrastLevel,2,(j-1)*2+1);
     [binCount, ind] = histc(po1d,thetaRange);
     binCount = binCount(1:ntheta);
@@ -2420,60 +2365,118 @@ end
 if tcReady
     hTCwidth = figure;
     p2 = contrastLevel; p1 = contrastLevel-2;
-    width = sigfsq2*sqrt(log(2));
+    pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate>thres
+    if (0)
     subplot(2,4,1); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p1,nP(p1).ei>0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        pickedWidth = width(p1,pick);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('half-width 25% Contrast');
-        xlabel('degree')
+        title('25%');
+        xlabel('half width (\theta)')
         ylabel('% exc neurons')
-    xlim([0,90]);
+        xlim([0,90]);
     subplot(2,4,2); hold on;
         edges = 0:5:90;
-        pickedWidth = width(p2,nP(p2).ei>0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        pickedWidth = width(p2,pick);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('half-width 100% Contrast');
-        xlabel('degree')
+        title('100%');
+        xlabel('half width (\theta)')
         ylabel('% exc neurons')
-    xlim([0,90]);
-    subplot(2,2,2); hold on;
-    for i=lgnmin_e:lgnmax_e
-        pick= nP(p2).ei>0.5 & nLGN==i & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres;
-        if ~isempty(pick)
-            plot(width(p1,pick),width(p2,pick),'o','Color',[0.1+0.899*(i-lgnmin_e)/(lgnmax_e-lgnmin_e),0,0]);
-        end
+        xlim([0,90]);
     end
-    plot(0:90:180,0:90:180,'-.k','LineWidth',2);
-    ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
-    xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
-    xlim([0,180]); ylim([0,180]);
+    hExcWidth = subplot(1,2,1);
+        ctrs = cell(2,1);
+        if sum(pick) > 0
+            pair1 = width(p1,pick);
+            pair2 = width(p2,pick);
+            %dTick = 30;
+            %tickLim = [0,90];
+            %[tick,n0] = autoAxis(tickLim(1),tickLim(2),round(tickLim(2)/dTick),tickLim);
+            idTick = 6;
+            tick = [0,30,60,90];
+            n0 = length(tick);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*idTick+1;
+            dctr = (tick(n0)-tick(1))/lctrsx-1
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(n0),lctrsx)+dctr/2;
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:idTick:(lctrsy-1+0.5);
+            tickPosX = 0.5:idTick:(lctrsx-1+0.5);
+            
+            dataPair = [pair1', pair2'];
+            denPair = hist3(dataPair,ctrs);
+            maxDen = max(max(denPair));
+            denPair = denPair/maxDen;
+            denPair = denPair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denPair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            title([num2str(sum(pick)/sum(nP(contrastLevel).ei>0.5)*100,'%.1f'),'% qualified neurons']);
+            xlabel('half width(25%)')
+            ylabel('half width(100%)')
+            daspect([1,1,1]);
+            
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            colormap(hExcWidth,redOnly);
+        end
+
+    pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate>thres
+    %pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
+    if (0)
     subplot(2,4,5); hold on;
-        edges = 0:5:90;
-        pickedWidth = width(p1,nP(p1).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres);
+        edges = 0:10:180;
+        pickedWidth = width(p1,pick);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
-        title('half-width 25% Contrast');
-        xlabel('degree')
+        title('25%');
+        xlabel('half width (\theta)')
         ylabel('% inh neurons')
-    xlim([0,90]);
+        xlim([0,180]);
     subplot(2,4,6); hold on;
-        edges = 0:5:90;
-        pickedWidth = width(p2,nP(p2).ei<0.5 & nP(p2).pkrate> nP(1).br & nP(p2).pkrate>thres);
+        edges = 0:45:720;
+        pickedWidth = width(p2,pick);
         histogram(pickedWidth,edges,'Normalization','probability','FaceColor','b');
-        title('half-width 100% Contrast');
-        xlabel('degree')
+        title('100%');
+        xlabel('half width (\theta)')
         ylabel('% inh neurons')
-    xlim([0,90]);
-    subplot(2,2,4); hold on;
-    for i=lgnmin_i:lgnmax_i
-        pick= nP(p1).ei>0.5 & nLGN==i & nP(p1).pkrate> nP(1).br & nP(p1).pkrate>thres;
-        if ~isempty(pick)
-            plot(width(p1,pick),width(p2,pick),'o','Color',[0,0,0.1+0.899*(i-lgnmin_i)/(lgnmax_i-lgnmin_i)]);
-        end
+        xlim([0,720]);
     end
-    plot(0:90:180,0:90:180,'-.k','LineWidth',2);
-    ylabel(['width at ',num2str(12.5*2^(p1-1),'%3.1f'),'% Contrast']);
-    xlabel(['width at ',num2str(12.5*2^(p2-1),'%3.1f'),'% Contrast']);
+    pick = pick & width(p2,:)' < 200 & width(p1,:)' < 200;
+
+    hInhWidth = subplot(1,2,2); 
+        idTick = 6;
+        ctrs = cell(2,1);
+        dTick = 60;
+        tickLim = [0,200];
+
+        if sum(pick) > 0
+            pair1 = width(p1,pick);
+            pair2 = width(p2,pick);
+            [tick,n0] = autoAxis(tickLim(1),tickLim(2),round(tickLim(2)/dTick),tickLim);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*idTick+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:idTick:(lctrsy-1+0.5);
+            tickPosX = 0.5:idTick:(lctrsx-1+0.5);
+            
+            dataPair = [pair1', pair2'];
+            denPair = hist3(dataPair,ctrs);
+            maxDen = max(max(denPair));
+            denPair = denPair/maxDen;
+            denPair = denPair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denPair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            title([num2str(sum(pick)/sum(nP(contrastLevel).ei<0.5)*100,'%.1f'),'% qualified neurons']);
+            xlabel('half width(25%)')
+            ylabel('half width(100%)')
+            daspect([1,1,1]);
+            
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            colormap(hInhWidth,blueOnly);
+        end
 
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
@@ -2495,7 +2498,7 @@ end
         ipCurr = zeros(contrastLevel,p.nv1i);
         ioCurrc = zeros(contrastLevel,p.nv1i);
         ipCurrc = zeros(contrastLevel,p.nv1i);
-        if ~(tcReady && ~dontUseFit)
+        if ~tcReady
             aiprefTheta = zeros(contrastLevel,nv1);
             aiorthTheta = aiprefTheta;
             for i = 1:contrastLevel

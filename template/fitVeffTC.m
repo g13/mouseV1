@@ -1,10 +1,25 @@
 function [vmax, smax, sigfsq2, lifted] = fitVeffTC(Veff,prA,levels,n,ntheta,threads)
-    vmax = zeros(1,n)-1;
+    vmax = zeros(n,levels);
     smax = vmax;
     sigfsq2 = vmax;
     dtheta = 180/ntheta;
+    hWF=sqrt(log(2));  %halfWidthFactor
+    pool = gcp('nocreate');
+	if threads > 1
+		pool = gcp('nocreate');
+		if ~isempty(pool)
+			if pool.NumWorkers ~= threads  
+				delete(pool);
+				pool = parpool(threads);
+			end
+		else 
+			pool = parpool(threads);
+		end
+	end
+
     for ii = 1:levels
 		disp(['fitting Veff for contrast ',num2str(ii)]);
+		disp(['expecting ', num2str(sum(sum(Veff(:,:,ii),2)==0)),' silences']);
 
         parfor (j = 1:n,threads)
             ipA = round(prA(j,ii)*180/pi/dtheta)+1;
@@ -18,28 +33,31 @@ function [vmax, smax, sigfsq2, lifted] = fitVeffTC(Veff,prA,levels,n,ntheta,thre
             smaxLeft = thetas(ntheta/4);
             vs = Veff(j,shift,ii);
 			if (sum(vs) == 0)
-            	vmax(j) = 0;
-            	smax(j) = (thetas(1)+thetas(end))/2;
-            	sigfsq2(j) = 180;
-            	lifted(j) = 0;
+            	vmax(j,ii) = 0;
+            	smax(j,ii) = (thetas(1)+thetas(end))/2;
+            	sigfsq2(j,ii) = inf;
+            	lifted(j,ii) = 0;
 			else
-            	if (max(vs)-mean(vs))<2*std(vs)
-            	    vmax0 = 0;
-            	else
-            	    vmax0 = max(vs)-min(vs);
-            	end
-				lifted0 = min(0,min(vs));
+            	vmax0 = max(vs)-min(vs);
             	liftedGauss1 = fittype(...
 					@(smax,sigfsq2,vmax,lifted,x) lifted + vmax*exp(-((x-smax)./sigfsq2).^2),...
 					'independent',{'x'},'coefficients',{'smax','sigfsq2','vmax','lifted'});
-            	fitted = fit(thetas', vs',liftedGauss1,...
-            	    'Lower',[smaxLeft,					1e-8,	max(vs)-mean(vs),								lifted0],...
-					'Upper',[smaxRight,					Inf,	max(max(vs)-mean(vs)+2e-7,2*(max(vs)-min(vs))),	mean(vs)],...
-            	    'Start',[(thetas(1)+thetas(end))/2,	40,		vmax0,											lifted0]);
-            	vmax(j) = fitted.vmax;
-            	smax(j) = fitted.smax;
-            	sigfsq2(j) = fitted.sigfsq2;
-            	lifted(j) = fitted.lifted;
+                if max(vs)-mean(vs) > 1.45*std(vs)
+            	    fitted = fit(thetas', vs',liftedGauss1,...
+            	        'Lower',[smaxLeft,					dtheta/hWF,	max(vs)-mean(vs),		0],...
+				    	'Upper',[smaxRight,					inf,	    2*(max(vs)-min(vs)),	mean(vs)],...
+            	        'Start',[(thetas(1)+thetas(end))/2,	45/hWF,		vmax0,					min(vs)]);
+                else
+            	    fitted = fit(thetas', vs',liftedGauss1,...
+            	        'Lower',[smaxLeft,					45/hWF,	  max(vs)-mean(vs),		   0],...
+				    	'Upper',[smaxRight,					inf,	    1.5*(max(vs)-min(vs)),	mean(vs)],...
+            	        'Start',[(thetas(1)+thetas(end))/2,	1e10,		0,					    mean(vs)]);
+
+                end
+            	vmax(j,ii) = fitted.vmax;
+            	smax(j,ii) = fitted.smax;
+            	sigfsq2(j,ii) = fitted.sigfsq2;
+            	lifted(j,ii) = fitted.lifted;
 			end
         end
     end
