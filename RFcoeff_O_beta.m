@@ -1,21 +1,21 @@
-function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase)
-    if nargin < 15
+function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase)
+    if nargin < 14
         antiphase = false;
-        if nargin < 14
+        if nargin < 13
             ie = false;
-            if nargin < 13
+            if nargin < 12
                 OnOff = false;
-                if nargin < 12
+                if nargin < 11
                     reverse = 1;
-                    if nargin < 11
+                    if nargin < 10
                         temper = 0.0;
-                        if nargin < 10
+                        if nargin < 9
                             ld = false;
-                            if nargin < 9
+                            if nargin < 8
                                 format = '';
-                                if nargin < 8
+                                if nargin < 7
                                     draw = true;
-                                    if nargin < 7
+                                    if nargin < 6
                                         tw = 1.0;
                                     end
                                 end
@@ -125,53 +125,33 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format
     pickTheta = theta>pi/2;
     gtheta(pickTheta) = theta(pickTheta) - pi/2;
     gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
-    thetaC = zeros(m,1);
     for i=1:n
-        if pick
-            subregion = length(nSubLGN{i});
-            subpick = 1:subregion;
-            sigma = p.esigma(i,subpick);
-            sigmb = sigma.*p.eAspectRatio(i,subpick);
-
-            peak = zeros(subregion,2);
-            pickGrid = false([ngrid,1]);
-            for j = 1:subregion
-                if nSubLGN{i}(j) > 0
-                    peak(j,:) = mean(LGNpos(v1Map{i,j},:),1)*180/pi;
-                else
-                    peak(j,:) = mean(LGNpos(-v1Map{i,j},:),1)*180/pi;
-                end
-                d2 = (pox-peak(j,1)).^2 + (poy-peak(j,2)).^2;
-                ptheta = atan((poy-peak(j,2))./(pox-peak(j,1)));
-                picked = ptheta < 0;
-                ptheta(picked) = pi + ptheta(picked) - gtheta(i);
-                ptheta(~picked) = ptheta(~picked) - gtheta(i);
-                r2 = rho(ptheta,FWHM*sigmb(j)*180/pi,FWHM*sigma(j)*180/pi); 
-                pickGrid(d2<(r2+ramp^2+2*sqrt(r2)*ramp)) = true;
-            end
-        else 
-            pickGrid = true([ngrid,1]);
-        end
-        sizePicked = sum(pickGrid);
-        dataI = Z(pickGrid,i);
-        if ~isequal(dataI,zeros(sizePicked,1))
+        dataI = Z(:,i);
+        jpick = [(i+1):p.nv1];
+        if ~isequal(dataI,zeros(ngrid,1))
             stdI = std(dataI,1);
             meanI = mean(dataI);
             dataI = dataI-meanI;
             dataI = repmat(dataI,[1,m]);
 
-            dataJ = Z(pickGrid,:);
+            dataJ = Z(:,jpick);
             stdJ = std(dataJ,1,1);
             meanJ = mean(dataJ,1);
-            dataJ = dataJ-ones(sizePicked,1)*meanJ;
+            dataJ = dataJ-ones(ngrid,1)*meanJ;
 
             RFcorr = mean(dataI.*dataJ,1)./(stdI*stdJ);
             RFcorr(isnan(RFcorr)) = 0;
             RFcorr = RFcorr';
-
         else
-            RFcorr = zeros(m,1);
+            RFcorr = zeros(m-i,1);
         end
+        if antiphase
+            RFcorr(n-i+(1:p.nv1i)) = -RFcorr(n-i+(1:p.nv1i));
+        end
+        RFcorrMat(jpick,i) = RFcorr;
+        RFcorrMat(i,(i+1):n) = RFcorr((i+1):n);
+    end
+    for i=1:n
         dTheta = abs(gtheta-gtheta(i));
         pickTheta = dTheta>pi/2;
         dTheta(pickTheta) = pi - dTheta(pickTheta);
@@ -187,19 +167,13 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format
         dTheta_tempered(pickTheta) = pi-dTheta_tempered(pickTheta);
 
         thetaC = 1 - dTheta_tempered./(pi/4);
+        dThetaMat(:,i) = dTheta;
         if sum(RFcorr) == 0.0
             %coMat(:,i) = thetaC; 
             AORF(i) = true;
         end
-        if antiphase
-            temp = RFcorr(p.nv1e+(1:p.nv1i));
-            RFcorr(p.nv1e+(1:p.nv1i)) = -temp;
-            RFcorrMat(:,i) = RFcorr; 
-        else
-            RFcorrMat(:,i) = RFcorr;
-        end
-
-        dThetaMat(:,i) = dTheta;
+    end
+    for i=1:n
         %coMat(:,i) = RFcorr*w(i) + thetaC*oneMinusW(i);
         coMat(:,i) = RFcorr*oneMinusW(i) + thetaC*w(i);
 
