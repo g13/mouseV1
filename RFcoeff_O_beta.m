@@ -127,13 +127,13 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format
     gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
     thetaC = zeros(m,1);
     for i=1:n
-        subregion = length(nSubLGN{i});
-        subpick = 1:subregion;
-        sigma = p.esigma(i,subpick);
-        sigmb = sigma.*p.eAspectRatio(i,subpick);
-
-        peak = zeros(subregion,2);
         if pick
+            subregion = length(nSubLGN{i});
+            subpick = 1:subregion;
+            sigma = p.esigma(i,subpick);
+            sigmb = sigma.*p.eAspectRatio(i,subpick);
+
+            peak = zeros(subregion,2);
             pickGrid = false([ngrid,1]);
             for j = 1:subregion
                 if nSubLGN{i}(j) > 0
@@ -155,17 +155,17 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,pick,save2file,tw,draw,format
         sizePicked = sum(pickGrid);
         dataI = Z(pickGrid,i);
         if ~isequal(dataI,zeros(sizePicked,1))
-            varI = var(dataI,1);
+            stdI = std(dataI,1);
             meanI = mean(dataI);
             dataI = dataI-meanI;
             dataI = repmat(dataI,[1,m]);
 
             dataJ = Z(pickGrid,:);
-            varJ = var(dataJ,1,1);
+            stdJ = std(dataJ,1,1);
             meanJ = mean(dataJ,1);
             dataJ = dataJ-ones(sizePicked,1)*meanJ;
 
-            RFcorr = mean(dataI.*dataJ,1)./sqrt(varI*varJ);
+            RFcorr = mean(dataI.*dataJ,1)./(stdI*stdJ);
             RFcorr(isnan(RFcorr)) = 0;
             RFcorr = RFcorr';
 

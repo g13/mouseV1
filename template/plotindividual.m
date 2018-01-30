@@ -1792,8 +1792,10 @@ denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
 plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+title('Excitatory');
 xlabel('gOSI(25%)')
 ylabel('gOSI(100%)')
+daspect([1,1,1]);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 colormap(hExc,redOnly);
@@ -1823,14 +1825,16 @@ imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
 plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 %plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+title('Inhibitory');
 xlabel('gOSI(25%)')
 ylabel('gOSI(100%)')
+daspect([1,1,1]);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 colormap(hInh,blueOnly);
 
 if ~isempty(format)
-    set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+    %set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
     if strcmp(format,'fig')
         saveas(hCVheatPair,[outputfdr,'/','C',num2str(p1),'vsC',num2str(p2),'_CVheat-',theme,'.',format]);
     else

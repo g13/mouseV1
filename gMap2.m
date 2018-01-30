@@ -14,7 +14,7 @@ p.isigma0 = p.esigma0;
 p.eAspectR0 = [1.2;0.012];
 %p.iAspectR0 = [1.5;0.015];
 p.iAspectR0 = p.eAspectR0;
-p.se = 1;  % boundary
+p.se = 1;  % connection strength
 p.si = 2;
 FontSize = 14;
 set(0,'DefaultAxesFontSize',FontSize);
