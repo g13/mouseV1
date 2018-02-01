@@ -11,16 +11,16 @@
 
 module purge
 module load matlab
-module load gcc/4.9.1
+module load gcc/4.9.3
 module list
 ulimit -s unlimited
     
-NAME="sample40-neo6-01"     # raw data folder name
+NAME="sample40-neo6-adap"     # raw data folder name
 PRESET="1xu-ndi305-40-s911.mat" # connection matrix and preset data file
 FORMAT="png"        # figure format for saving
 individOnly="false" # plot individual neurons’ figures only
-statsOnly="false"   # plot populational figures only
-ld="true"  #   default to false, if already acquired sim data as ".mat" file, set to true
+statsOnly="true"   # plot populational figures only
+ld="false"  #   default to false, if already acquired sim data as ".mat" file, set to true
 fit="true"  # fit the tuning curves for width.
 rt=5        #   run time of simulation
 npool=12

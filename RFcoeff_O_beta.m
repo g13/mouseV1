@@ -1,22 +1,25 @@
-function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase)
-    if nargin < 14
-        antiphase = false;
-        if nargin < 13
-            ie = false;
-            if nargin < 12
-                OnOff = false;
-                if nargin < 11
-                    reverse = 1;
-                    if nargin < 10
-                        temper = 0.0;
-                        if nargin < 9
-                            ld = false;
-                            if nargin < 8
-                                format = '';
-                                if nargin < 7
-                                    draw = true;
-                                    if nargin < 6
-                                        tw = 1.0;
+function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase,threads)
+    if nargin < 15
+        threads = 1;
+        if nargin < 14
+            antiphase = false;
+            if nargin < 13
+                ie = false;
+                if nargin < 12
+                    OnOff = false;
+                    if nargin < 11
+                        reverse = 1;
+                        if nargin < 10
+                            temper = 0.0;
+                            if nargin < 9
+                                ld = false;
+                                if nargin < 8
+                                    format = '';
+                                    if nargin < 7
+                                        draw = true;
+                                        if nargin < 6
+                                            tw = 1.0;
+                                        end
                                     end
                                 end
                             end
@@ -26,6 +29,17 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             end
         end
     end
+	if threads > 1
+		pool = gcp('nocreate');
+		if ~isempty(pool)
+			if pool.NumWorkers ~= threads  
+				delete(pool);
+				pool = parpool(threads);
+			end
+		else 
+			pool = parpool(threads);
+		end
+	end
     addpath(genpath('./matlab_Utilities'));
     pPosition = [0, 0, 1280, 720];
     if ~isempty(format)
@@ -80,108 +94,96 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
     filename=['coMa-',num2str(nx),'x',num2str(ny),'-',lgnfile];
     global Aa Ab siga2 sigb2 X Y
     if ~ld
-    AORF = false(p.nv1e,1);
-    FWHM = 2*sqrt(2*log(2));
-    Aa = 14.88 * (180/pi)^2;
-    Ab = Aa*0.97;
-    rc = 5.61; %deg
-    rs = 16.98*rc/5.61; %deg
-    siga = rc/sqrt(2);
-    sigb = rs/sqrt(2);
-    siga2 = siga^2;
-    sigb2 = sigb^2;
-    x = linspace(LGNpos(1,1)*180/pi - nsig*sigb,LGNpos(p.lgny*(p.lgnx-1)+1,1)*180/pi+nsig*sigb,nx);
-    y = linspace(LGNpos(1,2)*180/pi - nsig*sigb,LGNpos(p.lgny,2)*180/pi+nsig*sigb,ny);
-    ngrid = nx*ny;
-    [X, Y] = meshgrid(x,y);
-    rho = @(theta,a,b) (a.*b).^2./((b.*cos(theta)).^2+(a*sin(theta)).^2);
-    pox = reshape(X,[ny*nx,1]);
-    poy = reshape(Y,[ny*nx,1]);
-    dpox = x(2)-x(1);
-    dpoy = y(2)-y(1);
-    ramp = sqrt(dpox^2 + dpoy^2);
-    %ramp = 0;
-    disp(['ramp size for grid involved: ',num2str(sqrt(ramp)),' degree']);
-    figure;
-    plot(LGNpos(:,1)*180/pi,LGNpos(:,2)*180/pi,'*k');
-    xlim([min(x),max(x)]);
-    ylim([min(y),max(y)]);
-    Z = zeros(numel(X),m);
-    for i = 1:m
-        for j = 1:length(nSubLGN{i})
-            if nSubLGN{i}(j) > 0
-                Z(:,i) = Z(:,i) + multiLGNspatialKernel(LGNpos(v1Map{i,j},:)*180/pi,nSubLGN{i}(j),lgnStrength{i,j},1);
-            else
-                Z(:,i) = Z(:,i) - multiLGNspatialKernel(LGNpos(-v1Map{i,j},:)*180/pi,-nSubLGN{i}(j),lgnStrength{i,j},1);
+        AORF = false(p.nv1e,1);
+        FWHM = 2*sqrt(2*log(2));
+        Aa = 14.88 * (180/pi)^2;
+        Ab = Aa*0.97;
+        rc = 5.61; %deg
+        rs = 16.98*rc/5.61; %deg
+        siga = rc/sqrt(2);
+        sigb = rs/sqrt(2);
+        siga2 = siga^2;
+        sigb2 = sigb^2;
+        x = linspace(LGNpos(1,1)*180/pi - nsig*sigb,LGNpos(p.lgny*(p.lgnx-1)+1,1)*180/pi+nsig*sigb,nx);
+        y = linspace(LGNpos(1,2)*180/pi - nsig*sigb,LGNpos(p.lgny,2)*180/pi+nsig*sigb,ny);
+        ngrid = nx*ny;
+        [X, Y] = meshgrid(x,y);
+        rho = @(theta,a,b) (a.*b).^2./((b.*cos(theta)).^2+(a*sin(theta)).^2);
+        pox = reshape(X,[ny*nx,1]);
+        poy = reshape(Y,[ny*nx,1]);
+        dpox = x(2)-x(1);
+        dpoy = y(2)-y(1);
+        ramp = sqrt(dpox^2 + dpoy^2);
+        %ramp = 0;
+        disp(['ramp size for grid involved: ',num2str(sqrt(ramp)),' degree']);
+        figure;
+        plot(LGNpos(:,1)*180/pi,LGNpos(:,2)*180/pi,'*k');
+        xlim([min(x),max(x)]);
+        ylim([min(y),max(y)]);
+        Z = zeros(numel(X),m);
+        for i = 1:m
+            for j = 1:length(nSubLGN{i})
+                if nSubLGN{i}(j) > 0
+                    Z(:,i) = Z(:,i) + multiLGNspatialKernel(LGNpos(v1Map{i,j},:)*180/pi,nSubLGN{i}(j),lgnStrength{i,j},1);
+                else
+                    Z(:,i) = Z(:,i) - multiLGNspatialKernel(LGNpos(-v1Map{i,j},:)*180/pi,-nSubLGN{i}(j),lgnStrength{i,j},1);
+                end
             end
         end
-    end
-    disp('RF grids ready');
-    coMat = ones(m,n);
-    RFcorrMat = ones(m,n);
-    dThetaMat = ones(m,n);
-    theta = [etheta;itheta];
-    gtheta = zeros(m,1);
-    pickTheta = theta>pi/2;
-    gtheta(pickTheta) = theta(pickTheta) - pi/2;
-    gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
-    for i=1:n
-        dataI = Z(:,i);
-        jpick = [(i+1):p.nv1];
-        if ~isequal(dataI,zeros(ngrid,1))
-            stdI = std(dataI,1);
-            meanI = mean(dataI);
-            dataI = dataI-meanI;
-            dataI = repmat(dataI,[1,m]);
-
-            dataJ = Z(:,jpick);
-            stdJ = std(dataJ,1,1);
-            meanJ = mean(dataJ,1);
-            dataJ = dataJ-ones(ngrid,1)*meanJ;
-
-            RFcorr = mean(dataI.*dataJ,1)./(stdI*stdJ);
-            RFcorr(isnan(RFcorr)) = 0;
-            RFcorr = RFcorr';
-        else
-            RFcorr = zeros(m-i,1);
+        disp('RF grids ready');
+        coMat = ones(m,n);
+        dThetaMat = ones(m,n);
+        theta = [etheta;itheta];
+        gtheta = zeros(m,1);
+        pickTheta = theta>pi/2;
+        gtheta(pickTheta) = theta(pickTheta) - pi/2;
+        gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
+        RFcorrMat = ones(m,n);
+        nmZ = (Z-ones(ngrid,1)*mean(Z,1))./(ones(ngrid,1)*std(Z,1,1));
+        disp('data normalized');
+        parfor i=1:n
+            if sum(nmZ(:,i)) == 0.0
+                AORF(i) = true;
+                RFcorrMat(:,i) = zeros(m,1);
+            else
+                jpick = [(i+1):m];
+                        % [1, ngrid] x [ngird, m-i]
+                RFcorr = (nmZ(:,i)'*nmZ(:,jpick))'/ngrid;
+                RFcorr(isnan(RFcorr)) = 0;
+                RFcorrMat(:,i) = [ones(i,1);RFcorr];
+            end
+            %if mod(i,round(n/10)) == 0
+            %    disp(num2str(round(i/(n/10))));
+            %end
         end
         if antiphase
-            RFcorr(n-i+(1:p.nv1i)) = -RFcorr(n-i+(1:p.nv1i));
+            RFcorrMat((n+1):m) = -RFcorrMat((n+1):m);
         end
-        RFcorrMat(jpick,i) = RFcorr;
-        RFcorrMat(i,(i+1):n) = RFcorr((i+1):n);
-    end
-    for i=1:n
-        dTheta = abs(gtheta-gtheta(i));
-        pickTheta = dTheta>pi/2;
-        dTheta(pickTheta) = pi - dTheta(pickTheta);
+        for i=1:n
+            RFcorrMat(i,(i+1):n) = RFcorrMat((i+1):n,i);
+            RFcorrMat(i,i) = 1;
+        end
+        for i=1:n
+            dTheta = abs(gtheta-gtheta(i));
+            pickTheta = dTheta>pi/2;
+            dTheta(pickTheta) = pi - dTheta(pickTheta);
 
-        if temper > 0
-            dTheta_tempered = dTheta + temperMat(:,i);
-        else
-            dTheta_tempered = dTheta;
-        end
-        
-        dTheta_tempered = abs(dTheta_tempered);
-        pickTheta = dTheta_tempered > pi/2;
-        dTheta_tempered(pickTheta) = pi-dTheta_tempered(pickTheta);
+            if temper > 0
+                dTheta_tempered = dTheta + temperMat(:,i);
+            else
+                dTheta_tempered = dTheta;
+            end
+            
+            dTheta_tempered = abs(dTheta_tempered);
+            pickTheta = dTheta_tempered > pi/2;
+            dTheta_tempered(pickTheta) = pi-dTheta_tempered(pickTheta);
 
-        thetaC = 1 - dTheta_tempered./(pi/4);
-        dThetaMat(:,i) = dTheta;
-        if sum(RFcorr) == 0.0
-            %coMat(:,i) = thetaC; 
-            AORF(i) = true;
+            thetaC = 1 - dTheta_tempered./(pi/4);
+            dThetaMat(:,i) = dTheta;
         end
-    end
-    for i=1:n
-        %coMat(:,i) = RFcorr*w(i) + thetaC*oneMinusW(i);
-        coMat(:,i) = RFcorr*oneMinusW(i) + thetaC*w(i);
-
-        if mod(i,round(n/10)) == 0
-            disp(num2str(round(i/(n/10))));
-        end
-    end
-    nAORF = sum(AORF);
+        %coMat = RFcorrMat.*(ones(m,1)*w') + dThetaMat.*(ones(m,1)*oneMinusW');
+        coMat = RFcorrMat.*(ones(m,1)*oneMinusW') + dThetaMat.*(ones(m,1)*w');
+        nAORF = sum(AORF);
     else
         load([filename,'_more']);
         if temper > 0
