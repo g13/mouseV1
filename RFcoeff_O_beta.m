@@ -81,12 +81,15 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             w = ones(n,1)-tw;
     end
     oneMinusW = (1-w);  % oneMinusW * RFcorr + w * coeff
+    wMat = ones(p.nv1,1)*w';
+    oneMinusWmat = ones(p.nv1,1)*oneMinusW';
 
-    if temper > 0
+    if temper > 0 % for ORF, more overlap -> more blurness in dTheta gauge
         temperMat = ones(m,1) * (1-wE)' * temper;
         s = rng;
         temperMat = randn(m,n) .* temperMat * pi/180;
     else
+        temperMat = zeros(m,n);
         s = -1;
     end
 
@@ -121,6 +124,7 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
         xlim([min(x),max(x)]);
         ylim([min(y),max(y)]);
         Z = zeros(numel(X),m);
+        tic;
         for i = 1:m
             for j = 1:length(nSubLGN{i})
                 if nSubLGN{i}(j) > 0
@@ -131,6 +135,7 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             end
         end
         disp('RF grids ready');
+        toc;
         coMat = ones(m,n);
         dThetaMat = ones(m,n);
         theta = [etheta;itheta];
@@ -139,8 +144,11 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
         gtheta(pickTheta) = theta(pickTheta) - pi/2;
         gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
         RFcorrMat = ones(m,n);
+        tic;
         nmZ = (Z-ones(ngrid,1)*mean(Z,1))./(ones(ngrid,1)*std(Z,1,1));
         disp('data normalized');
+        toc;
+        tic;
         parfor i=1:n
             if sum(nmZ(:,i)) == 0.0
                 AORF(i) = true;
@@ -156,6 +164,8 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             %    disp(num2str(round(i/(n/10))));
             %end
         end
+        disp('RFcoef ready');
+        toc;
         if antiphase
             RFcorrMat((n+1):m) = -RFcorrMat((n+1):m);
         end
@@ -163,7 +173,9 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             RFcorrMat(i,(i+1):n) = RFcorrMat((i+1):n,i);
             RFcorrMat(i,i) = 1;
         end
-        for i=1:n
+        tic;
+        thetaC = zeros(m,n);
+        parfor i=1:n
             dTheta = abs(gtheta-gtheta(i));
             pickTheta = dTheta>pi/2;
             dTheta(pickTheta) = pi - dTheta(pickTheta);
@@ -178,11 +190,16 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             pickTheta = dTheta_tempered > pi/2;
             dTheta_tempered(pickTheta) = pi-dTheta_tempered(pickTheta);
 
-            thetaC = 1 - dTheta_tempered./(pi/4);
+            thetaC(:,i) = 1 - dTheta_tempered./(pi/4);
             dThetaMat(:,i) = dTheta;
         end
+        disp('thetaC ready');
+        toc;
         %coMat = RFcorrMat.*(ones(m,1)*w') + dThetaMat.*(ones(m,1)*oneMinusW');
-        coMat = RFcorrMat.*(ones(m,1)*oneMinusW') + dThetaMat.*(ones(m,1)*w');
+        tic;
+        coMat = RFcorrMat.*oneMinusWmat + thetaC.*wMat;
+        disp('coMat finished');
+        toc;
         nAORF = sum(AORF);
     else
         load([filename,'_more']);
@@ -195,9 +212,6 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
             dThetaMat_tempered = dThetaMat;
         end
         thetaC = 1-dThetaMat_tempered./(pi/4);
-        wMat = ones(p.nv1,1)*w';
-        oneMinusWmat = ones(p.nv1,1)*oneMinusW';
-        %coMat = RFcorrMat.*wMat + thetaC.*oneMinusWmat;
         coMat = RFcorrMat.*oneMinusWmat + thetaC.*wMat;
     end
     weights = figure;
