@@ -2370,7 +2370,7 @@ end
 if tcReady
     hTCwidth = figure;
     p2 = contrastLevel; p1 = contrastLevel-2;
-    pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate>thres
+    pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate>thres;
     if (0)
     subplot(2,4,1); hold on;
         edges = 0:5:90;
@@ -2402,8 +2402,8 @@ if tcReady
             n0 = length(tick);
             tickLabel = num2str(tick');
             lctrsx = (n0-1)*idTick+1;
-            dctr = (tick(n0)-tick(1))/lctrsx-1
             lctrsy = lctrsx;
+            dctr = (tick(n0)-tick(1))/lctrsx-1;            
             ctrs{1} = linspace(tick(1),tick(n0),lctrsx)+dctr/2;
             ctrs{2} = ctrs{1};
             tickPosY = 0.5:idTick:(lctrsy-1+0.5);
@@ -2426,7 +2426,7 @@ if tcReady
             colormap(hExcWidth,redOnly);
         end
 
-    pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate>thres
+    pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate>thres;
     %pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
     if (0)
     subplot(2,4,5); hold on;
@@ -2461,7 +2461,8 @@ if tcReady
             tickLabel = num2str(tick');
             lctrsx = (n0-1)*idTick+1;
             lctrsy = lctrsx;
-            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            dctr = (tick(n0)-tick(1))/lctrsx-1;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx)+dctr/2;
             ctrs{2} = ctrs{1};
             tickPosY = 0.5:idTick:(lctrsy-1+0.5);
             tickPosX = 0.5:idTick:(lctrsx-1+0.5);
