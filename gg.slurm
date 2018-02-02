@@ -11,9 +11,9 @@
 module purge
 module load matlab
 fdr='test'              # target simulation folder
-theme='ndb305-40'       # simulation name, pls set the p.suffix to the same value in gMap2.m
+theme='ndl305-40'       # simulation name, pls set the p.suffix to the same value in gMap2.m
 lgnfile='1xu-'$theme'-s911' # data file name for lgn position and map to v1
-TYPE='t0'              # additional type name
+TYPE='o'              # additional type name
 conmat=conMat-$theme'_'$TYPE  # name for connection matrix
 coMa='coMa-60x60-'$lgnfile   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
@@ -27,8 +27,8 @@ ldRF='false'          # don't re-generate lgn to V1 RF
 reverse=2           # different types weight contribution see RFcoeff_O_beta.m
 threads=12          # number of threads used in parpool for RFcoef_O_beta.m
 
-tw=0.0             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
-temper=0            # randomness to temper with the preset orientation of recruiting ellipses
+tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
+temper=30            # randomness to temper with the preset orientation of recruiting ellipses
 ntheta=12           # number of angles simulated
 ex=10               #  # of example plots
 p2s=40.0            # estimated converting scale from connection strength to resulting PSP
