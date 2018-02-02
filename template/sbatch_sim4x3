@@ -1,22 +1,22 @@
 #!/bin/bash
-theme='ndl305-40'
+theme='ndl305-40'       # LGN setup name
 walltime=0:30:00
 analysisTime=0:30:00
+TYPE='t0'               # type of LGN setup
 ######## Please find the following variable description in pA.slurm ########
-TYPE='t0'
-NAME='t'
-PRESET='1xu-'$theme'-s911'
-FORMAT='png'
-individOnly="false"
-statsOnly="true"
-ld="false"
+NAME='t'                   # raw data folder name
+PRESET='1xu-'$theme'-s911' # connection matrix and preset data file
+FORMAT='png'               # figure format for saving
+individOnly="false"        # plot individual neurons’ figures only
+statsOnly="true"           # plot populational figures only
+rt=1                      #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT 
+npool=12                   # number of cpus used to fit tuning curves
+thres=0.25                 # a gauge of firing rate threshold for active, non-active, non-active neurons were not included in some of the plots
 fit="true"
-rt=10
-npool=12
-thres=0.25
-fit="true"
-NTHETA="12"
-CONTRASTS="4"
+NTHETA="12"                # number of angles in simulation
+CONTRASTS="4"              # number of constrast used in simulation
+fit="true"                 # fit the tuning curves for width.
+ld="false"                 #   default to false, if already acquired sim data as ".mat" file, set to true
 
 if [ ! -d "$NAME" ]; then
 	mkdir $NAME
@@ -25,10 +25,11 @@ else
 	rm -rf *
 	cd ../
 fi
-cp conMat-$theme'_'$TYPE.mat conMat.mat
-cp profile-$theme'_'$TYPE.out $NAME/profile.out
-cp generateConMat-$theme'_'$TYPE.m gg-$theme'_'$TYPE.slurm $NAME
-cp logNormalProfile-$theme'_'$TYPE.m $NAME/logNormalProfile.m
+fname=$theme'_'$TYPE
+mkdir $NAME/sim_package_backup
+cp conMat-$fname.mat conMat.mat
+cp profile-$fname.out $NAME/profile.out
+cp generateConMat-$fname.m gg-$fname.slurm logNormalProfile-$fname.m RFcoeff_O_beta-$fname.m lgn2v1Map_beta-$fname.m gMap2-$fname.m $NAME/sim_package_backup/
 cp logNormalProfile-$theme'_'$TYPE.mat $NAME/logNormalProfile.mat
 cp lgnmap.out-$PRESET $NAME/lgnmap.out
 
@@ -53,18 +54,18 @@ do
     ((i++))
 done
 echo all contrasts done
-export $NAME
-export $PRESET
-export $FORMAT
-export $individOnly
-export $statsOnly
-export $ld
-export $fit
-export $rt
-export $npool
-export $thres
-export $fit
-export $NTHETA
-export $CONTRASTS
+export NAME
+export PRESET
+export FORMAT
+export individOnly
+export statsOnly
+export ld
+export fit
+export rt
+export npool
+export thres
+export fit
+export NTHETA
+export CONTRASTS
 
 sbatch --export=ALL -p serial --time=$analysisTime --dependency=afterany$jobList plotAll4.slurm

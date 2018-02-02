@@ -7,13 +7,39 @@
 0. Get to a HPC module environment that use SLURM scripts.
     $ git clone git@github.com:g13/mouseV1.git
 1. Set parameters in gMap2.m for generating LGN to V1 mapping
-2. Set parameters in generate.m for generating connection and strength between V1 neurons
-3. Find other global parameters in gg.slurm
+2. Set parameters in generateConMat.m for generating connection and strength between V1 neurons
+3. Find other global parameters in gg.slurm and submit the setup job with
+    $ sbatch gg.slurm
 4. Create a folder and copy the code in template/ to it.
 5. Set global name in sbatch_sim4x3, note that here 12 jobs were submitted, each with 4 cpus.
     (If you want to use different number of cpus, and you are familiar with openmp in FORTRAN, go ahead and modify any of the EIFSep*.f in src/)
-6. Match global settings in plotAll4.slurm with sbatch_sim4x3 and set ploting parameters.
-7. Submit the simulation with $ ./sbatch_sim4x3
+6. Set simulation parameters (dt, connection strength and more)
+7. Submit the simulation with 
+    $ ./sbatch_sim4x3
 
-# Most of the parameters are described in correspoding files, Dai et al. and its Supplementary Data.
+To plot only, match global settings in pA.slurm with sbatch_sim4x3 and set ploting parameters.
+# Most of the parameters are described in the correspoding source files and the Supplementary Material of the publication.
+
+####### variable description of ./template/adg_INPUT
+dt: time step used in envolving the equations in the simulation in seconds
+tfinal: total simulation run time in seconds
+iperiod: number of samples in one temporal period, equally spaced.
+iseed: seed of random number generator
+
+parameters for the EIF model (Eqn.1 in the paper):
+Vthres: membrane potential threshold for action potential
+Vreset: resting potential
+Vexcit: reversal potential for excitatory input
+Vinhib: reversal potential for inhibitory input
+Gleak: leaky conductance for excitatory neuron
+DeltaT: parameter in the Exponential term 
+vTheta: the cutoff potential used to avoid infinity NaN when simulating EIF model.
+GleakI: leaky conductance for inhibitory neuron
+
+non-related parameters(redundant or out-dated implementations in the code), ignore:
+    tstep1, tstep2, tstep3, tstep4,
+    tnrise, tndamp, tau_i_2
+    dE, dI, rdexc, raexc, rdinh, rainh, gIIc, gEIc
+
+
 # For related issues pls send email to wd554@nyu.edu or submit issues on github.

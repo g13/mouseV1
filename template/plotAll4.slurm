@@ -14,19 +14,20 @@ module load matlab
 module load gcc/4.9.3
 ulimit -s unlimited
 
-echo $NAME
-echo $PRESET
-echo $FORMAT
-echo $individOnly
-echo $statsOnly
-echo $ld
-echo $fit
-echo $rt
-echo $npool
-echo $thres
-echo $fit
-echo $NTHETA
-echo $CONTRASTS
+######## find variable description in pA.slurm or sbatch_sim4x3 ###########
+echo NAME=$NAME
+echo PRESET=$PRESET
+echo FORMAT=$FORMAT
+echo individOnly=$individOnly
+echo statsOnly=$statsOnly
+echo ld=$ld
+echo fit=$fit
+echo rt=$rt
+echo npool=$npool
+echo thres=$thres
+echo fit=$fit
+echo NTHETA=$NTHETA
+echo CONTRASTS=$CONTRASTS
 
 date
 ./assa
