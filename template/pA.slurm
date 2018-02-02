@@ -17,17 +17,18 @@ ulimit -s unlimited
     
 NAME="sample40-neo6-adap"     # raw data folder name
 PRESET="1xu-ndi305-40-s911.mat" # connection matrix and preset data file
-FORMAT="png"        # figure format for saving
+FORMAT="psc2"        # figure format for saving
 individOnly="false" # plot individual neurons’ figures only
 statsOnly="true"   # plot populational figures only
 ld="false"  #   default to false, if already acquired sim data as ".mat" file, set to true
-fit="true"  # fit the tuning curves for width.
-rt=5        #   run time of simulation
+fit="false" # fit the tuning curves for width.
+rt=5        #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT
 npool=12
-thres=0.5          # a gauge of firing rate threshold for active, non-active, non-active neurons were not included in some of the plots
+thres=0.25          # a gauge of firing rate threshold for active, non-active, non-active neurons were not included in some of the plots
 NTHETA="12"         # number of angles in simulation
 CONTRASTS="4"       # # of constrast used in simulation
 
-matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt,$fit,$npool);exit"
+matlab -nosplash -nodesktop -r "plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt,$fit,$npool);exit"
+#matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt,$fit,$npool);exit"
 
 echo Folder = $NAME

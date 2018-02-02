@@ -1809,6 +1809,7 @@ minCtrs = min(min(pair1),min(pair2));
 maxCtrs = max(max(pair1),max(pair2));
 [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
 tickLabel = num2str(tick');
+nCV = 5;
 lctrsx = (n0-1)*nCV+1;
 lctrsy = lctrsx;
 ctrs{1} = linspace(tick(1),tick(end),lctrsx);

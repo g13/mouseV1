@@ -1,10 +1,22 @@
 #!/bin/bash
-theme='ndi305-40'
-TYPE='neo6'
-NAME='sample40-neo6-01'
-lgnfile='1xu-'$theme'-s911'
-walltime=0:40:00
+theme='ndl305-40'
+walltime=0:30:00
 analysisTime=0:30:00
+######## Please find the following variable description in pA.slurm ########
+TYPE='t0'
+NAME='t'
+PRESET='1xu-'$theme'-s911'
+FORMAT='png'
+individOnly="false"
+statsOnly="true"
+ld="false"
+fit="true"
+rt=10
+npool=12
+thres=0.25
+fit="true"
+NTHETA="12"
+CONTRASTS="4"
 
 if [ ! -d "$NAME" ]; then
 	mkdir $NAME
@@ -18,7 +30,7 @@ cp profile-$theme'_'$TYPE.out $NAME/profile.out
 cp generateConMat-$theme'_'$TYPE.m gg-$theme'_'$TYPE.slurm $NAME
 cp logNormalProfile-$theme'_'$TYPE.m $NAME/logNormalProfile.m
 cp logNormalProfile-$theme'_'$TYPE.mat $NAME/logNormalProfile.mat
-cp lgnmap.out-$lgnfile $NAME/lgnmap.out
+cp lgnmap.out-$PRESET $NAME/lgnmap.out
 
 cp sbatch_sim4x3 nextContrast.keys plotAll4.slurm sim4x1.slurm sim4x2.slurm sim4x3.slurm ompaSep1 ompaSep2 ompaSep3 assa adg_INPUT conMat.mat $NAME 
 cd $NAME
@@ -41,4 +53,18 @@ do
     ((i++))
 done
 echo all contrasts done
-sbatch -p serial --time=$analysisTime --dependency=afterany$jobList plotAll4.slurm
+export $NAME
+export $PRESET
+export $FORMAT
+export $individOnly
+export $statsOnly
+export $ld
+export $fit
+export $rt
+export $npool
+export $thres
+export $fit
+export $NTHETA
+export $CONTRASTS
+
+sbatch --export=ALL -p serial --time=$analysisTime --dependency=afterany$jobList plotAll4.slurm
