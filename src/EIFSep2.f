@@ -191,7 +191,7 @@
 !
 !------------------------------------------------------------
       common / lgnIndivid / pspon,pspoff,gkx,gky,eps,satur,gtheta
-      common / lgnSat / xS,yS,linear
+      common / lgnSat / xS,yS,linear,rI0
       common /   rhs  / alpha1,beta1
       common /  avgs  / condavg,curravg,condlgn,condexc,condinh,
      1   geavg,giavg,gpavg
@@ -318,6 +318,10 @@
       read(13,*)
       read(13,*) frtexc_e,ce0_e,frtinh_e,ci0_e,frtexc_i,ce0_i,frtinh_i,
      1  ci0_i
+      read(13,*)
+      read(13,*)
+      read(13,*) SiRatio, SeRatio
+
       close(13)
       phiVAS = DeltaT*dexp((vreset-vthres)/DeltaT)
       vreset = vreset - phiVAS
@@ -367,6 +371,14 @@
           ceemax = ce4all
           ciemax = ce4all
       endif
+      seemax = seemax*SeRatio
+      ceemax = ceemax*SeRatio
+      siemax = siemax*SeRatio
+      ciemax = ciemax*SeRatio
+      siimax = siimax*SiRatio
+      ciimax = ciimax*SiRatio
+      seimax = seimax*SiRatio
+      ceimax = ceimax*SiRatio
       if (synfailEI.GT.1.D0) synfailEI = 1.D0 
       if (synfailEE.GT.1.D0) synfailEE = 1.D0 
       if (synfailIE.GT.1.D0) synfailIE = 1.D0 
@@ -472,7 +484,7 @@
       twopi  =  8.D0*atan(1.D0)
       dpi    =  0.5D0*twopi
 !-------------------------------------------------------------
-!  cond0 is normalized to maximum g0 for n_LGN = 30
+!  cond0 is normalized to maximum g0
 !-------------------------------------------------------------
       satur =  lgnsatur(frtlgn0)
       print *, satur
@@ -689,13 +701,14 @@
       print *, 'nIE: ', sngl(rneffie), 'nII: ',
      1  sngl(rneffii)
       print *, 'cond0 = ',sngl(cond0)
+      print *, 'sLGN = ',sngl(cond0*tau_e)
       print *,'--------------------------------------------'
       print *,'  LGN-driving parameters : '
       print *,'  #contrast  = ',neps,'     g0 = ',sngl(g0)
       satur =  lgnsatur(frtlgn0)
       print *,'  spontaneous rate = ',sngl(satur), 
      1  '    gfail = ',sngl(gfail)
-      print *,'    absolute illuminance I0 = ', sngl(rI0)
+      print *,' increase  effective #LGN by ', sngl(rI0)
       print *,'--------------------------------------------'
       count =  0.D0
       do i=1,nmax
@@ -781,7 +794,7 @@
       omega  = twopi*omega
       gk2 = (twopi*gk)**2
 !!----------------------Determine DRIFTING GRATING time course
-      call lgnrf(rI0,tmpphi,conAmp)
+      call lgnrf(tmpphi,conAmp)
 !============================================================
 !    Contrast Loop
 !============================================================
@@ -4334,7 +4347,7 @@
       return
       end
 !************************************************************
-      subroutine lgnrf(rI0,tmpphi,conAmp)
+      subroutine lgnrf(tmpphi,conAmp)
 !  Map each LGN cell to its receptive field :
 !    location & spatiotemporal filter parameters
 !
@@ -4395,7 +4408,7 @@
       A = Aa*exp(-gk2*siga**2/2.D0) - Ab*exp(-gk2*sigb**2/2.D0)
 !------------------------------------------------------------
       DG_A = sqrt(Gc**2+Gs**2)
-      conAmp = DG_A*A*rI0
+      conAmp = DG_A*A
       print *,'DG Amplitude = ', sngl(conAmp)
       return
       end
@@ -4408,7 +4421,7 @@
 !------------------------------------------------------------
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N) 
 !------------------------------------------------------------
-      common / lgnSat / xS, yS, linear
+      common / lgnSat / xS, yS, linear, rI0
       rr = xS*x
         if (linear.NE.1) then
       c2 = 0.09827D0
@@ -4430,7 +4443,7 @@
         else
             lgnsatur = rr
         endif
-      lgnsatur = lgnsatur*yS
+      lgnsatur = lgnsatur*yS*rI0
 
 !------------------------------------------------------------
       return

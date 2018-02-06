@@ -44,15 +44,15 @@ if nargin < 15
         end
     end
 end
-	if ~isempty(format)
-		if strcmp(format,'psc2')
-			printDriver = ['-de',format];
-			format = 'eps';
-		else
-			printDriver = ['-d',format];
-		end
-		dpi = '-r150';
+if ~isempty(format)
+	if strcmp(format,'psc2')
+		printDriver = ['-de',format];
+		format = 'eps';
+	else
+		printDriver = ['-d',format];
 	end
+	dpi = '-r150';
+end
 FontSize = 20;
 set(0,'DefaultAxesFontSize',FontSize)
 switch preMatProfile
@@ -89,7 +89,7 @@ load([suffix,'.mat']);
 %     etheta = reshape(etheta,[p.nv1e,1]);
 % end
 if strcmp(eSpecific,'coGauss')
-    eeSigCoeff = 0.80;
+    eeSigCoeff = 1.00;
     if eiSpecific
         eiSigCoeff = 0.60;
     end
@@ -97,7 +97,7 @@ if strcmp(eSpecific,'coGauss')
         ieSigCoeff = 0.50;
     end
     %coMatfile = ['coMa-60x60-1xu-nmLDoO-ff3-s911.mat'];
-    load(coMatfile);
+    load([coMatfile,'.mat']);
     size(coMat)
 end
 if logP.spread
