@@ -2,7 +2,7 @@
 drawSpecific = false;
 p = struct;
 p.YoudensIndex = 0.32;
-p.suffix = 'ndb305-40';
+p.name = 'ndb305-40';
 enorm = 0.305; 
 inorm = 0.40; 
 enormStd = 0.1016;
@@ -51,10 +51,8 @@ p.example = 32; % examples bigger than 16 will not be displayed.
 p.sigmaTheta = 0/180*pi; % orientation fluctuation of subregion
 % guassian parameters, to use cutoff uniform, put seed to -1;
 p.dlgn = 5/(5/180*pi)^2; % corresponding to lgns per 25 square degree
-% p.seed = 12345679;
-p.seed = 911;
+p.seed = 911; % keep it fix, data file naming system doesn't have it.
 rng(p.seed);
-p.profile = 'u'; % u for uniform, g for gaussian
 p.average = 3;
 % guassian end
 p.cbounde = sqrt(2);
@@ -103,7 +101,6 @@ p.multi = 1;
 
 azimuth = [-25,150]./180.*pi;
 altitude = [-50,25]./180.*pi;
-p.name = [num2str(p.multi),'x',p.profile,'-',p.suffix,'-s',num2str(p.seed)]; % in terms of how many core RFsize
 p.fdr = ['lgn2v1map/',p.name];
 if ~exist(p.fdr,'dir')
     mkdir(p.fdr);
@@ -343,35 +340,6 @@ meanLGNe = mean(nLGN(1:p.nv1e,1));
 meanLGNi = mean(nLGN(p.nv1e+(1:p.nv1i),1));
 disp(['nLGN i over e = ', num2str(meanLGNi*p.si/(meanLGNe*p.se))]);
 disp(p.name);
-%%
-% % load('lgn2v1map/1xu-sngl-s911.mat');
-% load(['lgn2v1map/',p.name,'.mat']);
-% % if drawSpecific
-% %     pick = [p.typeE == 4; false(p.nv1i,1)];
-% %     id = 1:p.nv1;
-% %     id = id(pick);
-% %     nnn = abs(cell2mat(nSubLGN(pick)'));
-% %     [~,index] = max(nnn(1,:)+nnn(3,:)-nnn(2,:));
-% %     ii = id(index);
-%     ii = 10000; %2213;
-%     pp.bound = p.bound;
-%     pp.rlgn = p.rlgn;
-%     if ii <=p.nv1e
-%         i = ii;
-%         pp.sigma = p.esigma(i,:);
-%         pp.aspectRatio = p.eAspectRatio(i,:);
-%         pp.subregion = p.eSubregion(i);
-%         theta = etheta(i);
-%     else
-%         i = ii-p.nv1e;
-%         pp.sigma = p.isigma(i,:);
-%         pp.aspectRatio = p.iAspectRatio(i);
-%         pp.subregion = p.iSubregion(i);
-%         theta = itheta(i);
-%     end
-%     pp.isub = nSubLGN{ii};
-%     draftFunc(pp,LGNpos*180/pi,v1Map(ii,1:pp.subregion),lgnStrength(ii,1:pp.subregion),ii,theta);
-% % end
 copyfile('gMap2.m',[p.fdr,'/']);
 copyfile('lgn2v1Map_beta.m',[p.fdr,'/']);
 copyfile(['lgn2v1map/',p.name,'.mat'],['./']);

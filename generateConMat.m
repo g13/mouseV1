@@ -8,7 +8,7 @@ end
 assert(exist('conMatFigures')==7);
 pPosition = [18, 180, 1200, 900];
 if nargin < 15
-    disp('no logNormal, return');
+    disp('no logNormal parameters set, return');
     return
     if nargin <14
         coMatfile ='';
@@ -76,15 +76,20 @@ switch heterogeneous
     otherwise
         disp(['no function is defined for ', heterogeneous]);
 end
-matName = [suffix,'-',theme,'-',preMatProfile,'-',eSpecific,...
-            '-r',num2str(reciprocal*100,'%d'),'-s',num2str(seed),scType,'-',heterogeneous];
+if isempty(outputName)
+    matName = ['conMat-',suffix,'-',theme,'-',preMatProfile,'-',eSpecific,...
+                '-r',num2str(reciprocal*100,'%d'),'-s',num2str(seed),scType,'-',heterogeneous];
+else
+    matName = outputName;
+end
+
 load([suffix,'.mat']);
 % if ~strcmp(eSpecific, '')
 % 	load([suffix,'.mat']);
 %     etheta = reshape(etheta,[p.nv1e,1]);
 % end
 if strcmp(eSpecific,'coGauss')
-    eeSigCoeff = 0.50;
+    eeSigCoeff = 0.80;
     if eiSpecific
         eiSigCoeff = 0.60;
     end
@@ -305,11 +310,8 @@ disp('EE finished');
 toc;
 m(1:p.nv1e,1:p.nv1e) = mee;
 
-if isempty(outputName)
-    save(['mee-',matName,'.mat'],'mee');
-else
-    save(['mee-',outputName,'.mat'],'mee');
-end
+save(['mee-',matName,'.mat'],'mee');
+
 q.profile = function_handle.empty();
 %EI
 
@@ -423,11 +425,7 @@ else
 end
 m(1:p.nv1e,p.nv1e+1:p.nv1) = mie;
 
-if isempty(outputName)
-    save(['mei-',matName,'.mat'],'mei');
-else
-    save(['mei-',outputName,'.mat'],'mei');
-end
+save(['mei-',matName,'.mat'],'mei');
 
 %II
 
@@ -453,11 +451,7 @@ q.self = self;
 mii = subMat(src,tar,q);
 m(p.nv1e+1:p.nv1,p.nv1e+1:p.nv1) = mii;
 toc;
-if isempty(outputName)
-    fid = fopen(['conMat-',matName,'.mat'],'w');
-else
-    fid = fopen([outputName,'.mat'],'w');
-end
+fid = fopen([matName,'.mat'],'w');
 fwrite(fid,m,'int8');
 fclose(fid);
 if strcmp(eSpecific,'coGauss')

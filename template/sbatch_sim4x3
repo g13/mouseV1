@@ -2,10 +2,10 @@
 theme='ndl305-40'       # LGN setup name
 walltime=0:30:00
 analysisTime=0:30:00
-TYPE='t0'               # type of LGN setup
+TYPE='t0'               # type of cortical connection
 ######## Please find the following variable description in pA.slurm ########
 NAME='t'                   # raw data folder name
-PRESET='1xu-'$theme'-s911' # connection matrix and preset data file
+PRESET=$theme         # lgn presets file
 FORMAT='png'               # figure format for saving
 individOnly="false"        # plot individual neurons’ figures only
 statsOnly="true"           # plot populational figures only
@@ -29,9 +29,9 @@ fname=$theme'_'$TYPE
 mkdir $NAME/sim_package_backup
 cp conMat-$fname.mat conMat.mat
 cp profile-$fname.out $NAME/profile.out
-cp generateConMat-$fname.m gg-$fname.slurm logNormalProfile-$fname.m RFcoeff_O_beta-$fname.m lgn2v1Map_beta-$fname.m gMap2-$fname.m $NAME/sim_package_backup/
+cp generateConMat-$fname.m gg-$fname.slurm logNormalProfile-$fname.m RFcoeff_O_beta-$fname.m lgn2v1Map_beta-$theme.m gMap2-$theme.m $NAME/sim_package_backup/
 cp logNormalProfile-$theme'_'$TYPE.mat $NAME/logNormalProfile.mat
-cp lgnmap.out-$PRESET $NAME/lgnmap.out
+cp lgnmap.out-$theme $NAME/lgnmap.out
 
 cp sbatch_sim4x3 nextContrast.keys plotAll4.slurm sim4x1.slurm sim4x2.slurm sim4x3.slurm ompaSep1 ompaSep2 ompaSep3 assa adg_INPUT conMat.mat $NAME 
 cd $NAME

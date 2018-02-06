@@ -1768,71 +1768,73 @@ end
 nCV = 8;
 ctrs = cell(2,1);
 dTick = 0.2;
+hExc = subplot(1,2,1);
 pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
 if sum(pick) > 0
-pair1 = 1-nP(p1).cv(pick);
-pair2 = 1-nP(p2).cv(pick);
-minCtrs = min(min(pair1),min(pair2));
-maxCtrs = max(max(pair1),max(pair2));
-[tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-tickLabel = num2str(tick');
-lctrsx = (n0-1)*nCV+1;
-lctrsy = lctrsx;
-ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-ctrs{2} = ctrs{1};
-tickPosY = 0.5:nCV:(lctrsy-1+0.5);
-tickPosX = 0.5:nCV:(lctrsx-1+0.5);
-
-hExc = subplot(1,2,1);
-CVpair = [pair1, pair2];
-denCVpair = hist3(CVpair,ctrs);
-maxDen = max(max(denCVpair));
-denCVpair = denCVpair/maxDen;
-denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-hold on
-plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-title('Excitatory');
-xlabel('gOSI(25%)')
-ylabel('gOSI(100%)')
-daspect([1,1,1]);
-
-set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-colormap(hExc,redOnly);
+    pair1 = 1-nP(p1).cv(pick);
+    pair2 = 1-nP(p2).cv(pick);
+    minCtrs = min(min(pair1),min(pair2));
+    maxCtrs = max(max(pair1),max(pair2));
+    [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+    tickLabel = num2str(tick');
+    lctrsx = (n0-1)*nCV+1;
+    lctrsy = lctrsx;
+    ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+    ctrs{2} = ctrs{1};
+    tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+    tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+    
+    CVpair = [pair1, pair2];
+    denCVpair = hist3(CVpair,ctrs);
+    maxDen = max(max(denCVpair));
+    denCVpair = denCVpair/maxDen;
+    denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+    imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+    hold on
+    plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+    title('Excitatory');
+    xlabel('gOSI(25%)')
+    ylabel('gOSI(100%)')
+    daspect([1,1,1]);
+    
+    set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+    colormap(hExc,redOnly);
 end
 
 hInh = subplot(1,2,2);
 pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
-pair1 = 1-nP(p1).cv(pick);
-pair2 = 1-nP(p2).cv(pick);
-minCtrs = min(min(pair1),min(pair2));
-maxCtrs = max(max(pair1),max(pair2));
-[tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-tickLabel = num2str(tick');
-nCV = 5;
-lctrsx = (n0-1)*nCV+1;
-lctrsy = lctrsx;
-ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-ctrs{2} = ctrs{1};
-tickPosY = 0.5:nCV:(lctrsx-1+0.5);
-tickPosX = 0.5:nCV:(lctrsy-1+0.5);
-
-CVpair = [pair1, pair2];
-denCVpair = hist3(CVpair,ctrs);
-maxDen = max(max(denCVpair));
-denCVpair = denCVpair/maxDen;
-denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-hold on
-plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-%plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-title('Inhibitory');
-xlabel('gOSI(25%)')
-ylabel('gOSI(100%)')
-daspect([1,1,1]);
-
-set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-colormap(hInh,blueOnly);
+if sum(pick) >0
+    pair1 = 1-nP(p1).cv(pick);
+    pair2 = 1-nP(p2).cv(pick);
+    minCtrs = min(min(pair1),min(pair2));
+    maxCtrs = max(max(pair1),max(pair2));
+    [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+    tickLabel = num2str(tick');
+    nCV = 5;
+    lctrsx = (n0-1)*nCV+1;
+    lctrsy = lctrsx;
+    ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+    ctrs{2} = ctrs{1};
+    tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+    tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+    
+    CVpair = [pair1, pair2];
+    denCVpair = hist3(CVpair,ctrs);
+    maxDen = max(max(denCVpair));
+    denCVpair = denCVpair/maxDen;
+    denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+    imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+    hold on
+    plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+    %plot(0.5:lctrsx+0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+    title('Inhibitory');
+    xlabel('gOSI(25%)')
+    ylabel('gOSI(100%)')
+    daspect([1,1,1]);
+    
+    set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+    colormap(hInh,blueOnly);
+end
 
 if ~isempty(format)
     %set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);

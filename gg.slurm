@@ -11,11 +11,10 @@
 module purge
 module load matlab
 fdr='test'              # target simulation folder
-theme='ndl305-40'       # simulation name, pls set the p.suffix to the same value in gMap2.m
-lgnfile='1xu-'$theme'-s911' # data file name for lgn position and map to v1
-TYPE='o'              # additional type name
+theme='nds305-40'       # lgn mapping name, pls set the p.suffix to the same value in gMap2.m
+TYPE='t0'              # additional type name for RFcoeff, OP difference and cortical connection
 conmat=conMat-$theme'_'$TYPE  # name for connection matrix
-coMa='coMa-60x60-'$lgnfile   # name for RF pearson coefficient matrix
+coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
 edist='coGauss'             # E-E connection strength type
 eiSpecific='true'          # E<-I connection specificity over orientation preference
@@ -27,8 +26,8 @@ ldRF='false'          # don't re-generate lgn to V1 RF
 reverse=2           # different types weight contribution see RFcoeff_O_beta.m
 threads=12          # number of threads used in parpool for RFcoef_O_beta.m
 
-tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
-temper=30            # randomness to temper with the preset orientation of recruiting ellipses
+tw=0.0             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
+temper=0            # randomness to temper with the preset orientation of recruiting ellipses
 ntheta=12           # number of angles simulated
 ex=10               #  # of example plots
 p2s=40.0            # estimated converting scale from connection strength to resulting PSP
@@ -42,24 +41,24 @@ spread='false'      # unrelated test variable, assign EPSP value to E->E connect
 lowestRatio=0.02    # related to variable "spread", ignore.
 
 if [ "$ld" == 'false' ]; then
-   matlab -nosplash -nodesktop -r "gMap2;exit"
+    matlab -nosplash -nodesktop -r "gMap2;exit"
+    cp lgn2v1map/$theme/gMap2.m $fdr/gMap2-$theme.m
+    cp lgn2v1map/$theme/lgn2v1Map_beta.m $fdr/lgn2v1Map_beta-$theme.m
+    cp $theme.mat $fdr/
 fi
 # pre copy
 cp generateConMat.m $fdr/generateConMat-$theme'_'$TYPE.m
 cp gg.slurm $fdr/gg-$theme'_'$TYPE.slurm
-cp $lgnfile.mat $fdr/
-cp lgnmap.out-$lgnfile $fdr/lgnmap.out-$lgnfile
+cp lgnmap.out-$theme $fdr/lgnmap.out-$theme
 cp logNormalProfile.m $fdr/logNormalProfile-$theme'_'$TYPE.m
-cp lgn2v1map/$lgnfile/gMap2.m $fdr/gMap2-$theme'_'$TYPE.m
-cp lgn2v1map/$lgnfile/lgn2v1Map_beta.m $fdr/lgn2v1Map_beta-$theme'_'$TYPE.m
 
 date
 
 #cp RFcoeff_V.m $fdr/RFcoeff_O_beta-$theme'_'$TYPE.m
-#matlab -nosplash -nodesktop -r "dbstop if error;RFcoeff_V('$lgnfile',60,60,3,true,true,$tw,true,'png',$ld,$temper,$reverse);logNormalProfile(400,rand(400,1),$nbins,$mu,$sig,true);generateConMat('$lgnfile','t2','gauss',$reciprocal,'coGauss',911,true,'png','n','logNormal','$conmat',$eiSpecific,'$coMa');checkConnection_EI('mee-$conmat','$lgnfile','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh);checkConnection_EI('mee-$conmat','$lgnfile','$coMa',1:8640,8,'png',true,$ntheta,$drawInh);exit"
+#matlab -nosplash -nodesktop -r "dbstop if error;RFcoeff_V('$theme',60,60,3,true,true,$tw,true,'png',$ld,$temper,$reverse);logNormalProfile(400,rand(400,1),$nbins,$mu,$sig,true);generateConMat('$theme','t2','gauss',$reciprocal,'coGauss',911,true,'png','n','logNormal','$conmat',$eiSpecific,'$coMa');checkConnection_EI('mee-$conmat','$theme','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh);checkConnection_EI('mee-$conmat','$theme','$coMa',1:8640,8,'png',true,$ntheta,$drawInh);exit"
 #cp RFcoeff_O.m $fdr/RFcoeff_O-$theme'_'$TYPE.m
 cp RFcoeff_O_beta.m $fdr/RFcoeff_O_beta-$theme'_'$TYPE.m
-matlab -nosplash -nodesktop -r "dbstop if error;logP.nbins=$nbins;logP.mu=$mu;logP.sigma=$sig;logP.mu0=$mu0;logP.nsig=$nsig;logP.lR=$lowestRatio;logP.p2s=$p2s;logP.spread=$spread;RFcoeff_O_beta('$lgnfile',60,60,3,true,$tw,true,'png',$ldRF,$temper,$reverse,false,$ieSpecific,$antiphase,$threads);generateConMat('$lgnfile','t2','gauss',$reciprocal,'$edist',911,true,'png','n','$EPSPprofile','$conmat',$eiSpecific,$ieSpecific,'$coMa',logP);checkConnection_EI('mee-$conmat','$lgnfile','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh,$spread,'$TYPE');checkConnection_EI('mee-$conmat','$lgnfile','$coMa',1:8640,8,'png',true,$ntheta,$drawInh,$spread,'$TYPE');exit"
+matlab -nosplash -nodesktop -r "dbstop if error;logP.nbins=$nbins;logP.mu=$mu;logP.sigma=$sig;logP.mu0=$mu0;logP.nsig=$nsig;logP.lR=$lowestRatio;logP.p2s=$p2s;logP.spread=$spread;RFcoeff_O_beta('$theme',60,60,3,true,$tw,true,'png',$ldRF,$temper,$reverse,false,$ieSpecific,$antiphase,$threads);generateConMat('$theme','t2','gauss',$reciprocal,'$edist',911,true,'png','n','$EPSPprofile','$conmat',$eiSpecific,$ieSpecific,'$coMa',logP);checkConnection_EI('mee-$conmat','$theme','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh,$spread,'$TYPE');checkConnection_EI('mee-$conmat','$theme','$coMa',1:8640,8,'png',true,$ntheta,$drawInh,$spread,'$TYPE');exit"
 
 cp $coMa'_more.mat' $fdr/coMat-$theme'_'$TYPE.mat
 cp $conmat.mat $fdr

@@ -19,8 +19,8 @@ function clusterFilename = rasterCluster(theme,lgnfile,eps,ctheta,conMatfile,coM
         dpi = '-r100';
     end
 
-FontSize = 10;
-set(0,'DefaultAxesFontSize',FontSize)
+    FontSize = 10;
+    set(0,'DefaultAxesFontSize',FontSize)
     load(lgnfile,'p','nSubLGN','v1Map','LGNpos');
     %load(sfile);
     fid = fopen(conMatfile);
@@ -46,9 +46,9 @@ set(0,'DefaultAxesFontSize',FontSize)
     end
     if isempty(clusterFile)
         tic;
-%         poolobj =gcp('nocreate');
-%         delete(poolobj);
-%         parpool(nthres);
+        %poolobj =gcp('nocreate');
+        %delete(poolobj);
+        %parpool(nthres);
         seq = randperm(n);
         clusterID = zeros(n,1);
         cluster = cell(n,1);
@@ -112,7 +112,7 @@ set(0,'DefaultAxesFontSize',FontSize)
     if ~clusterOnly
         id = 0;
         h = figure;
-%         subplot(2,1,1);
+        %subplot(2,1,1);
         hold on
         hPlot = 1;
         for i=1:nCluster
@@ -152,23 +152,23 @@ set(0,'DefaultAxesFontSize',FontSize)
         %ylim([0,300]);
         xlim([t0,t1]*10^3);
         %% 
-%         v1pos = zeros(n,2);
-%         for i=1:n
-%             for j =1:length(nSubLGN{i})
-%                 v1pos(i,:) = v1pos(i,:) + sum(LGNpos(abs(v1Map{i,j}),:),1);
-%             end
-%             v1pos(i,:) = v1pos(i,:)/sum(abs(nSubLGN{i}));
-%         end
-% 
-%         if Mov
-%             h2 = subplot(2,2,3);
-%         else
-%             subplot(2,2,3);
-%             hold on
-%             for i=1:nCluster
-%                 plot(v1pos(cluster{i},1),v1pos(cluster{i},2),'.','MarkerSize',mSize);
-%             end
-%             axis equal
+        % v1pos = zeros(n,2);
+        % for i=1:n
+        %     for j =1:length(nSubLGN{i})
+        %         v1pos(i,:) = v1pos(i,:) + sum(LGNpos(abs(v1Map{i,j}),:),1);
+        %     end
+        %     v1pos(i,:) = v1pos(i,:)/sum(abs(nSubLGN{i}));
+        % end
+ 
+        % if Mov
+        %     h2 = subplot(2,2,3);
+        % else
+        %     subplot(2,2,3);
+        %     hold on
+        %     for i=1:nCluster
+        %         plot(v1pos(cluster{i},1),v1pos(cluster{i},2),'.','MarkerSize',mSize);
+        %     end
+        %     axis equal
         if ~isempty(format)
             figname = ['raster-',theme,'-',epsStr,'-',thetaStr,'.',format];
             if strcmp(format,'fig')
@@ -178,80 +178,79 @@ set(0,'DefaultAxesFontSize',FontSize)
                 print(h,['raster-',theme,'-',epsStr,'-',thetaStr,'.',format],printDriver,dpi);
             end
         end
-%             %% xcorr
-% %             close(h);
-         h=figure;
- %             subplot(2,2,4);
-         hold on
-         nt = nearest((t1-t0)/timebin);
+        %% xcorr
+        %close(h);
+        h=figure;
+        %subplot(2,2,4);
+        hold on
+        nt = nearest((t1-t0)/timebin);
  
-     %             iTestCluster = randperm(nCluster,nTestCluster);
-         iTestCluster = 1:nCluster;
-         nxcluster = 100;
-         nTestCluster = length(iTestCluster);
-         xcorrVec = zeros(maxTau*2+1,nTestCluster);
-         tranges = linspace(t0,t1,nt+1);
-         tauRanges = (-(maxTau):(maxTau))*timebin;
-         CbinedSpikeTrains = zeros(nt,nTestCluster);
-         for i=1:nTestCluster
-             j = iTestCluster(i);
-             sC = clusterSize(j);
-             binedSpikeTrains = zeros(nt,sC);
-             if sC > 1
-                 noneZero = true(sC,1);
-                 for k = 1:clusterSize(j)
-                      if l(cluster{j}(k)) > 0
-                          tempCounts = histc(tspI(cluster{j}(k)).tsp,tranges);
-                          binedSpikeTrains(:,k) = tempCounts(1:nt);
-                      else
-                          noneZero(k) = false;
-                      end
-                 end
-                 if sum(noneZero)>1
-                     CbinedSpikeTrains(:,i) = mean(binedSpikeTrains,2); 
-                     xcorrMat = xcorr(binedSpikeTrains(:,noneZero),maxTau,'coeff');
-                     sC = sC - sum(~noneZero);
-                     autoColumns = (1:sC);
-                     autoColumns = (autoColumns-1)*sC +autoColumns;
-                     column = true(sC*sC,1);
-                     column(autoColumns) = false;
-                     xcorrVec(:,i) = mean(xcorrMat(:,column),2);
-                 end
-             end
-         end
-         xcorrVecMean = mean(xcorrVec,2);
-         xcorrVecStd = std(xcorrVec,1,2);
-         errorbar(tauRanges,xcorrVecMean,xcorrVecStd,'-','LineWidth',2);
-     %             plot(tauRanges,xcorrVec,'--');
+        %iTestCluster = randperm(nCluster,nTestCluster);
+        iTestCluster = 1:nCluster;
+        nxcluster = 100;
+        nTestCluster = length(iTestCluster);
+        xcorrVec = zeros(maxTau*2+1,nTestCluster);
+        tranges = linspace(t0,t1,nt+1);
+        tauRanges = (-(maxTau):(maxTau))*timebin;
+        CbinedSpikeTrains = zeros(nt,nTestCluster);
+        for i=1:nTestCluster
+            j = iTestCluster(i);
+            sC = clusterSize(j);
+            binedSpikeTrains = zeros(nt,sC);
+            if sC > 1
+                noneZero = true(sC,1);
+                for k = 1:clusterSize(j)
+                     if l(cluster{j}(k)) > 0
+                         tempCounts = histc(tspI(cluster{j}(k)).tsp,tranges);
+                         binedSpikeTrains(:,k) = tempCounts(1:nt);
+                     else
+                         noneZero(k) = false;
+                     end
+                end
+                if sum(noneZero)>1
+                    CbinedSpikeTrains(:,i) = mean(binedSpikeTrains,2); 
+                    xcorrMat = xcorr(binedSpikeTrains(:,noneZero),maxTau,'coeff');
+                    sC = sC - sum(~noneZero);
+                    autoColumns = (1:sC);
+                    autoColumns = (autoColumns-1)*sC +autoColumns;
+                    column = true(sC*sC,1);
+                    column(autoColumns) = false;
+                    xcorrVec(:,i) = mean(xcorrMat(:,column),2);
+                end
+            end
+        end
+        xcorrVecMean = mean(xcorrVec,2);
+        xcorrVecStd = std(xcorrVec,1,2);
+        errorbar(tauRanges,xcorrVecMean,xcorrVecStd,'-','LineWidth',2);
+        %plot(tauRanges,xcorrVec,'--');
  
-         [~,selectedClusters] = sort(max(xcorrVec),'descend');
-         selectedClusters = selectedClusters(1:nxcluster);
-         clear xcorrVec;
-         xcorrMat = xcorr(CbinedSpikeTrains(:,selectedClusters),maxTau,'coeff');
-         autoColumns = (1:nxcluster);
-         autoColumns = (autoColumns-1)*nxcluster +autoColumns;
-         column = true(nxcluster*nxcluster,1);
-         column(autoColumns) = false;
-         xcorrCVecMean = mean(xcorrMat(:,column),2);
-         xcorrCVecStd = std(xcorrMat(:,column),1,2);
-         errorbar(tauRanges,xcorrCVecMean,xcorrCVecStd,':','LineWidth',2);
+        [~,selectedClusters] = sort(max(xcorrVec),'descend');
+        selectedClusters = selectedClusters(1:nxcluster);
+        clear xcorrVec;
+        xcorrMat = xcorr(CbinedSpikeTrains(:,selectedClusters),maxTau,'coeff');
+        autoColumns = (1:nxcluster);
+        autoColumns = (autoColumns-1)*nxcluster +autoColumns;
+        column = true(nxcluster*nxcluster,1);
+        column(autoColumns) = false;
+        xcorrCVecMean = mean(xcorrMat(:,column),2);
+        xcorrCVecStd = std(xcorrMat(:,column),1,2);
+        errorbar(tauRanges,xcorrCVecMean,xcorrCVecStd,':','LineWidth',2);
  
-         ylim([0,inf]);
-         legend({'intraCluster','interCluster'});
-         xlabel('\tau s');
-         ylabel('xcorr');
-         title([epsStr,thetaStr]);
+        ylim([0,inf]);
+        legend({'intraCluster','interCluster'});
+        xlabel('\tau s');
+        ylabel('xcorr');
+        title([epsStr,thetaStr]);
  
-         if ~isempty(format)
-             figname = ['Xcorr-',theme,'-',epsStr,'-',thetaStr,'_',numstr(nthres),'-',num2str(cthres),'.',format];
-             if strcmp(format,'fig')
-                 savefig(h,figname);
-             else
-                 set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-                 print(h,figname,printDriver,dpi);
-             end
-         end
-% %         end
+        if ~isempty(format)
+            figname = ['Xcorr-',theme,'-',epsStr,'-',thetaStr,'_',numstr(nthres),'-',num2str(cthres),'.',format];
+            if strcmp(format,'fig')
+                savefig(h,figname);
+            else
+                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                print(h,figname,printDriver,dpi);
+            end
+        end
     end
 end
 function mark = inset(a,b)

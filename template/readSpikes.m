@@ -12,7 +12,9 @@ function [tspI,l] = readSpikes(DIR,n,filename)
 			l(i) = sum(ispike==i);
 		end
 	else
-		tspI(n).tsp = [];
-		l(n) = 0;
+        for i=1:n
+		    tspI(i).tsp = [];
+		    l(i) = 0;
+        end
 	end
 end
