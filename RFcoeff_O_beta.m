@@ -1,23 +1,23 @@
-function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase,threads)
-    if nargin < 15
+function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase,threads)
+    if nargin < 16
         threads = 1;
-        if nargin < 14
+        if nargin < 15
             antiphase = false;
-            if nargin < 13
+            if nargin < 14
                 ie = false;
-                if nargin < 12
+                if nargin < 13
                     OnOff = false;
-                    if nargin < 11
+                    if nargin < 12
                         reverse = 1;
-                        if nargin < 10
+                        if nargin < 11
                             temper = 0.0;
-                            if nargin < 9
+                            if nargin < 10
                                 ld = false;
-                                if nargin < 8
+                                if nargin < 9
                                     format = '';
-                                    if nargin < 7
+                                    if nargin < 8
                                         draw = true;
-                                        if nargin < 6
+                                        if nargin < 7
                                             tw = 1.0;
                                         end
                                     end
@@ -59,10 +59,10 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
     SepRFdist = maxd;
     %SepRFdist = max([0.64,max(p.enormDistance)]);
     set(0,'DefaultAxesFontSize',14);
-    wE = p.enormDistance;
-    wE(wE>=SepRFdist) = 1;
-    wORF =wE(wE<SepRFdist);
-    wE(wE<SepRFdist) = (wORF-mind)./SepRFdist;
+    %wE = p.enormDistance;
+    %wE(wE>=SepRFdist) = 1;
+    %wORF =wE(wE<SepRFdist);
+    %wE(wE<SepRFdist) = (wORF-mind)./SepRFdist;
 
     %SepRFdist = max([0.64,max(p.inormDistance)]);
     %wI = p.inormDistance;
@@ -70,22 +70,23 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
     %wORF =wI(wI<SepRFdist);
     %wI(wI<SepRFdist) = wORF./SepRFdist;
 
-    switch reverse 
-        case 1
-            w = wE*tw;
-        case 2
+    %switch reverse 
+    %    case 1
+    %        w = wE*tw;
+    %    case 2
             w = ones(n,1)*tw;
-        case -1 
-            w = (1-wE)*tw;
-        case -2
-            w = ones(n,1)-tw;
-    end
+    %    case -1 
+    %        w = (1-wE)*tw;
+    %    case -2
+    %        w = ones(n,1)-tw;
+    %end
     oneMinusW = (1-w);  % oneMinusW * RFcorr + w * coeff
     wMat = ones(p.nv1,1)*w';
     oneMinusWmat = ones(p.nv1,1)*oneMinusW';
 
     if temper > 0 % for ORF, more overlap -> more blurness in dTheta gauge
-        temperMat = ones(m,1) * (1-wE)' * temper;
+        %temperMat = ones(m,1) * (1-wE)' * temper;
+        temperMat = ones(m,n) * temper;
         s = rng;
         temperMat = randn(m,n) .* temperMat * pi/180;
     else
@@ -94,7 +95,7 @@ function coMat = RFcoeff_O_beta(lgnfile,nx,ny,nsig,save2file,tw,draw,format,ld,t
     end
 
     clear wORF
-    filename=['coMa-',num2str(nx),'x',num2str(ny),'-',lgnfile];
+    filename=['coMa-',num2str(nx),'x',num2str(ny),'-',lgnfile,'_',type];
     global Aa Ab siga2 sigb2 X Y
     if ~ld
         AORF = false(p.nv1e,1);

@@ -2,9 +2,10 @@
 drawSpecific = false;
 p = struct;
 p.YoudensIndex = 0.32;
-p.name = 'ndb305-40';
+p.profile = 'u'         % 'u' for uniform(single-value) profile for LGN connection strength, 'g' for gaussian
+p.name = 'ndl305-27';
 enorm = 0.305; 
-inorm = 0.40; 
+inorm = 0.27; 
 enormStd = 0.1016;
 inormStd = 0.1016;
 p.h = 'png';
@@ -16,8 +17,8 @@ p.iAspectR0 = [1.5;0.015];
 %p.iAspectR0 = p.eAspectR0;
 p.se = 1;  % connection strength
 %p.si = 2;      %s
-%p.si = 1.5;    %l
-p.si = 1;       %b
+p.si = 1;    %l
+%p.si = 1;       %b
 FontSize = 14;
 set(0,'DefaultAxesFontSize',FontSize);
 pPosition = [18, 180, 1200, 900];
