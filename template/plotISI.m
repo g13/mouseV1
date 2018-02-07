@@ -47,34 +47,38 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
     dtheta = 180/ntheta;
     ipA = round(priA*180/pi/dtheta);
     epick = [ipA(1:p.nv1e) == ctheta; false(p.nv1i,1)];
-    [isiE, minE, maxE] = getISI(tspI(epick));
+    [isiE, minE, maxE, emptyE] = getISI(tspI(epick));
     ipick = [false(p.nv1e,1); ipA(p.nv1e+(1:p.nv1i)) == ctheta];
-    [isiI, minI, maxI] = getISI(tspI(ipick));
-    [isiMatE, edgesMatE, activeE] = binitMat(isiE,minE,maxE,nbinsE,scale,roundoff,factors);
-    [isiMatI, edgesMatI, activeI] = binitMat(isiI,minI,maxI,nbinsI,scale,roundoff,factors);
-    [isiVecE, edgesVecE] = binitVec(isiE,minE,maxE,nbinsE,scale,roundoff,factors);
-    [isiVecI, edgesVecI] = binitVec(isiI,minI,maxI,nbinsI,scale,roundoff,factors);
+    [isiI, minI, maxI, emptyI] = getISI(tspI(ipick));
     h = figure;
-    ax = subplot(2,2,1);
-    plotsubMat(isiMatE,edgesMatE,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('pdf %');
-    ylim([0,inf]);
-    ax = subplot(2,2,2);
-    plotsubMat(isiMatI,edgesMatI,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('pdf %');
-    ylim([0,inf]);
-    ax = subplot(2,2,3);
-    plotsubVec(isiVecE,edgesVecE,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('pdf %');
-    ylim([0,inf]);
-    ax = subplot(2,2,4);
-    plotsubVec(isiVecI,edgesVecI,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('pdf %');
-    ylim([0,inf]);
+    if ~emptyE
+        [isiMatE, edgesMatE, activeE] = binitMat(isiE,minE,maxE,nbinsE,scale,roundoff,factors);
+        [isiVecE, edgesVecE] = binitVec(isiE,minE,maxE,nbinsE,scale,roundoff,factors);
+        ax = subplot(2,2,1);
+        plotsubMat(isiMatE,edgesMatE,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('pdf %');
+        ylim([0,inf]);
+        ax = subplot(2,2,3);
+        plotsubVec(isiVecE,edgesVecE,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('pdf %');
+        ylim([0,inf]);
+    end
+    if ~emptyI
+        [isiMatI, edgesMatI, activeI] = binitMat(isiI,minI,maxI,nbinsI,scale,roundoff,factors);
+        [isiVecI, edgesVecI] = binitVec(isiI,minI,maxI,nbinsI,scale,roundoff,factors);
+        ax = subplot(2,2,2);
+        plotsubMat(isiMatI,edgesMatI,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('pdf %');
+        ylim([0,inf]);
+        ax = subplot(2,2,4);
+        plotsubVec(isiVecI,edgesVecI,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('pdf %');
+        ylim([0,inf]);
+    end
     if ~isempty(format)
         fname = [theme,'/ISI-',epsStr,'-',thetaStr,'-',theme,'.',format];
         if strcmp(format,'fig')
@@ -84,26 +88,30 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
         end
     end
     h = figure;
-    %subplot(2,2,1);
-    efr = fr(epick);
-    [H,frEdgesE,binIDE] = histcounts(efr(activeE),frBinsE);
-    %edges = frEdgesE(1:frBinsE)- (frEdgesE(2)-frEdgesE(1))/2;
-    %bar(edges,H);
-    ax = subplot(2,1,1);
-    heatFrISI(isiMatE,frEdgesE,binIDE,edgesMatE,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('FR (Hz)');
-    title('Excitatory');
-    %subplot(2,2,3);
-    ifr = fr(ipick);
-    [H,frEdgesI,binIDI] = histcounts(ifr(activeI),frBinsI);
-    %edges = frEdgesI(1:frBinsI)- (frEdgesI(2)-frEdgesI(1))/2;
-    %bar(edges,H);
-    ax = subplot(2,1,2);
-    heatFrISI(isiMatI,frEdgesI,binIDI,edgesMatI,scale,ax);
-    xlabel('ISI (ms)');
-    ylabel('FR (Hz)');
-    title('Inhibitory');
+    if ~emptyE
+        %subplot(2,2,1);
+        efr = fr(epick);
+        [H,frEdgesE,binIDE] = histcounts(efr(activeE),frBinsE);
+        %edges = frEdgesE(1:frBinsE)- (frEdgesE(2)-frEdgesE(1))/2;
+        %bar(edges,H);
+        ax = subplot(2,1,1);
+        heatFrISI(isiMatE,frEdgesE,binIDE,edgesMatE,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('FR (Hz)');
+        title('Excitatory');
+    end
+    if ~emptyI
+        %subplot(2,2,3);
+        ifr = fr(ipick);
+        [H,frEdgesI,binIDI] = histcounts(ifr(activeI),frBinsI);
+        %edges = frEdgesI(1:frBinsI)- (frEdgesI(2)-frEdgesI(1))/2;
+        %bar(edges,H);
+        ax = subplot(2,1,2);
+        heatFrISI(isiMatI,frEdgesI,binIDI,edgesMatI,scale,ax);
+        xlabel('ISI (ms)');
+        ylabel('FR (Hz)');
+        title('Inhibitory');
+    end
     if ~isempty(format)
         fname = [theme,'/ISIheat-',epsStr,'-',thetaStr,'-',theme,'.',format];
         if strcmp(format,'fig')
@@ -113,7 +121,7 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
         end
     end
 end
-function [isi, minISI, maxISI] = getISI(tspI)
+function [isi, minISI, maxISI, empty] = getISI(tspI)
     n = length(tspI);
     isi = cell(1,n);
     maxtmp = zeros(n,1);
@@ -129,6 +137,11 @@ function [isi, minISI, maxISI] = getISI(tspI)
     end
     maxISI = max(maxtmp);
     minISI = min(mintmp);
+    empty = false
+    if maxISI == 0
+        assert(minISI == inf);
+        empty = true
+    end
 end
 function [isiMat, edges, active] = binitMat(isi,minISI,maxISI,nbins,scale,roundoff,factors)
     n = length(isi);

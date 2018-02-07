@@ -61,21 +61,27 @@ if nargin < 16
         end
     end
 end
-    if ~isempty(format)
-        if strcmp(format,'psc2')
-            printDriver = ['-de',format];
-            format = 'eps';
-        else
-            printDriver = ['-d',format];
-        end
-        dpi = '-r100';
+if ~isempty(format)
+    if strcmp(format,'psc2')
+        printDriver = ['-de',format];
+        format = 'eps';
+    else
+        printDriver = ['-d',format];
     end
-%meanTimeLine = true;
-meanTimeLine = false;
+    dpi = '-r100';
+end
+meanTimeLine = true;
+%meanTimeLine = false;
 % current = true;
 current = false;
-ndperiod = 25;
+%operiod = true;
+operiod = false;
+%dThetaSize = true;
+dThetaSize = false;
+%Phase = true;
+Phase = false;
 
+ndperiod = 25;
 polarplot = 0;
 pOSI = true;
 rng('shuffle');
@@ -389,11 +395,12 @@ if ~statsOnly || neuronlistOnly
 %             neuronlist(end-sn+1:end) = CVsortedID(candidates([length(candidates),floor(length(candidates)/2),1]),level);
 %         end
     %%  choose over types
-        [~,widthSortedID] = sort(sigfsq2);
-        [~,dWidthsortedID] = sort(sigfsq2(4,:)-sigfsq2(2,:));
-        sortedID = widthSortedID';
-        dsortedID = dWidthsortedID;
-        %sortedID = CVsortedID;
+        %[~,widthSortedID] = sort(sigfsq2);
+        %[~,dWidthsortedID] = sort(sigfsq2(4,:)-sigfsq2(2,:));
+        %sortedID = widthSortedID';
+        %dsortedID = dWidthsortedID;
+        sortedID = CVsortedID;
+        dsortedID = dCVsortedID;
         level = contrastLevel;
         efired = nP(level).pkrate(sortedID(:,level)) > nP(level).br(sortedID(:,level)) & nP(level).ei(sortedID(:,level)) > 0.5 &...
                  nP(level).pkrate(sortedID(:,level)) > thres;
@@ -887,155 +894,160 @@ for nn = 1:length(neuronlist)
     %if k>p.nv1e
     oiLabel = {'o','i'};
     offset = 0;
-    for oi = 1:2
-        if oi == 1
-            iitheta = nP(level).indpo(k);
-        else
-            iitheta = nP(level).indpi(k);
-        end
-        level = contrastLevel;
-        hPhase = figure;
-        %colormap(hPhase,phaseSkip(ndperiod+1));
-        %subplot(2,2,1)
-        %x = 1;
-        %y = p.ev1y;
-        c = zeros(p.nv1e,1);
-        frC = zeros(preE(k),1)-1;
-        for i = 1:preE(k)
-            id = pre(k).ID_exc(i);
-            titheta = nP(level).indpo(id);
-            if abs(titheta - iitheta) <= offset || abs(titheta - iitheta) >= ntheta - offset
-                [frC(i),c(id)] = max(pC(level).spikes(id,:));
+    if Phase
+        for oi = 1:2
+            if ~operiod && oi == 1
+                continue
             end
-        end
-        %c=reshape(c,[p.ev1y,p.ev1x]);
-        c = c./ndperiod;
-        ch = c(c>0).*ndperiod;
-        frC = frC.*ndperiod/rt.*(profiles(pre(k).s_exc))';
-        frC = frC(frC>=0);
-        %imagesc(x,y,c);
-        %title(['Exc-',num2str((iitheta-1)*dtheta),'^o']);
-       
-        if ~isempty(ch) 
-         
-        hExc = subplot(2,2,1);
-        nfr = 10;
-        ctrs = cell(2,1);
-        ctrs{1} = 1:ndperiod;
-        lctrsx = length(ctrs{1});
-        lctrsy = nfr+1;
-        dTickX = 5/ndperiod;
-        dTickY = 0.2;
-        tickPosX = 0.5:lctrsx*dTickX:lctrsx+0.5;
-        tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
-        tickLabelX = num2str((linspace(0,2*pi,length(tickPosX)))'.*180/pi);
-
-        maxfr = max(frC);
-        minfr = min(frC);
-        ctrs{2} = linspace(minfr,maxfr,lctrsy);
-        tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
-        pair = [ch,frC];
-        den = hist3(pair,ctrs);
-        den = den(1:ntheta,1:nfr);
-        den = den/max(max(den));
-        imagesc([1,lctrsx],[lctrsy,1],den');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('Phase');
-        ylabel('Excitation');
-        title([num2str(k),'-',neuron_alias,' Dist. of phase and Excitation',num2str(iitheta)]);
-        colormap(hExc,redOnly);
-        else
-        title(['no iso-oriented exc neuron were connected']);
-        end
-        
-        c = zeros(p.nv1i,1);
-        frC = zeros(preI(k),1)-1;
-        for i = 1:preI(k)
-            id = pre(k).ID_inh(i);
-            titheta = nP(level).indpo(id);
-            if abs(titheta - iitheta) <= offset || abs(titheta - iitheta) >= ntheta - offset
-                [frC(i),c(id)] = max(pC(level).spikes(id,:));
-            end
-        end
-        %c=reshape(c,[p.iv1y,p.iv1x]);
-        c = c./ndperiod;
-        ch = c(c>0).*ndperiod;
-        frC = frC.*ndperiod/rt;
-        frC = frC(frC>=0);
-
-        if ~isempty(ch) 
-        hInh=subplot(2,2,2);
-        maxfr = max(frC);
-        minfr = min(frC);
-        ctrs{2} = linspace(minfr,maxfr,lctrsy);
-        tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
-        pair = [ch,frC];
-        den = hist3(pair,ctrs);
-        den = den(1:ntheta,1:nfr);
-        den = den/max(max(den));
-        imagesc([1,lctrsx],[lctrsy,1],den');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('Phase');
-        ylabel('Hz');
-        title([num2str(k),'-',neuron_alias,' Dist. of phase and Inh FR',num2str(iitheta)]);
-        colormap(hInh,blueOnly);
-        else
-        title(['no iso-oriented inh neuron were connected']);
-        end
-
-        %%
-        dddtheta = pi/ntheta;
-        nfr = 20;
-        ctrs = cell(2,1);
-        ctrs{1} = 0:dddtheta:pi;
-        lctrsx = length(ctrs{1});
-        lctrsy = nfr+1;
-        dTickX = 2/ntheta;
-        dTickY = 0.2;
-        tickPosX = 0.5:lctrsx*dTickX:lctrsx+0.5;
-        tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
-        tickLabelX = num2str((linspace(0,pi,length(tickPosX)))'.*180/pi);
-
-        hExc = subplot(2,2,3);
-        frTarget = tC(level).frate(pre(k).ID_exc,iitheta);
-        thetaTarget = nP(level).prA(pre(k).ID_exc);
-        maxfr = max(frTarget);
-        minfr = min(frTarget);
-        ctrs{2} = linspace(minfr,maxfr,lctrsy);
-        tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
-        pair = [thetaTarget,frTarget];
-        den = hist3(pair,ctrs);
-        den = den(1:ntheta,1:nfr);
-        den = den/max(max(den));
-        imagesc([1,lctrsx],[lctrsy,1],den');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('\theta');
-        ylabel('FR Hz');
-        colormap(hExc,redOnly);
-
-        hInh = subplot(2,2,4);
-        frTarget = tC(level).frate(pre(k).ID_inh,iitheta);
-        thetaTarget = nP(level).prA(pre(k).ID_inh);
-        maxfr = max(frTarget);
-        minfr = min(frTarget);
-        ctrs{2} = linspace(minfr,maxfr,lctrsy);
-        tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
-        pair = [thetaTarget,frTarget];
-        den = hist3(pair,ctrs);
-        den = den(1:ntheta,1:nfr);
-        den = den/max(max(den));
-        imagesc([1,lctrsx],[lctrsy,1],den');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('\theta');
-        ylabel('FR Hz');
-        colormap(hInh,blueOnly);
-
-        if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hPhase,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-FRphaseMap',oiLabel{oi},'-A',num2str(iitheta),'-',theme,'.',format]);
+            if oi == 1
+                iitheta = nP(level).indpo(k);
             else
-                print(hPhase,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-FRphaseMap',oiLabel{oi},'-A',num2str(iitheta),'-',theme,'.',format],printDriver,dpi);
+                iitheta = nP(level).indpi(k);
+            end
+            level = contrastLevel;
+            hPhase = figure;
+            %colormap(hPhase,phaseSkip(ndperiod+1));
+            %subplot(2,2,1)
+            %x = 1;
+            %y = p.ev1y;
+            c = zeros(p.nv1e,1);
+            frC = zeros(preE(k),1)-1;
+            for i = 1:preE(k)
+                id = pre(k).ID_exc(i);
+                titheta = nP(level).indpo(id);
+                if abs(titheta - iitheta) <= offset || abs(titheta - iitheta) >= ntheta - offset
+                    [frC(i),c(id)] = max(pC(level).spikes(id,:));
+                end
+            end
+            %c=reshape(c,[p.ev1y,p.ev1x]);
+            c = c./ndperiod;
+            ch = c(c>0).*ndperiod;
+            frC = frC.*ndperiod/rt.*(profiles(pre(k).s_exc))';
+            frC = frC(frC>=0);
+            %imagesc(x,y,c);
+            %title(['Exc-',num2str((iitheta-1)*dtheta),'^o']);
+           
+            if ~isempty(ch) 
+             
+            hExc = subplot(2,2,1);
+            nfr = 10;
+            ctrs = cell(2,1);
+            ctrs{1} = 1:ndperiod;
+            lctrsx = length(ctrs{1});
+            lctrsy = nfr+1;
+            dTickX = 5/ndperiod;
+            dTickY = 0.2;
+            tickPosX = 0.5:lctrsx*dTickX:lctrsx+0.5;
+            tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
+            tickLabelX = num2str((linspace(0,2*pi,length(tickPosX)))'.*180/pi);
+
+            maxfr = max(frC);
+            minfr = min(frC);
+            ctrs{2} = linspace(minfr,maxfr,lctrsy);
+            tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
+            pair = [ch,frC];
+            den = hist3(pair,ctrs);
+            den = den(1:ntheta,1:nfr);
+            den = den/max(max(den));
+            imagesc([1,lctrsx],[lctrsy,1],den');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('Phase');
+            ylabel('Excitation');
+            title([num2str(k),'-',neuron_alias,' Dist. of phase and Excitation',num2str(iitheta)]);
+            colormap(hExc,redOnly);
+            else
+            title(['no iso-oriented exc neuron were connected']);
+            end
+            
+            c = zeros(p.nv1i,1);
+            frC = zeros(preI(k),1)-1;
+            for i = 1:preI(k)
+                id = pre(k).ID_inh(i);
+                titheta = nP(level).indpo(id);
+                if abs(titheta - iitheta) <= offset || abs(titheta - iitheta) >= ntheta - offset
+                    [frC(i),c(id)] = max(pC(level).spikes(id,:));
+                end
+            end
+            %c=reshape(c,[p.iv1y,p.iv1x]);
+            c = c./ndperiod;
+            ch = c(c>0).*ndperiod;
+            frC = frC.*ndperiod/rt;
+            frC = frC(frC>=0);
+
+            if ~isempty(ch) 
+            hInh=subplot(2,2,2);
+            maxfr = max(frC);
+            minfr = min(frC);
+            ctrs{2} = linspace(minfr,maxfr,lctrsy);
+            tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
+            pair = [ch,frC];
+            den = hist3(pair,ctrs);
+            den = den(1:ntheta,1:nfr);
+            den = den/max(max(den));
+            imagesc([1,lctrsx],[lctrsy,1],den');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('Phase');
+            ylabel('Hz');
+            title([num2str(k),'-',neuron_alias,' Dist. of phase and Inh FR',num2str(iitheta)]);
+            colormap(hInh,blueOnly);
+            else
+            title(['no iso-oriented inh neuron were connected']);
+            end
+
+            %%
+            dddtheta = pi/ntheta;
+            nfr = 20;
+            ctrs = cell(2,1);
+            ctrs{1} = 0:dddtheta:pi;
+            lctrsx = length(ctrs{1});
+            lctrsy = nfr+1;
+            dTickX = 2/ntheta;
+            dTickY = 0.2;
+            tickPosX = 0.5:lctrsx*dTickX:lctrsx+0.5;
+            tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
+            tickLabelX = num2str((linspace(0,pi,length(tickPosX)))'.*180/pi);
+
+            hExc = subplot(2,2,3);
+            frTarget = tC(level).frate(pre(k).ID_exc,iitheta);
+            thetaTarget = nP(level).prA(pre(k).ID_exc);
+            maxfr = max(frTarget);
+            minfr = min(frTarget);
+            ctrs{2} = linspace(minfr,maxfr,lctrsy);
+            tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
+            pair = [thetaTarget,frTarget];
+            den = hist3(pair,ctrs);
+            den = den(1:ntheta,1:nfr);
+            den = den/max(max(den));
+            imagesc([1,lctrsx],[lctrsy,1],den');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('\theta');
+            ylabel('FR Hz');
+            colormap(hExc,redOnly);
+
+            hInh = subplot(2,2,4);
+            frTarget = tC(level).frate(pre(k).ID_inh,iitheta);
+            thetaTarget = nP(level).prA(pre(k).ID_inh);
+            maxfr = max(frTarget);
+            minfr = min(frTarget);
+            ctrs{2} = linspace(minfr,maxfr,lctrsy);
+            tickLabelY = flipud(num2str((linspace(minfr,maxfr,length(tickPosY)))'));
+            pair = [thetaTarget,frTarget];
+            den = hist3(pair,ctrs);
+            den = den(1:ntheta,1:nfr);
+            den = den/max(max(den));
+            imagesc([1,lctrsx],[lctrsy,1],den');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('\theta');
+            ylabel('FR Hz');
+            colormap(hInh,blueOnly);
+
+            if ~isempty(format)
+                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                if strcmp(format,'fig')
+                    saveas(hPhase,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-FRphaseMap',oiLabel{oi},'-A',num2str(iitheta),'-',theme,'.',format]);
+                else
+                    print(hPhase,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-FRphaseMap',oiLabel{oi},'-A',num2str(iitheta),'-',theme,'.',format],printDriver,dpi);
+                end
             end
         end
     end
@@ -1076,64 +1088,66 @@ for nn = 1:length(neuronlist)
     end
     %% timeline average
     if meanTimeLine
-        hTimeline = figure;
-        for i=1:contrastLevel
-            
-            iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
-            subplot(contrastLevel,4,(i-1)*4+1);hold on;
-            
-            errorbar(1:ndperiod,pC(i).gLGN(k,:),pC(i).gLGNstd(k,:),'-g');
-            plot(ndperiod+0.6,mean(pC(i).gLGN(k,:)),'sg');
-            errorbar((1:ndperiod)+0.3,oC(i).gLGN(k,:),oC(i).gLGNstd(k,:),':k');
-            plot(ndperiod+0.3,mean(oC(i).gLGN(k,:)),'^k');
-            if i == 1
-                title(['gLGN, F1/F0: ',num2str(tC(i).gLGNsc(k,iprefTheta),'%1.2f')]); 
-            else
-                title(num2str(tC(i).gLGNsc(k,iprefTheta),'%1.2f')); 
+        if operiod
+            hTimeline = figure;
+            for i=1:contrastLevel
+                
+                iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
+                subplot(contrastLevel,4,(i-1)*4+1);hold on;
+                
+                errorbar(1:ndperiod,pC(i).gLGN(k,:),pC(i).gLGNstd(k,:),'-g');
+                plot(ndperiod+0.6,mean(pC(i).gLGN(k,:)),'sg');
+                errorbar((1:ndperiod)+0.3,oC(i).gLGN(k,:),oC(i).gLGNstd(k,:),':k');
+                plot(ndperiod+0.3,mean(oC(i).gLGN(k,:)),'^k');
+                if i == 1
+                    title(['gLGN, F1/F0: ',num2str(tC(i).gLGNsc(k,iprefTheta),'%1.2f')]); 
+                else
+                    title(num2str(tC(i).gLGNsc(k,iprefTheta),'%1.2f')); 
+                end
+                ylabel(conLabel{i});
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+2);hold on;
+                
+                errorbar(1:ndperiod,pC(i).gI(k,:), pC(i).gIstd(k,:),'-b');
+                plot(ndperiod+0.6,mean(pC(i).gI(k,:)),'sb');
+                errorbar(1:ndperiod,oC(i).gI(k,:), oC(i).gIstd(k,:),':k');
+                plot(ndperiod,mean(oC(i).gI(k,:)),'^k');
+                if i == 1, title(['gInh, ',neuron_alias]); end
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+3); hold on;  
+                errorbar(1:ndperiod,pC(i).gE(k,:), pC(i).gEstd(k,:),'-r');
+                plot(ndperiod+0.6,mean(pC(i).gE(k,:)),'sr');
+                errorbar((1:ndperiod)+0.3,oC(i).gE(k,:), oC(i).gEstd(k,:),':k');
+                plot(ndperiod+0.3,mean(oC(i).gE(k,:)),'^k');
+                if i == 1
+                    title(['gE, F1/F0: ',num2str(tC(i).gEsc(k,iprefTheta),'%1.2f')]);
+                else
+                    title(num2str(tC(i).gEsc(k,iprefTheta),'%1.2f'));
+                end
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+4); hold on;
+                if i==1,title(['FR, ID.', num2str(k)]);end
+                plot(1:ndperiod,pC(i).spikes(k,:)*ndperiod/rt,'-k');
+                plot(1:ndperiod,oC(i).spikes(k,:)*ndperiod/rt,':k');
+                plot(ndperiod+0.6,mean(pC(i).spikes(k,:))*ndperiod/rt,'sk');
+                plot(ndperiod+0.3,mean(oC(i).spikes(k,:))*ndperiod/rt,'^k');
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                if i==contrastLevel, xlabel('phase');end
             end
-            ylabel(conLabel{i});
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+2);hold on;
-            
-            errorbar(1:ndperiod,pC(i).gI(k,:), pC(i).gIstd(k,:),'-b');
-            plot(ndperiod+0.6,mean(pC(i).gI(k,:)),'sb');
-            errorbar(1:ndperiod,oC(i).gI(k,:), oC(i).gIstd(k,:),':k');
-            plot(ndperiod,mean(oC(i).gI(k,:)),'^k');
-            if i == 1, title(['gInh, ',neuron_alias]); end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+3); hold on;  
-            errorbar(1:ndperiod,pC(i).gE(k,:), pC(i).gEstd(k,:),'-r');
-            plot(ndperiod+0.6,mean(pC(i).gE(k,:)),'sr');
-            errorbar((1:ndperiod)+0.3,oC(i).gE(k,:), oC(i).gEstd(k,:),':k');
-            plot(ndperiod+0.3,mean(oC(i).gE(k,:)),'^k');
-            if i == 1
-                title(['gE, F1/F0: ',num2str(tC(i).gEsc(k,iprefTheta),'%1.2f')]);
-            else
-                title(num2str(tC(i).gEsc(k,iprefTheta),'%1.2f'));
-            end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+4); hold on;
-            if i==1,title(['FR, ID.', num2str(k)]);end
-            plot(1:ndperiod,pC(i).spikes(k,:)*ndperiod/rt,'-k');
-            plot(1:ndperiod,oC(i).spikes(k,:)*ndperiod/rt,':k');
-            plot(ndperiod+0.6,mean(pC(i).spikes(k,:))*ndperiod/rt,'sk');
-            plot(ndperiod+0.3,mean(oC(i).spikes(k,:))*ndperiod/rt,'^k');
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            if i==contrastLevel, xlabel('phase');end
-        end
-        if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-operiod-',theme,'.',format]);
-            else
-                print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-operiod-',theme,'.',format],printDriver,dpi);
+            if ~isempty(format)
+                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                if strcmp(format,'fig')
+                    saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-operiod-',theme,'.',format]);
+                else
+                    print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-operiod-',theme,'.',format],printDriver,dpi);
+                end
             end
         end
 
@@ -1197,158 +1211,166 @@ for nn = 1:length(neuronlist)
                 print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-iperiod-',theme,'.',format],printDriver,dpi);
             end
         end
-        hTimeline = figure;
-        for i=1:contrastLevel
-            
-            iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
-            subplot(contrastLevel,4,(i-1)*4+1);hold on;
-            
-            errorbar(1:ndperiod,pC(i).cLGN(k,:),pC(i).cLGNstd(k,:),'-g');
-            plot(ndperiod+0.6,mean(pC(i).cLGN(k,:)),'sg');
-            errorbar((1:ndperiod)+0.3,oC(i).cLGN(k,:),oC(i).cLGNstd(k,:),':k');
-            plot(ndperiod+0.3,mean(oC(i).cLGN(k,:)),'^k');
-            if i == 1
-                title('cLGN'); 
+        if current
+            if operiod
+                hTimeline = figure;
+                for i=1:contrastLevel
+                    
+                    iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
+                    subplot(contrastLevel,4,(i-1)*4+1);hold on;
+                    
+                    errorbar(1:ndperiod,pC(i).cLGN(k,:),pC(i).cLGNstd(k,:),'-g');
+                    plot(ndperiod+0.6,mean(pC(i).cLGN(k,:)),'sg');
+                    errorbar((1:ndperiod)+0.3,oC(i).cLGN(k,:),oC(i).cLGNstd(k,:),':k');
+                    plot(ndperiod+0.3,mean(oC(i).cLGN(k,:)),'^k');
+                    if i == 1
+                        title('cLGN'); 
+                    end
+                    ylabel(conLabel{i});
+                    ylim([0,inf]);
+                    xlim([0,ndperiod+2]);
+                    
+                    subplot(contrastLevel,4,(i-1)*4+2);hold on;
+                    
+                    errorbar(1:ndperiod,pC(i).cIstd(k,:), pC(i).cIstd(k,:),'-b');
+                    plot(ndperiod+0.6,mean(pC(i).cIstd(k,:)),'sb');
+                    errorbar(1:ndperiod,oC(i).cI(k,:), oC(i).cIstd(k,:),':k');
+                    plot(ndperiod,mean(oC(i).cI(k,:)),'^k');
+                    if i == 1, title(['cInh, ',neuron_alias]); end
+                    ylim([0,inf]);
+                    xlim([0,ndperiod+2]);
+                    
+                    subplot(contrastLevel,4,(i-1)*4+3); hold on;  
+                    errorbar(1:ndperiod,pC(i).cE(k,:), pC(i).cEstd(k,:),'-r');
+                    plot(ndperiod+0.6,mean(pC(i).cE(k,:)),'sr');
+                    errorbar((1:ndperiod)+0.3,oC(i).cE(k,:), oC(i).cEstd(k,:),':k');
+                    plot(ndperiod+0.3,mean(oC(i).cE(k,:)),'^k');
+                    if i == 1
+                        title('cExc');
+                    end
+                    ylim([0,inf]);
+                    xlim([0,ndperiod+2]);
+                    
+                    subplot(contrastLevel,4,(i-1)*4+4); hold on;
+                    if i==1,title(['FR, ID.', num2str(k)]);end
+                    plot(1:ndperiod,pC(i).spikes(k,:)*ndperiod/rt,'-k');
+                    plot(1:ndperiod,oC(i).spikes(k,:)*ndperiod/rt,':k');
+                    plot(ndperiod+0.6,mean(pC(i).spikes(k,:))*ndperiod/rt,'sk');
+                    plot(ndperiod+0.3,mean(oC(i).spikes(k,:))*ndperiod/rt,'^k');
+                    ylim([0,inf]);
+                    xlim([0,ndperiod+2]);
+                    if i==contrastLevel, xlabel('phase');end
+                end
+                if ~isempty(format)
+                    set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                    if strcmp(format,'fig')
+                        saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-coperiod-',theme,'.',format]);
+                    else
+                        print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-coperiod-',theme,'.',format],printDriver,dpi);
+                    end
+                end
             end
-            ylabel(conLabel{i});
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+2);hold on;
-            
-            errorbar(1:ndperiod,pC(i).cIstd(k,:), pC(i).cIstd(k,:),'-b');
-            plot(ndperiod+0.6,mean(pC(i).cIstd(k,:)),'sb');
-            errorbar(1:ndperiod,oC(i).cI(k,:), oC(i).cIstd(k,:),':k');
-            plot(ndperiod,mean(oC(i).cI(k,:)),'^k');
-            if i == 1, title(['cInh, ',neuron_alias]); end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+3); hold on;  
-            errorbar(1:ndperiod,pC(i).cE(k,:), pC(i).cEstd(k,:),'-r');
-            plot(ndperiod+0.6,mean(pC(i).cE(k,:)),'sr');
-            errorbar((1:ndperiod)+0.3,oC(i).cE(k,:), oC(i).cEstd(k,:),':k');
-            plot(ndperiod+0.3,mean(oC(i).cE(k,:)),'^k');
-            if i == 1
-                title('cExc');
+            hTimeline = figure;
+            for i=1:contrastLevel
+                
+                iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
+                subplot(contrastLevel,4,(i-1)*4+1);hold on;
+                
+                errorbar(1:ndperiod,ipC(i).cLGN(k,:),ipC(i).cLGNstd(k,:),'-g');
+                plot(ndperiod+0.6,mean(ipC(i).cLGN(k,:)),'sg');
+                errorbar((1:ndperiod)+0.3,ioC(i).cLGN(k,:),ioC(i).cLGNstd(k,:),':k');
+                plot(ndperiod+0.3,mean(ioC(i).cLGN(k,:)),'^k');
+                if i == 1
+                    title('cLGN'); 
+                end
+                ylabel(conLabel{i});
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+2);hold on;
+                
+                errorbar(1:ndperiod,ipC(i).cIstd(k,:), ipC(i).cIstd(k,:),'-b');
+                plot(ndperiod+0.6,mean(ipC(i).cIstd(k,:)),'sb');
+                errorbar(1:ndperiod,ioC(i).cI(k,:), ioC(i).cIstd(k,:),':k');
+                plot(ndperiod,mean(ioC(i).cI(k,:)),'^k');
+                if i == 1, title(['cInh, ',neuron_alias]); end
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+3); hold on;  
+                errorbar(1:ndperiod,ipC(i).cE(k,:), ipC(i).cEstd(k,:),'-r');
+                plot(ndperiod+0.6,mean(ipC(i).cE(k,:)),'sr');
+                errorbar((1:ndperiod)+0.3,ioC(i).cE(k,:), ioC(i).cEstd(k,:),':k');
+                plot(ndperiod+0.3,mean(ioC(i).cE(k,:)),'^k');
+                if i == 1
+                    title('cExc');
+                end
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                
+                subplot(contrastLevel,4,(i-1)*4+4); hold on;
+                if i==1,title(['FR, ID.', num2str(k)]);end
+                plot(1:ndperiod,ipC(i).spikes(k,:)*ndperiod/rt,'-k');
+                plot(1:ndperiod,ioC(i).spikes(k,:)*ndperiod/rt,':k');
+                plot(ndperiod+0.6,mean(ipC(i).spikes(k,:))*ndperiod/rt,'sk');
+                plot(ndperiod+0.3,mean(ioC(i).spikes(k,:))*ndperiod/rt,'^k');
+                ylim([0,inf]);
+                xlim([0,ndperiod+2]);
+                if i==contrastLevel, xlabel('phase');end
             end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+4); hold on;
-            if i==1,title(['FR, ID.', num2str(k)]);end
-            plot(1:ndperiod,pC(i).spikes(k,:)*ndperiod/rt,'-k');
-            plot(1:ndperiod,oC(i).spikes(k,:)*ndperiod/rt,':k');
-            plot(ndperiod+0.6,mean(pC(i).spikes(k,:))*ndperiod/rt,'sk');
-            plot(ndperiod+0.3,mean(oC(i).spikes(k,:))*ndperiod/rt,'^k');
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            if i==contrastLevel, xlabel('phase');end
-        end
-        if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-coperiod-',theme,'.',format]);
-            else
-                print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-coperiod-',theme,'.',format],printDriver,dpi);
-            end
-        end
-        hTimeline = figure;
-        for i=1:contrastLevel
-            
-            iprefTheta = round((nP(i).prA(k)*180/pi)/dtheta+1);
-            subplot(contrastLevel,4,(i-1)*4+1);hold on;
-            
-            errorbar(1:ndperiod,ipC(i).cLGN(k,:),ipC(i).cLGNstd(k,:),'-g');
-            plot(ndperiod+0.6,mean(ipC(i).cLGN(k,:)),'sg');
-            errorbar((1:ndperiod)+0.3,ioC(i).cLGN(k,:),ioC(i).cLGNstd(k,:),':k');
-            plot(ndperiod+0.3,mean(ioC(i).cLGN(k,:)),'^k');
-            if i == 1
-                title('cLGN'); 
-            end
-            ylabel(conLabel{i});
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+2);hold on;
-            
-            errorbar(1:ndperiod,ipC(i).cIstd(k,:), ipC(i).cIstd(k,:),'-b');
-            plot(ndperiod+0.6,mean(ipC(i).cIstd(k,:)),'sb');
-            errorbar(1:ndperiod,ioC(i).cI(k,:), ioC(i).cIstd(k,:),':k');
-            plot(ndperiod,mean(ioC(i).cI(k,:)),'^k');
-            if i == 1, title(['cInh, ',neuron_alias]); end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+3); hold on;  
-            errorbar(1:ndperiod,ipC(i).cE(k,:), ipC(i).cEstd(k,:),'-r');
-            plot(ndperiod+0.6,mean(ipC(i).cE(k,:)),'sr');
-            errorbar((1:ndperiod)+0.3,ioC(i).cE(k,:), ioC(i).cEstd(k,:),':k');
-            plot(ndperiod+0.3,mean(ioC(i).cE(k,:)),'^k');
-            if i == 1
-                title('cExc');
-            end
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            
-            subplot(contrastLevel,4,(i-1)*4+4); hold on;
-            if i==1,title(['FR, ID.', num2str(k)]);end
-            plot(1:ndperiod,ipC(i).spikes(k,:)*ndperiod/rt,'-k');
-            plot(1:ndperiod,ioC(i).spikes(k,:)*ndperiod/rt,':k');
-            plot(ndperiod+0.6,mean(ipC(i).spikes(k,:))*ndperiod/rt,'sk');
-            plot(ndperiod+0.3,mean(ioC(i).spikes(k,:))*ndperiod/rt,'^k');
-            ylim([0,inf]);
-            xlim([0,ndperiod+2]);
-            if i==contrastLevel, xlabel('phase');end
-        end
-        if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-ciperiod-',theme,'.',format]);
-            else
-                print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-ciperiod-',theme,'.',format],printDriver,dpi);
+            if ~isempty(format)
+                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                if strcmp(format,'fig')
+                    saveas(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-ciperiod-',theme,'.',format]);
+                else
+                    print(hTimeline,[outputfdr,'/',num2str(k),'-',neuron_alias,'-ciperiod-',theme,'.',format],printDriver,dpi);
+                end
             end
         end
     end
-    oiLabel = {'o','i'};
-    for oi = 1:2
-    hdThetaSizeFR = figure; 
-    ndtheta = ntheta/2;
-    dThetaColorScheme = ones(ndtheta,3);
-    dThetaColorScheme(:,1) = (linspace(0,11/15,ndtheta))';
-    dThetaColorScheme(:,2) = ones(ndtheta,1);
-    dThetaColorScheme(:,3) = ones(ndtheta,1);
-    for i=1:contrastLevel
-        if oi == 1
-            iiitheta = nP(i).indpo(k);
-        else
-            iiitheta = nP(i).indpi(k);
-        end
-        %subplot(contrastLevel,2,2*(i-1)+1)
-        subplot(contrastLevel,1,i)
-        hold on
-        dThetaVec = abs(nP(i).prA(pre(k).ID_exc)-nP(i).priA(k));
+    if dThetaSize
+        for oi = 1:2
+            if ~operiod && oi == 1
+                continue;
+            end
+            hdThetaSizeFR = figure; 
+            ndtheta = ntheta/2;
+            dThetaColorScheme = ones(ndtheta,3);
+            dThetaColorScheme(:,1) = (linspace(0,11/15,ndtheta))';
+            dThetaColorScheme(:,2) = ones(ndtheta,1);
+            dThetaColorScheme(:,3) = ones(ndtheta,1);
+            for i=1:contrastLevel
+                if oi == 1
+                    iiitheta = nP(i).indpo(k);
+                else
+                    iiitheta = nP(i).indpi(k);
+                end
+                %subplot(contrastLevel,2,2*(i-1)+1)
+                subplot(contrastLevel,1,i)
+                hold on
+                dThetaVec = abs(nP(i).prA(pre(k).ID_exc)-nP(i).priA(k));
 
-        tempPick = dThetaVec > pi/2;
-        dThetaVec(tempPick) = pi - dThetaVec(tempPick);
-        idThetaVec = (round(dThetaVec*180/pi/dtheta)+1)';
-        FRvec = tC(i).frate(pre(k).ID_exc,iiitheta);
-        SizeVec = pre(k).s_exc;
-        for j=1:ndtheta
-            target = idThetaVec==j-1;
-            plot(SizeVec(target),FRvec(target),'o','Color',hsv2rgb(dThetaColorScheme(j,:)));
-        end
-        xlabel('PSPSize'); ylabel('FR');title('dTheta 0->90, red->blue');
-    end
-
-    if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hdThetaSizeFR,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-dThetaSizeFR',oiLabel{oi},'-',num2str(iitheta),'-',theme,'.',format]);
-            else
-                print(hdThetaSizeFR,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-dThetaSizeFR',oiLabel{oi},'-',num2str(iitheta),'-',theme,'.',format],printDriver,dpi);
+                tempPick = dThetaVec > pi/2;
+                dThetaVec(tempPick) = pi - dThetaVec(tempPick);
+                idThetaVec = (round(dThetaVec*180/pi/dtheta)+1)';
+                FRvec = tC(i).frate(pre(k).ID_exc,iiitheta);
+                SizeVec = pre(k).s_exc;
+                for j=1:ndtheta
+                    target = idThetaVec==j-1;
+                    plot(SizeVec(target),FRvec(target),'o','Color',hsv2rgb(dThetaColorScheme(j,:)));
+                end
+                xlabel('PSPSize'); ylabel('FR');title('dTheta 0->90, red->blue');
             end
-    end
+
+            if ~isempty(format)
+                    set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                    if strcmp(format,'fig')
+                        saveas(hdThetaSizeFR,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-dThetaSizeFR',oiLabel{oi},'-',num2str(iitheta),'-',theme,'.',format]);
+                    else
+                        print(hdThetaSizeFR,[outputfdr,'/',num2str(k),'-',neuron_alias,'-C',num2str(level),'-dThetaSizeFR',oiLabel{oi},'-',num2str(iitheta),'-',theme,'.',format],printDriver,dpi);
+                    end
+            end
+        end
     end
 end
 disp('individual examples done');
@@ -2614,6 +2636,9 @@ end
     ImeanTCgI = ImeanTC;
     io = {'i','o'};
     for ij = 1:2
+        if ~operiod && io == 2
+            continue
+        end
         hTCall = figure;
         for i = 1:contrastLevel
             epick = nP(contrastLevel).ei>0.5 & nP(i).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
@@ -2899,115 +2924,115 @@ end
                 print(hTCall,[outputfdr,'/','TCall',io{ij},'-',theme,'.',format],printDriver,dpi);
             end
         end
-    %% TC of types
-    hTypeTC = figure;
+        %% TC of types
+        hTypeTC = figure;
 
-    ntypes = p.ntypeE+p.ntypeI;
-    meanTC = zeros(ntheta+1,contrastLevel,ntypes);
-    meanTCgLGN = meanTC;
-    meanTCgE = meanTC;
-    for i = 1:contrastLevel
-        epick = nP(contrastLevel).ei>0.5 & nP(i).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
-        ipick = nP(contrastLevel).ei<0.5 & nP(i).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
-        for j = 1:p.ntypeE
-            pick = epick & [p.typeE == j; false(p.nv1i,1)];
-            subplot(contrastLevel+1,ntypes,(i-1)*ntypes+j)
-            hold on 
-            meanTC(:,i,j) = mean(rasterTC(:,pick,i),2);
-            meanTCgLGN(:,i,j) = mean(TCgLGN(:,pick,i),2);
-            meanTCgLGN_F1(:,i,j) = mean(TCgLGN_F1(:,pick,i),2);
-            meanTCgE(:,i,j) = mean(TCgE(:,pick,i),2);
-            %[ax, h1, h2] = plotyy(meanTC(:,i,j),std(rasterTC(:,pick,i),1,2),...
-            %                [meanTCgLGN(:,i,j),meanTCgE(:,i,j)],[std(TCgLGN(:,pick,i),1,2),std(TCgE(:,pick,i),1,2)],...
-            %                'errorbar');
-            ax1 = gca(gcf);
-            axesPos = get(ax1,'Position');
-            ax2 = axes('Position',axesPos,'YAxisLocation','right','Color','None','Box','off','XTick',[]);
-            axes(ax1);
-            errorbar(relTheta, meanTC(:,i,j),std(rasterTC(:,pick,i),1,2),'Color','k');
-
-            axes(ax2);
-            hold(ax2,'on');
-            errorbar(relTheta, meanTCgLGN(:,i,j),std(TCgLGN(:,pick,i),1,2),'Color','g');
-            errorbar(relTheta, meanTCgLGN_F1(:,i,j),std(TCgLGN_F1(:,pick,i),1,2),'Color','m');
-            errorbar(relTheta, meanTCgE(:,i,j),std(TCgE(:,pick,i),1,2),'Color','r');
-
-            set(ax1,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'Box','off');
-            set(ax2,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'YColor','b');
-
-            evoked = [num2str(100*sum(pick)/sum(p.typeE == j),'%3.1f'),'%'];
-            if i==contrastLevel && j==1,ylabel(ax1,'Hz');ylabel(ax2,'Conductance');end
-            if i==1 
-                title([evoked,' ' ,p.Etypes{j}]);
-            else
-                title(evoked);
-            end
-
-        end
-        for j = 1:p.ntypeI
-            pick = ipick & [false(p.nv1e,1); p.typeI == j];
-            subplot(contrastLevel+1,ntypes,(i-1)*ntypes+p.ntypeE+j)
-            hold on
-            meanTC(:,i,p.ntypeE+j) = mean(rasterTC(:,pick,i),2);
-            meanTCgLGN(:,i,p.ntypeE+j) = mean(TCgLGN(:,pick,i),2);
-            meanTCgLGN_F1(:,i,p.ntypeE+j) = mean(TCgLGN_F1(:,pick,i),2);
-            meanTCgE(:,i,p.ntypeE+j) = mean(TCgE(:,pick,i),2);
-
-            ax1 = gca(gcf);
-            axesPos = get(ax1,'Position');
-            ax2 = axes('Position',axesPos,'YAxisLocation','right','Color','None','Box','off','XTick',[]);
-            axes(ax1);
-            errorbar(relTheta, meanTC(:,i,p.ntypeE+j),std(rasterTC(:,pick,i),1,2),'Color','k');
-
-            axes(ax2);
-            hold(ax2,'on');
-            errorbar(relTheta, meanTCgLGN(:,i,p.ntypeE+j),std(TCgLGN(:,pick,i),1,2),'Color','g');
-            errorbar(relTheta, meanTCgLGN_F1(:,i,p.ntypeE+j),std(TCgLGN_F1(:,pick,i),1,2),'Color','m');
-            errorbar(relTheta, meanTCgE(:,i,p.ntypeE+j),std(TCgE(:,pick,i),1,2),'Color','r');
-
-            set(ax1,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'Box','off');
-            set(ax2,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'YColor','b');
-
-            evoked = [num2str(100*sum(pick)/sum(p.typeI == j),'%3.1f'),'%'];
-            if i==1 
-                title([evoked,' ' ,p.Itypes{j}]);
-            else
-                title(evoked);
-            end
-        end
-    end
-    for j=1:ntypes
-        subplot(contrastLevel+1,ntypes,contrastLevel*ntypes+j)
-        hold on
-        maxMeanTC = ones(ntheta+1,1) * max(meanTC(:,:,j));
-        maxMeanTCgLGN = ones(ntheta+1,1) * max(meanTCgLGN(:,:,j));
-        maxMeanTCgLGN_F1 = ones(ntheta+1,1) * max(meanTCgLGN_F1(:,:,j));
-        maxMeanTCgE = ones(ntheta+1,1) * max(meanTCgE(:,:,j));
+        ntypes = p.ntypeE+p.ntypeI;
+        meanTC = zeros(ntheta+1,contrastLevel,ntypes);
+        meanTCgLGN = meanTC;
+        meanTCgE = meanTC;
         for i = 1:contrastLevel
-            plot(relTheta,meanTC(:,i,j)./maxMeanTC(:,i),LineScheme{i},'Color','k');
-            plot(relTheta,meanTCgLGN(:,i,j)./maxMeanTCgLGN(:,i),LineScheme{i},'Color','g');
-            plot(relTheta,meanTCgLGN_F1(:,i,j)./maxMeanTCgLGN_F1(:,i),LineScheme{i},'Color','m');
-            plot(relTheta,meanTCgE(:,i,j)./maxMeanTCgE(:,i),LineScheme{i},'Color','r');
-        end
-        ylabel('normalized to max');
-        xlabel('relative angle(^{o})');
-        ylim([0,inf]);
-        if j==1
-            title('All contrasts');
-        end    
-    end
+            epick = nP(contrastLevel).ei>0.5 & nP(i).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
+            ipick = nP(contrastLevel).ei<0.5 & nP(i).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
+            for j = 1:p.ntypeE
+                pick = epick & [p.typeE == j; false(p.nv1i,1)];
+                subplot(contrastLevel+1,ntypes,(i-1)*ntypes+j)
+                hold on 
+                meanTC(:,i,j) = mean(rasterTC(:,pick,i),2);
+                meanTCgLGN(:,i,j) = mean(TCgLGN(:,pick,i),2);
+                meanTCgLGN_F1(:,i,j) = mean(TCgLGN_F1(:,pick,i),2);
+                meanTCgE(:,i,j) = mean(TCgE(:,pick,i),2);
+                %[ax, h1, h2] = plotyy(meanTC(:,i,j),std(rasterTC(:,pick,i),1,2),...
+                %                [meanTCgLGN(:,i,j),meanTCgE(:,i,j)],[std(TCgLGN(:,pick,i),1,2),std(TCgE(:,pick,i),1,2)],...
+                %                'errorbar');
+                ax1 = gca(gcf);
+                axesPos = get(ax1,'Position');
+                ax2 = axes('Position',axesPos,'YAxisLocation','right','Color','None','Box','off','XTick',[]);
+                axes(ax1);
+                errorbar(relTheta, meanTC(:,i,j),std(rasterTC(:,pick,i),1,2),'Color','k');
 
-    if ~isempty(format)
-        set(gcf,'Renderer','Painters')
-        %set(gcf,'Renderer','zbuffer')
-        %set(gcf,'Renderer','OpenGL')
-        set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition.*2.5);
-        if strcmp(format,'fig')
-            saveas(hTypeTC,[outputfdr,'/','TypeTC',io{ij},'-',theme,'.',format]);
-        else
-            print(hTypeTC,[outputfdr,'/','TypeTC',io{ij},'-',theme,'.',format],printDriver,dpi);
+                axes(ax2);
+                hold(ax2,'on');
+                errorbar(relTheta, meanTCgLGN(:,i,j),std(TCgLGN(:,pick,i),1,2),'Color','g');
+                errorbar(relTheta, meanTCgLGN_F1(:,i,j),std(TCgLGN_F1(:,pick,i),1,2),'Color','m');
+                errorbar(relTheta, meanTCgE(:,i,j),std(TCgE(:,pick,i),1,2),'Color','r');
+
+                set(ax1,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'Box','off');
+                set(ax2,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'YColor','b');
+
+                evoked = [num2str(100*sum(pick)/sum(p.typeE == j),'%3.1f'),'%'];
+                if i==contrastLevel && j==1,ylabel(ax1,'Hz');ylabel(ax2,'Conductance');end
+                if i==1 
+                    title([evoked,' ' ,p.Etypes{j}]);
+                else
+                    title(evoked);
+                end
+
+            end
+            for j = 1:p.ntypeI
+                pick = ipick & [false(p.nv1e,1); p.typeI == j];
+                subplot(contrastLevel+1,ntypes,(i-1)*ntypes+p.ntypeE+j)
+                hold on
+                meanTC(:,i,p.ntypeE+j) = mean(rasterTC(:,pick,i),2);
+                meanTCgLGN(:,i,p.ntypeE+j) = mean(TCgLGN(:,pick,i),2);
+                meanTCgLGN_F1(:,i,p.ntypeE+j) = mean(TCgLGN_F1(:,pick,i),2);
+                meanTCgE(:,i,p.ntypeE+j) = mean(TCgE(:,pick,i),2);
+
+                ax1 = gca(gcf);
+                axesPos = get(ax1,'Position');
+                ax2 = axes('Position',axesPos,'YAxisLocation','right','Color','None','Box','off','XTick',[]);
+                axes(ax1);
+                errorbar(relTheta, meanTC(:,i,p.ntypeE+j),std(rasterTC(:,pick,i),1,2),'Color','k');
+
+                axes(ax2);
+                hold(ax2,'on');
+                errorbar(relTheta, meanTCgLGN(:,i,p.ntypeE+j),std(TCgLGN(:,pick,i),1,2),'Color','g');
+                errorbar(relTheta, meanTCgLGN_F1(:,i,p.ntypeE+j),std(TCgLGN_F1(:,pick,i),1,2),'Color','m');
+                errorbar(relTheta, meanTCgE(:,i,p.ntypeE+j),std(TCgE(:,pick,i),1,2),'Color','r');
+
+                set(ax1,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'Box','off');
+                set(ax2,'XLim',[relTheta(1),relTheta(end)],'YLim',[0,inf],'YColor','b');
+
+                evoked = [num2str(100*sum(pick)/sum(p.typeI == j),'%3.1f'),'%'];
+                if i==1 
+                    title([evoked,' ' ,p.Itypes{j}]);
+                else
+                    title(evoked);
+                end
+            end
         end
-    end
+        for j=1:ntypes
+            subplot(contrastLevel+1,ntypes,contrastLevel*ntypes+j)
+            hold on
+            maxMeanTC = ones(ntheta+1,1) * max(meanTC(:,:,j));
+            maxMeanTCgLGN = ones(ntheta+1,1) * max(meanTCgLGN(:,:,j));
+            maxMeanTCgLGN_F1 = ones(ntheta+1,1) * max(meanTCgLGN_F1(:,:,j));
+            maxMeanTCgE = ones(ntheta+1,1) * max(meanTCgE(:,:,j));
+            for i = 1:contrastLevel
+                plot(relTheta,meanTC(:,i,j)./maxMeanTC(:,i),LineScheme{i},'Color','k');
+                plot(relTheta,meanTCgLGN(:,i,j)./maxMeanTCgLGN(:,i),LineScheme{i},'Color','g');
+                plot(relTheta,meanTCgLGN_F1(:,i,j)./maxMeanTCgLGN_F1(:,i),LineScheme{i},'Color','m');
+                plot(relTheta,meanTCgE(:,i,j)./maxMeanTCgE(:,i),LineScheme{i},'Color','r');
+            end
+            ylabel('normalized to max');
+            xlabel('relative angle(^{o})');
+            ylim([0,inf]);
+            if j==1
+                title('All contrasts');
+            end    
+        end
+
+        if ~isempty(format)
+            set(gcf,'Renderer','Painters')
+            %set(gcf,'Renderer','zbuffer')
+            %set(gcf,'Renderer','OpenGL')
+            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition.*2.5);
+            if strcmp(format,'fig')
+                saveas(hTypeTC,[outputfdr,'/','TypeTC',io{ij},'-',theme,'.',format]);
+            else
+                print(hTypeTC,[outputfdr,'/','TypeTC',io{ij},'-',theme,'.',format],printDriver,dpi);
+            end
+        end
     end
 
     hFRThetaHeat = figure;
