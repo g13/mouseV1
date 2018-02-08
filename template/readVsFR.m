@@ -2,8 +2,10 @@ function [indpi,Veff,Veffstd,Veffsc,rate,allCycle] = readVsFR(DIR,ntheta,n,ndper
 
 filepath = [DIR, '/', 'cv.dat'];
 fid = fopen(filepath);
-fread(fid, [n, 14],'double');
-indpi = nearest(fread(fid, [n, 1],'double'));
+fread(fid, [n, 11],'double');
+priA = nearest(fread(fid, [n, 1],'double'));
+dtheta = 180/ntheta;
+priA = round(priA/pi*180/dtheta)+1;
 fclose(fid);
 
 filepath = [DIR, '/', 'intra.dat'];

@@ -31,12 +31,14 @@ function VsFR(lgnfile,theme,ntheta,contrastLevel,ndperiod,loadData,format,dir,th
 			pool = parpool(threads);
 		end
 	end
-    
+    set(0,'defaulAxesFontSize',6);
+    set(0,'defaultTextFontSize',8);    
     load(lgnfile,'p');
     epick = 1:p.nv1e;
     ipick = (p.nv1e+1):p.nv1;
     ntotal = p.nv1;
     dir = [dir,'/'];
+    explore = true;
     VsEdgeE = 0:0.1:1.2;
     VsStdEdgeE = 0:0.05:0.5;
     VsScEdgeE = 0:0.1:2;
@@ -98,7 +100,7 @@ function VsFR(lgnfile,theme,ntheta,contrastLevel,ndperiod,loadData,format,dir,th
                 aC(i).gPstd(j,:,:)   = aC(i).gPstd(j,:,half);
                 aC(i).Vstd(j,:,:)    = aC(i).Vstd(j,:,half);
                 for k=1:ntheta
-                   [~,maxIperiod] = max(aC(i).Vs(j,:,k));
+                    [~,maxIperiod] = max(aC(i).Vs(j,:,k));
                     if maxIperiod <= maxPeriodi
                         iperiod = [(maxIperiod+(ndperiod-1)*3/4):ndperiod,1:(maxIperiod+(ndperiod-1)*3/4-1)];
                     else
@@ -132,50 +134,100 @@ function VsFR(lgnfile,theme,ntheta,contrastLevel,ndperiod,loadData,format,dir,th
     else 
         load([theme,'-VsFR.mat'],'priA','Vs','VsSTD','VsSC','rate','aC');
     end
-    % Vs to Firing Rate transfer function averaged over period
-    for k=1:ntheta
-        hAvPeriodHeatVsVsSTD = figure;
-        hAvPeriodHeatVsVsSC = figure;
-        hVsDist = figure;
-        k
-        for i=1:contrastLevel
-            i
-            figure(hAvPeriodHeatVsVsSTD);
-            ax1 = subplot(4,4,(i-1)*4+1);
-            ax2 = subplot(4,4,(i-1)*4+2);
-                [binRateE,binRateStdE,VsID] = binVsFr(Vs(epick,k,i),VsSTD(epick,k,i),rate(epick,k,i),VsEdgeE,VsStdEdgeE);
-                heatVsStdFr(VsEdgeE,VsStdEdgeE,binRateE,binRateStdE,ax1,ax2,'VsSTD');
-            figure(hAvPeriodHeatVsVsSC);
-            ax3 = subplot(4,4,(i-1)*4+1);
-            ax4 = subplot(4,4,(i-1)*4+2);
-                [binRateE,binRateStdE,~] = binVsFr(Vs(epick,k,i),VsSC(epick,k,i),rate(epick,k,i),VsEdgeE,VsScEdgeE,VsID);
-                heatVsStdFr(VsEdgeE,VsScEdgeE,binRateE,binRateStdE,ax3,ax4,'VsSC');
-
-            figure(hAvPeriodHeatVsVsSTD);
-            ax1 = subplot(4,4,(i-1)*4+3);
-            ax2 = subplot(4,4,(i-1)*4+4);
-                [binRateI,binRateStdI,VsID] = binVsFr(Vs(ipick,k,i),VsSTD(ipick,k,i),rate(ipick,k,i),VsEdgeI,VsStdEdgeI);
-                heatVsStdFr(VsEdgeI,VsStdEdgeI,binRateI,binRateStdI,ax1,ax2,'VsSTD');
-            figure(hAvPeriodHeatVsVsSC);
-            ax3 = subplot(4,4,(i-1)*4+3);
-            ax4 = subplot(4,4,(i-1)*4+4);
-                [binRateI,binRateStdI,~] = binVsFr(Vs(ipick,k,i),VsSC(ipick,k,i),rate(ipick,k,i),VsEdgeI,VsScEdgeI,VsID);
-                heatVsStdFr(VsEdgeI,VsScEdgeI,binRateI,binRateStdI,ax3,ax4,'VsSC');
-        end
-        if ~isempty(format)
-            fname = [theme,'/VsFRVsSCheat-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
-            if strcmp(format,'fig')
-                saveas(hAvPeriodHeatVsVsSC,fname);
-            else
-                print(hAvPeriodHeatVsVsSC,fname,printDriver,dpi);
+    if explore
+        for k=1:ntheta
+            hVs = figure;
+            hFr = figure;
+            for i=1:contrastLevel
+                figure(hVs);
+                subplot(4,6,(i-1)*6+1)
+                histogram(Vs(epick,k,i));
+                if i==1, title('Exc Vs'), end;
+                ylabel(['C',num2str(i)]);
+                subplot(4,6,(i-1)*6+2)
+                histogram(VsSTD(epick,k,i));
+                if i==1, title('VsSTD'), end;
+                subplot(4,6,(i-1)*6+3)
+                histogram(VsSC(epick,k,i));
+                if i==1, title('VsSC'), end;
+                subplot(4,6,(i-1)*6+4)
+                histogram(Vs(ipick,k,i));
+                if i==1, title('Inh Vs'), end;
+                subplot(4,6,(i-1)*6+5)
+                histogram(VsSTD(ipick,k,i));
+                if i==1, title('VsSTD'), end;
+                subplot(4,6,(i-1)*6+6)
+                histogram(VsSC(ipick,k,i));
+                if i==1, title('VsSC'), end;
+                figure(hFr);
+                subplot(2,4,i)
+                histogram(rate(epick,k,i));
+                if i==1, ylabel('Exc'),end;
+                title(['C',num2str(i)]);
+                subplot(2,4,4+i)
+                histogram(rate(ipick,k,i));
+                if i==1, ylabel('Inh'),end;
+            end
+            if ~isempty(format)
+                fname = [theme,'/VsExplore-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
+                if strcmp(format,'fig')
+                    saveas(hVs,fname);
+                else
+                    print(hVs,fname,printDriver,dpi);
+                end
+            end
+            if ~isempty(format)
+                fname = [theme,'/FrExplore-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
+                if strcmp(format,'fig')
+                    saveas(hFr,fname);
+                else
+                    print(hFr,fname,printDriver,dpi);
+                end
             end
         end
-        if ~isempty(format)
-            fname = [theme,'/VsFRVsSTDheat-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
-            if strcmp(format,'fig')
-                saveas(hAvPeriodHeatVsVsSTD,fname);
-            else
-                print(hAvPeriodHeatVsVsSTD,fname,printDriver,dpi);
+    else
+    % Vs to Firing Rate transfer function averaged over period
+        for k=1:ntheta
+            hAvPeriodHeatVsVsSTD = figure;
+            hAvPeriodHeatVsVsSC = figure;
+            for i=1:contrastLevel
+                figure(hAvPeriodHeatVsVsSTD);
+                ax1 = subplot(4,4,(i-1)*4+1);
+                ax2 = subplot(4,4,(i-1)*4+2);
+                    [binRateE,binRateStdE,VsID] = binVsFr(Vs(epick,k,i),VsSTD(epick,k,i),rate(epick,k,i),VsEdgeE,VsStdEdgeE);
+                    heatVsStdFr(VsEdgeE,VsStdEdgeE,binRateE,binRateStdE,ax1,ax2,'VsSTD');
+                figure(hAvPeriodHeatVsVsSC);
+                ax3 = subplot(4,4,(i-1)*4+1);
+                ax4 = subplot(4,4,(i-1)*4+2);
+                    [binRateE,binRateStdE,~] = binVsFr(Vs(epick,k,i),VsSC(epick,k,i),rate(epick,k,i),VsEdgeE,VsScEdgeE,VsID);
+                    heatVsStdFr(VsEdgeE,VsScEdgeE,binRateE,binRateStdE,ax3,ax4,'VsSC');
+
+                figure(hAvPeriodHeatVsVsSTD);
+                ax1 = subplot(4,4,(i-1)*4+3);
+                ax2 = subplot(4,4,(i-1)*4+4);
+                    [binRateI,binRateStdI,VsID] = binVsFr(Vs(ipick,k,i),VsSTD(ipick,k,i),rate(ipick,k,i),VsEdgeI,VsStdEdgeI);
+                    heatVsStdFr(VsEdgeI,VsStdEdgeI,binRateI,binRateStdI,ax1,ax2,'VsSTD');
+                figure(hAvPeriodHeatVsVsSC);
+                ax3 = subplot(4,4,(i-1)*4+3);
+                ax4 = subplot(4,4,(i-1)*4+4);
+                    [binRateI,binRateStdI,~] = binVsFr(Vs(ipick,k,i),VsSC(ipick,k,i),rate(ipick,k,i),VsEdgeI,VsScEdgeI,VsID);
+                    heatVsStdFr(VsEdgeI,VsScEdgeI,binRateI,binRateStdI,ax3,ax4,'VsSC');
+            end
+            if ~isempty(format)
+                fname = [theme,'/VsFRVsSCheat-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
+                if strcmp(format,'fig')
+                    saveas(hAvPeriodHeatVsVsSC,fname);
+                else
+                    print(hAvPeriodHeatVsVsSC,fname,printDriver,dpi);
+                end
+            end
+            if ~isempty(format)
+                fname = [theme,'/VsFRVsSTDheat-',theme,'_',num2str(k-maxThetai,'%02d'),'.',format];
+                if strcmp(format,'fig')
+                    saveas(hAvPeriodHeatVsVsSTD,fname);
+                else
+                    print(hAvPeriodHeatVsVsSTD,fname,printDriver,dpi);
+                end
             end
         end
     end
