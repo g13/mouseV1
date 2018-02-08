@@ -208,6 +208,7 @@ function heatFrISI(isiMat,frEdges,binID,edges,scale,ax)
     imagesc([1,nbins],[nFrBins,1],dataPair');
     %daspect([1,1,1]);
     colormap('hot');
+    colorbar;
     %axis tight
     %box on
 

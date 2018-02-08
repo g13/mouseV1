@@ -3,7 +3,7 @@
        ----------------------------------------------
 
         dt		tfinal	tstep1	tstep2	tstep3	tstep4 iperiod	iseed
-        0.0001    6      1.0	1.0		1.0		1.0		25		211359
+        0.0001    11      1.0	1.0		1.0		1.0		25		211359
 
 	Vthres	Vreset	Vexcit	Vinhib	Gleak	DeltaT  vTheta  GleakI
 	 1.0	 0	    2.8     -0.4	50.0    0.4375  4.375   70.0
@@ -15,13 +15,13 @@
 	6.515	13.03	100.	100.0	100.0	100.0	 00.0	 00.0
 
 	eps		g0	   gfail	rI0		tau0	tau1	  recordAllspikes
-	04		5.0    1.0	    1.2		0.003	 0.005    0.0
+	04		4.5    1.0	    1.0		0.003	 0.005    0.0
 
 	omega	k		theta	phi		tstart	twindow	  taulgn  xScale	yScale
 	 4.0	2.2918	4		0.0 	0.25	 01.0	  0.014	  0.05923	0.875
 
 	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	1.00    0.090	1.00    0.090	0.021	0.040	0.021	0.040	0.5		31
+	1.00    0.090	1.00    0.090	0.022	0.050	0.022	0.050	0.5		31
 
 	 rk		frtlgn0	 jlgn	rstart	lgnlinear  nsample transient 
 	 2		109.5	 256	  1.0		0		10     0.25
@@ -47,34 +47,3 @@ rk4: tau_e    tau_i    tnrise  tndamp  tau0   tau1   tau2    tau_ar  tau_ad
      SiRatio   SeRatio
      1.0        1.0
 ---------------------------------------------------------------------------------------
-#  for simple-complex over strength
-	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	 0.0	53.25	8.60	53.25	60.56	82.34	60.56	82.34	0.0		1
-
-#  for simple-complex over # of connections See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile 0.0234	0.09	0.0234	0.09	0.16	0.16	0.16	0.16	0.5		22 
-#	vthres	Vreset	Vexcit		Vinhib		Gleak	
-	 1.0	 0.0	 2.8		-0.4		50.0
-
-#	Vthres	Vreset	Vexcit		Vinhib		Gleak	
-	 1.0	 0.0	 3.1818182	-0.4		50.0
-
-# standard theta specific and logNormal
-	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	0.0225	0.124	0.0225	0.124	0.225	0.225	0.225	0.225	0.5		22
-	0.0225	0.124	0.0225	0.124	0.075	0.135	0.075	0.135	0.5		22
-# none specific connection
-	0.075	0.124	0.075	0.124	0.075	0.135	0.075	0.135	1.0		1
-# theta specific without profile
-	0.0225	0.124	0.0225	0.124	0.075	0.135	0.075	0.135	1.0	    1	
-# cotest
-	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	0.0225	0.300	0.0225	0.300	0.08	0.20	0.08	0.20	0.5		31
-	0.0225	0.250	0.0225	0.250	0.095	0.250	0.095	0.250	0.5		31
-# mEE
-	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	0.0225	0.25	0.0225	0.25	0.25	0.15	0.25	0.15	0.5		31
-    
-    0.9549  60
-    1.9099  30
-    1.6370  35
-    2.8648  20

@@ -2636,7 +2636,7 @@ end
     ImeanTCgI = ImeanTC;
     io = {'i','o'};
     for ij = 1:2
-        if ~operiod && io == 2
+        if ~operiod && ij == 2
             continue
         end
         hTCall = figure;

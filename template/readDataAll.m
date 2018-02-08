@@ -138,7 +138,6 @@ for i=1:ntheta
 end
 fclose(fid);
 
-allCycle.Vstd = sqrt(cvm2-cvm.*cvm);
 allCycle.gtotstd = sqrt(cal2-cal.*cal);
 allCycle.Itotstd = sqrt(cbe2-cbe.*cbe);
 allCycle.Veffstd = sqrt(cvs2-cvs.*cvs);
