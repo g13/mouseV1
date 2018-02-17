@@ -4,7 +4,7 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
         if nargin < 5
             dir = '.';
             if nargin < 4
-                format = 'fig';
+                format = 'png';
                 if nargin < 3
                     fitReady = false;
                     if nargin < 2
@@ -40,6 +40,8 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
     vL = 0;
     EgL = 50;
     IgL = 70;
+    gEI = 3.5;
+    gII = 15;
     conLabel = cell(contrastLevel,1);
     if ~loadData
         for i=1:contrastLevel
@@ -82,6 +84,7 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
     ipick = (ne+1):n;
     for i = 1:contrastLevel
         for k=1:n    
+            %ipA = round(nP(i).prA(k)*180/pi/dtheta)+1;
             ipA = round(nP(i).priA(k)*180/pi/dtheta)+1;
             if ipA > ntheta
                 ipA = ipA-ntheta;
@@ -91,12 +94,12 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
             else 
                 half = [ipA-ntheta/2:ntheta,1:(ipA-ntheta/2)];
             end
-            %rho = [tC(i).frate(k,:),tC(i).frate(k,1)];
-            Veff_f0 = [tC(i).Veff(k,:),tC(i).Veff(k,1)];
-            Veff_f0_f1 = Veff_f0.*(1+[tC(i).Veffsc(k,:),tC(i).Veffsc(k,1)]);
-            %TCrate(:,k,i) = rho(half);
-            TCVeff_f0(:,k,i) = Veff_f0(half);
-            TCVeff_f0_f1(:,k,i) = Veff_f0_f1(half);
+            %Veff_f0 = [tC(i).Veff(k,:),tC(i).Veff(k,1)];
+            %Veff_f0_f1 = Veff_f0.*(1+[tC(i).Veffsc(k,:),tC(i).Veffsc(k,1)]);
+            %TCVeff_f0(:,k,i) = Veff_f0(half);
+            %TCVeff_f0_f1(:,k,i) = Veff_f0_f1(half);
+            TCVeff_f0(:,k,i) = tC(i).Veff(k,half);
+            TCVeff_f0_f1(:,k,i) = tC(i).Veff(k,half).*(1+tC(i).Veffsc(k,half));
         end
         subplot(1,2,1)
             hold on
@@ -116,160 +119,169 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
     title('Veff F0+F1');
     xlabel('\theta');
     ylim([0,inf]);
+
     filename = [dir,'VeffTC'];
-    
-    if strcmp(format,'fig')
-        saveas(gcf,[filename,'.',format]);
-    else
+    saveas(gcf,filename);
+    if ~isempty(format)
         print(gcf,[filename,'.',format],printDriver,dpi);
     end
     figure
-    %  OSI Vs F0+F1(Vs_0)       %  OSI Vs F0(Vs_0)      % sudo f0_f1(Vs_0) % sudo f0(Vs_0)
+    %  gOSI Vs F0+F1(Vs_0)      % gOSI Vs F0(Vs_0)      % sudo f0_f1(Vs_0) % sudo f0(Vs_0)
     %  OSI Vs F0+F1(constrast)  %  OSI Vs F0(contrast)  % sudo mean(contrast)
+    Veff_f0_s = zeros(ntheta,n,contrastLevel);
+    Veff_f0_f1_s = zeros(ntheta,n,contrastLevel);
+    for i=1:contrastLevel
+        for j = 1:n
+            gE10v = (tC(i).gE(j,1:ntheta).*(1+tC(i).gEsc(j,1:ntheta))+tC(i).gLGN(j,1:ntheta).*(1+tC(i).gLGNsc(j,1:ntheta))+tC(i).gEn(j,1:ntheta)) * vE;
+            gE0v = (tC(i).gE(j,1:ntheta)+tC(i).gLGN(j,1:ntheta)+tC(i).gEn(j,1:ntheta)) * vE;
+            if j<=ne
+                gIv = (tC(i).gI(j,1:ntheta)+tC(i).gIn(j,1:ntheta) + gEI)*vI;
+                Veff_f0_f1_s(:,j,i) = ((gE10v + gIv + EgL*vL)./tC(i).gtot(j,1:ntheta))';
+                Veff_f0_s(:,j,i) = ((gE0v + gIv + EgL*vL)./tC(i).gtot(j,1:ntheta))';
+            else
+                gIv = (tC(i).gI(j,1:ntheta)+tC(i).gIn(j,1:ntheta) + gII)*vI;
+                Veff_f0_f1_s(:,j,i) = ((gE10v + gIv + IgL*vL)./tC(i).gtot(j,1:ntheta))';
+                Veff_f0_s(:,j,i) = ((gE0v + gIv + IgL*vL)./tC(i).gtot(j,1:ntheta))';
+            end
+        end
+    end
+    ax = subplot(2,4,1);
+        hold on
+        cv_f0_f1 = 1-get_cv(TCVeff_f0_f1(1:ntheta,:,:));
+        quantileBar(contrast,cv_f0_f1(epick,:),':r',ax);
+        quantileBar(contrast,cv_f0_f1(ipick,:),':b',ax);
+        xlim([0,5])
+        set(gca,'XTick',[1,2,3,4]);
+        set(gca,'XTickLabel',{'12.5','25','50','100'});
+        xlabel('contrast %');
+        ylabel('True gOSI Vs F0+F1');
+        ylim([0,inf]);
+
+    ax = subplot(2,4,2);
+        hold on
+        cv_f0 = 1-get_cv(TCVeff_f0(1:ntheta,:,:));
+        quantileBar(contrast,cv_f0(epick,:),':r',ax);
+        quantileBar(contrast,cv_f0(ipick,:),':b',ax);
+        xlim([0,5])
+        set(gca,'XTick',[1,2,3,4]);
+        set(gca,'XTickLabel',{'12.5','25','50','100'});
+        xlabel('contrast %');
+        ylabel('True gOSI Vs F0');
+        ylim([0,inf]);
+
+    ax = subplot(2,4,3);
+        hold on
+        cv_f0_f1_s = 1-get_cv(Veff_f0_f1_s);
+        quantileBar(contrast,cv_f0_f1_s(epick,:),':r',ax);
+        quantileBar(contrast,cv_f0_f1_s(ipick,:),':b',ax);
+        xlim([0,5])
+        set(gca,'XTick',[1,2,3,4]);
+        set(gca,'XTickLabel',{'12.5','25','50','100'});
+        xlabel('contrast %');
+        ylabel('Pseudo gOSI Vs F0+F1');
+        ylim([0,inf]);
+
+    ax = subplot(2,4,4);
+        hold on
+        cv_f0_s = 1-get_cv(Veff_f0_s);
+        quantileBar(contrast,cv_f0_s(epick,:),':r',ax);
+        quantileBar(contrast,cv_f0_s(ipick,:),':b',ax);
+        xlim([0,5])
+        set(gca,'XTick',[1,2,3,4]);
+        set(gca,'XTickLabel',{'12.5','25','50','100'});
+        xlabel('contrast %');
+        ylabel('Pseudo gOSI Vs F0');
+        ylim([0,inf]);
+
+    clear TCVeff_f0 TCVeff_f0_f1
+
     Vs_f0_f1= zeros(n,2,contrastLevel);
     Vs_f0 = zeros(n,2,contrastLevel);
     Vs_f0_f1_s = zeros(n,2,contrastLevel);
     Vs_f0_s = zeros(n,2,contrastLevel);
-    Vs_0_mat = ones(n,1) * Vs_0;
+
+    epick = 1:ne;
+    ipick = (ne+1):n;
     for i=1:contrastLevel
         for j=1:n
-            itheta = nP(i).indpo(j);
+            [~,itheta] = max(tC(i).Veff(j,:).*(1+tC(i).Veffsc(j,:)));
             Vs_f0_f1(j,1,i) = tC(i).Veff(j,itheta)*(1+tC(i).Veffsc(j,itheta));
-            Vs_f0(j,1,i) = tC(i).Veff(j,itheta);
-            if j<=ne
-                Vs_f0_f1_s(j,1,i) = ((tC(i).gE(j,itheta)*(1+tC(i).gEsc(j,itheta))+tC(i).gLGN(j,itheta)*(1+tC(i).gLGNsc(j,itheta)))*vE + tC(i).gI(j,itheta)*vI + EgL*vL)/tC(i).gtot(j,itheta);
-                Vs_f0_s(j,1,i) = ((tC(i).gE(j,itheta)+tC(i).gLGN(j,itheta))*vE + tC(i).gI(j,itheta)*vI + EgL*vL)/tC(i).gtot(j,itheta);
-            else
-                Vs_f0_f1_s(j,1,i) = ((tC(i).gE(j,itheta)*(1+tC(i).gEsc(j,itheta))+tC(i).gLGN(j,itheta)*(1+tC(i).gLGNsc(j,itheta)))*vE + tC(i).gI(j,itheta)*vI + IgL*vL)/tC(i).gtot(j,itheta);
-                Vs_f0_s(j,1,i) = ((tC(i).gE(j,itheta)+tC(i).gLGN(j,itheta))*vE + tC(i).gI(j,itheta)*vI + IgL*vL)/tC(i).gtot(j,itheta);
+            Vs_f0_f1_s(j,1,i) = Veff_f0_f1_s(itheta,j,i);
+            itheta = itheta + 6;
+            if itheta > 12
+                itheta = itheta - 12;
             end
-            itheta = nP(i).indoo(j);
             Vs_f0_f1(j,2,i) = tC(i).Veff(j,itheta)*(1+tC(i).Veffsc(j,itheta));
-            Vs_f0(j,2,i) = tC(i).Veff(j,itheta);
-            if j<=ne
-                Vs_f0_f1_s(j,2,i) = ((tC(i).gE(j,itheta)*(1+tC(i).gEsc(j,itheta))+tC(i).gLGN(j,itheta)*(1+tC(i).gLGNsc(j,itheta)))*vE + tC(i).gI(j,itheta)*vI + EgL*vL)/tC(i).gtot(j,itheta);
-                Vs_f0_s(j,2,i) = ((tC(i).gE(j,itheta)+tC(i).gLGN(j,itheta))*vE + tC(i).gI(j,itheta)*vI + EgL*vL)/tC(i).gtot(j,itheta);
-            else
-                Vs_f0_f1_s(j,2,i) = ((tC(i).gE(j,itheta)*(1+tC(i).gEsc(j,itheta))+tC(i).gLGN(j,itheta)*(1+tC(i).gLGNsc(j,itheta)))*vE + tC(i).gI(j,itheta)*vI + IgL*vL)/tC(i).gtot(j,itheta);
-                Vs_f0_s(j,2,i) = ((tC(i).gE(j,itheta)+tC(i).gLGN(j,itheta))*vE + tC(i).gI(j,itheta)*vI + IgL*vL)/tC(i).gtot(j,itheta);
+            Vs_f0_f1_s(j,2,i) = Veff_f0_f1_s(itheta,j,i);
+
+            [~,itheta] = max(tC(i).Veff(j,:));
+            Vs_f0(j,1,i) = tC(i).Veff(j,itheta);
+            Vs_f0_s(j,1,i) = Veff_f0_s(itheta,j,i);
+            itheta = itheta + 6;
+            if itheta > 12
+                itheta = itheta - 12;
             end
+            Vs_f0(j,2,i) = tC(i).Veff(j,itheta);
+            Vs_f0_s(j,2,i) = Veff_f0_s(itheta,j,i);
         end
     end
-    subplot(2,4,1)
-        hold on
-        osi_f0_f1_h = osi(Vs_f0_f1(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
-        osi_f0_f1_l = osi(Vs_f0_f1(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
-        %errorbar(Vs_0,mean(osi_f0_f1_h(1:ne,:)),std(osi_f0_f1_h(1:ne,:)),'-r');
-        %errorbar(Vs_0,mean(osi_f0_f1_l(1:ne,:)),std(osi_f0_f1_l(1:ne,:)),':r');
-        %errorbar(Vs_0,mean(osi_f0_f1_h((ne+1):n,:)),std(osi_f0_f1_h((ne+1):n,:)),'-b');
-        %errorbar(Vs_0,mean(osi_f0_f1_l((ne+1):n,:)),std(osi_f0_f1_l((ne+1):n,:)),':b');
-        plot(Vs_0,mean(osi_f0_f1_h(1:ne,:)),'-r');
-        plot(Vs_0,mean(osi_f0_f1_l(1:ne,:)),':r');
-        plot(Vs_0,mean(osi_f0_f1_h((ne+1):n,:)),'-b');
-        plot(Vs_0,mean(osi_f0_f1_l((ne+1):n,:)),':b');
-        legend({'high exc','low exc','high inh','low inh'},'FontSize',10);
-        title('high as 100% (4th), low as 25% (2ed)','FontSize',10); 
-        ylim([0,inf]);
-        xlabel('Vs_0');
-        ylabel('True OSI Vs F0+F1 - Vs_0');
 
-    subplot(2,4,2)
-        hold on
-        osi_f0_h = osi(Vs_f0(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
-        osi_f0_l = osi(Vs_f0(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
-        %errorbar(Vs_0,mean(osi_f0_h(1:ne,:)),std(osi_f0_h(1:ne,:)),'-r');
-        %errorbar(Vs_0,mean(osi_f0_l(1:ne,:)),std(osi_f0_l(1:ne,:)),':r');
-        %errorbar(Vs_0,mean(osi_f0_h((ne+1):n,:)),std(osi_f0_h((ne+1):n,:)),'-b');
-        %errorbar(Vs_0,mean(osi_f0_l((ne+1):n,:)),std(osi_f0_l((ne+1):n,:)),':b');
-        plot(Vs_0,mean(osi_f0_h(1:ne,:)),'-r');
-        plot(Vs_0,mean(osi_f0_l(1:ne,:)),':r');
-        plot(Vs_0,mean(osi_f0_h((ne+1):n,:)),'-b');
-        plot(Vs_0,mean(osi_f0_l((ne+1):n,:)),':b');
-        ylim([0,inf]);
-        xlabel('Vs_0');
-        ylabel('True OSI Vs F0 - Vs_0');
-
-    subplot(2,4,3)
-        hold on
-        osi_f0_f1_s_h = osi(Vs_f0_f1_s(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1_s(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
-        osi_f0_f1_s_l = osi(Vs_f0_f1_s(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_f1_s(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
-        %errorbar(Vs_0,mean(osi_f0_f1_s_h(1:ne,:)),std(osi_f0_f1_s_h(1:ne,:)),'-r');
-        %errorbar(Vs_0,mean(osi_f0_f1_s_l(1:ne,:)),std(osi_f0_f1_s_l(1:ne,:)),':r');
-        %errorbar(Vs_0,mean(osi_f0_f1_s_h((ne+1):n,:)),std(osi_f0_f1_s_h((ne+1):n,:)),'-b');
-        %errorbar(Vs_0,mean(osi_f0_f1_s_l((ne+1):n,:)),std(osi_f0_f1_s_l((ne+1):n,:)),':b');
-        plot(Vs_0,mean(osi_f0_f1_s_h(1:ne,:)),'-r');
-        plot(Vs_0,mean(osi_f0_f1_s_l(1:ne,:)),':r');
-        plot(Vs_0,mean(osi_f0_f1_s_h((ne+1):n,:)),'-b');
-        plot(Vs_0,mean(osi_f0_f1_s_l((ne+1):n,:)),':b');
-        ylim([0,inf]);
-        xlabel('Vs_0');
-        ylabel('Pseudo OSI Vs F0+F1 - Vs_0');
-
-    subplot(2,4,4)
-        hold on
-        osi_f0_s_h = osi(Vs_f0_s(:,1,4)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_s(:,2,4)*ones(1,nVs_0)-Vs_0_mat);
-        osi_f0_s_l = osi(Vs_f0_s(:,1,2)*ones(1,nVs_0)-Vs_0_mat,Vs_f0_s(:,2,2)*ones(1,nVs_0)-Vs_0_mat);
-        %errorbar(Vs_0,mean(osi_f0_s_h(1:ne,:)),std(osi_f0_s_h(1:ne,:)),'-r');
-        %errorbar(Vs_0,mean(osi_f0_s_l(1:ne,:)),std(osi_f0_s_l(1:ne,:)),':r');
-        %errorbar(Vs_0,mean(osi_f0_s_h((ne+1):n,:)),std(osi_f0_s_h((ne+1):n,:)),'-b');
-        %errorbar(Vs_0,mean(osi_f0_s_l((ne+1):n,:)),std(osi_f0_s_l((ne+1):n,:)),':b');
-        plot(Vs_0,mean(osi_f0_s_h(1:ne,:)),'-r');
-        plot(Vs_0,mean(osi_f0_s_l(1:ne,:)),':r');
-        plot(Vs_0,mean(osi_f0_s_h((ne+1):n,:)),'-b');
-        plot(Vs_0,mean(osi_f0_s_l((ne+1):n,:)),':b');
-        ylim([0,inf]);
-        xlabel('Vs_0');
-        ylabel('Pseudo OSI Vs F0 - Vs_0');
-
-    subplot(2,4,5)
+    clear Veff_f0_s Veff_f0_f1_s 
+    ax = subplot(2,4,5);
         hold on
         osi_f0_f1 = osi(squeeze(Vs_f0_f1(:,1,:)),squeeze(Vs_f0_f1(:,2,:)));
-        errorbar(contrast,mean(osi_f0_f1(1:ne,:)),std(osi_f0_f1(1:ne,:)),':r');
-        errorbar(contrast,mean(osi_f0_f1((ne+1):n,:)),std(osi_f0_f1((ne+1):n,:)),':b');
+        quantileBar(contrast,osi_f0_f1(epick,:),':r',ax);
+        quantileBar(contrast,osi_f0_f1(ipick,:),':b',ax);
         xlim([0,5])
         set(gca,'XTick',[1,2,3,4]);
         set(gca,'XTickLabel',{'12.5','25','50','100'});
         xlabel('contrast %');
         ylabel('True OSI Vs F0+F1');
+        ylim([0,inf]);
 
-    subplot(2,4,6)
+    ax = subplot(2,4,6);
         hold on
         osi_f0 = osi(squeeze(Vs_f0(:,1,:)),squeeze(Vs_f0(:,2,:)));
-        errorbar(contrast,mean(osi_f0(1:ne,:)),std(osi_f0(1:ne,:)),':r');
-        errorbar(contrast,mean(osi_f0((ne+1):n,:)),std(osi_f0((ne+1):n,:)),':b');
+        quantileBar(contrast,osi_f0(epick,:),':r',ax);
+        quantileBar(contrast,osi_f0(ipick,:),':b',ax);
         xlim([0,5])
         set(gca,'XTick',[1,2,3,4]);
         set(gca,'XTickLabel',{'12.5','25','50','100'});
         xlabel('contrast %');
         ylabel('True OSI Vs F0');
+        ylim([0,inf]);
 
-    subplot(2,4,7)
+    ax = subplot(2,4,7);
         hold on
         osi_f0_f1_s = osi(squeeze(Vs_f0_f1_s(:,1,:)),squeeze(Vs_f0_f1_s(:,2,:)));
-        errorbar(contrast,mean(osi_f0_f1_s(1:ne,:)),std(osi_f0_f1_s(1:ne,:)),':r');
-        errorbar(contrast,mean(osi_f0_f1_s((ne+1):n,:)),std(osi_f0_f1_s((ne+1):n,:)),':b');
+        quantileBar(contrast,osi_f0_f1_s(epick,:),':r',ax);
+        quantileBar(contrast,osi_f0_f1_s(ipick,:),':b',ax);
         xlim([0,5])
         set(gca,'XTick',[1,2,3,4]);
         set(gca,'XTickLabel',{'12.5','25','50','100'});
         xlabel('contrast %');
         ylabel('Pseudo OSI Vs F0+F1');
+        ylim([0,inf]);
 
-    subplot(2,4,8)
+    ax = subplot(2,4,8);
         hold on
         osi_f0_s = osi(squeeze(Vs_f0_s(:,1,:)),squeeze(Vs_f0_s(:,2,:)));
-        errorbar(contrast,mean(osi_f0_s(1:ne,:)),std(osi_f0_s(1:ne,:)),':r');
-        errorbar(contrast,mean(osi_f0_s((ne+1):n,:)),std(osi_f0_s((ne+1):n,:)),':b');
+        quantileBar(contrast,osi_f0_s(epick,:),':r',ax);
+        quantileBar(contrast,osi_f0_s(ipick,:),':b',ax);
         xlim([0,5])
         set(gca,'XTick',[1,2,3,4]);
         set(gca,'XTickLabel',{'12.5','25','50','100'});
         xlabel('contrast %');
         ylabel('Pseudo OSI Vs F0');
-        filename = [dir,'OSIVeff'];
-        if strcmp(format,'fig')
-            saveas(gcf,[filename,'.',format]);
-        else
-            print(gcf,[filename,'.',format],printDriver,dpi);
-        end
+        ylim([0,inf]);
+
+    filename = [dir,'OSIgOSIVeff'];
+    saveas(gcf,filename);
+    if ~isempty(format)
+        print(gcf,[filename,'.',format],printDriver,dpi);
+    end
+
+    clear Vs_f0_f1 Vs_f0 Vs_f0_f1_s Vs_f0_s
 
     figure;
     p2 = contrastLevel; p1 = contrastLevel-2;
@@ -382,9 +394,20 @@ function simAssisVeff(theme,loadData,fitReady,format,dir,npool)
         end
 
     filename = [dir,'VeffHalfWidth'];
-    if strcmp(format,'fig')
-        saveas(gcf,[filename,'.fig']);
-    else
+    saveas(gcf,filename);
+    if ~isempty(format)
         print(gcf,[filename,'.',format],printDriver,dpi);
     end
+end
+function quantileBar(x,d,c,ax,l,u)
+    if nargin < 6
+        u = 0.75;
+        if nargin < 5
+            l = 0.25;
+        end
+    end
+    m = mean(d);
+    ll = m-quantile(d,l);
+    uu = quantile(d,u)-m;
+    errorbar(x,m,ll,uu,c);
 end

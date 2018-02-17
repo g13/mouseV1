@@ -1625,7 +1625,7 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx+0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 title('gEcortical');
@@ -1653,7 +1653,7 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 title('gLGN');
@@ -1681,7 +1681,7 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 title('gEtot');
@@ -1711,7 +1711,7 @@ denCVpair = denCVpair/maxDen;
 denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
 imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
 hold on
-plot(lctrsx+0.5:-1:0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
 
 set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
 title('gInh');

@@ -58,12 +58,10 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
         plotsubMat(isiMatE,edgesMatE,scale,ax);
         xlabel('ISI (ms)');
         ylabel('pdf %');
-        ylim([0,inf]);
         ax = subplot(2,2,3);
         plotsubVec(isiVecE,edgesVecE,scale,ax);
         xlabel('ISI (ms)');
         ylabel('pdf %');
-        ylim([0,inf]);
     end
     if ~emptyI
         [isiMatI, edgesMatI, activeI] = binitMat(isiI,minI,maxI,nbinsI,scale,roundoff,factors);
@@ -72,20 +70,15 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
         plotsubMat(isiMatI,edgesMatI,scale,ax);
         xlabel('ISI (ms)');
         ylabel('pdf %');
-        ylim([0,inf]);
         ax = subplot(2,2,4);
         plotsubVec(isiVecI,edgesVecI,scale,ax);
         xlabel('ISI (ms)');
         ylabel('pdf %');
-        ylim([0,inf]);
     end
     if ~isempty(format)
-        fname = [theme,'/ISI-',epsStr,'-',thetaStr,'-',theme,'.',format];
-        if strcmp(format,'fig')
-            saveas(h,fname);
-        else
-            print(h,fname,printDriver,dpi);
-        end
+        fname = [theme,'/ISI-',epsStr,'-',thetaStr,'-',theme];
+        saveas(h,fname);
+        print(h,[fname,'.',format],printDriver,dpi);
     end
     h = figure;
     if ~emptyE
@@ -113,12 +106,9 @@ function plotISI(theme,lgnfile,eps,ctheta,threads,format,ntheta)
         title('Inhibitory');
     end
     if ~isempty(format)
-        fname = [theme,'/ISIheat-',epsStr,'-',thetaStr,'-',theme,'.',format];
-        if strcmp(format,'fig')
-            saveas(h,fname);
-        else
-            print(h,fname,printDriver,dpi);
-        end
+        fname = [theme,'/ISIheat-',epsStr,'-',thetaStr,'-',theme];
+        saveas(h,fname);
+        print(h,[fname,'.',format],printDriver,dpi);
     end
 end
 function [isi, minISI, maxISI, empty] = getISI(tspI)
@@ -183,8 +173,8 @@ function plotsubMat(isiMat,edges,scale,ax)
     l = m-quantile(isiMat_pdf,0.25);
     u = quantile(isiMat_pdf,0.75) - m;
     edges = edges(1:length(edges)-1) + (edges(2) - edges(1))/2;
-    axes(ax);
     errorbar(ax,edges*scale, m, l, u);
+    ylim(ax,[0,inf]);
 end
 function plotsubVec(isiVec,edges,scale,ax)
     s = sum(isiVec);
@@ -192,8 +182,8 @@ function plotsubVec(isiVec,edges,scale,ax)
         isiVec = isiVec/s;
     end
     edges = edges(1:length(edges)-1) + (edges(2) - edges(1))/2;
-    axes(ax);
     bar(ax,edges*scale,isiVec);
+    ylim(ax,[0,inf])
 end
 function heatFrISI(isiMat,frEdges,binID,edges,scale,ax)
     nFrBins = length(frEdges)-1;
@@ -208,7 +198,6 @@ function heatFrISI(isiMat,frEdges,binID,edges,scale,ax)
     imagesc([1,nbins],[nFrBins,1],dataPair');
     %daspect([1,1,1]);
     colormap('hot');
-    colorbar;
     %axis tight
     %box on
 

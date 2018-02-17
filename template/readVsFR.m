@@ -1,4 +1,4 @@
-function [indpi,Veff,Veffstd,Veffsc,rate,allCycle] = readVsFR(DIR,ntheta,n,ndperiod)
+function [priA,Veff,Veffstd,Veffsc,rate,allCycle] = readVsFR(DIR,ntheta,n,ndperiod)
 
 filepath = [DIR, '/', 'cv.dat'];
 fid = fopen(filepath);
@@ -11,22 +11,22 @@ fclose(fid);
 filepath = [DIR, '/', 'intra.dat'];
 fid = fopen(filepath);
 
-fread(fid, [n,2*2*ntheta+1],'double');
+fread(fid, [n,2*(2*ntheta+1)],'double');
 Veff = fread(fid, [n, ntheta],'double');
 fread(fid, [n,ntheta+1],'double');
 
-fread(fid, [n,5*2*ntheta+1],'double');
+fread(fid, [n,5*(2*ntheta+1)],'double');
 rate = fread(fid,[n,ntheta],'double');
 fread(fid,[n,ntheta+1],'double');
 
-fread(fid, [n,5*2*ntheta+1],'double');
+fread(fid, [n,5*(2*ntheta+1)],'double');
 Veffsc = fread(fid, [n, ntheta],'double');
 
 fclose(fid);
 
 filepath = [DIR, '/', 'intra2.dat'];
 fid = fopen(filepath);
-fread(fid, [n,2*2*ntheta+1],'double');
+fread(fid, [n,2*(2*ntheta+1)],'double');
 Veff2 = fread(fid, [n, ntheta],'double');
 fclose(fid);
 

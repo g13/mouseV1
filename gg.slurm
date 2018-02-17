@@ -11,22 +11,22 @@
 module purge
 module load matlab
 fdr='test'              # target simulation folder
-theme='nds305-40'       # lgn mapping name, pls set the p.suffix to the same value in gMap2.m
+theme='ndi305-40'       # lgn mapping name, pls set the p.suffix to the same value in gMap2.m
 TYPE='o'              # additional type name for RFcoeff, OP difference and cortical connection
 conmat=conMat-$theme'_'$TYPE  # name for connection matrix
 coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
-edist='coGauss'             # type of presynaptic connection to exc
+edist='coGauss'             # E-E connection strength type
 eiSpecific='true'          # E<-I connection specificity over orientation preference
 antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
 reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
 drawInh='true'      # if draw inhibitory example; 
 ld='true'          # don't re-generate lgn to v1 map
-ldRF='true'          # don't re-generate lgn to V1 RF
+ldRF='false'          # don't re-generate lgn to V1 RF
 threads=12          # number of threads used in parpool for RFcoef_O_beta.m
 
 tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
-temper=0            # randomness to temper with the preset orientation of recruiting ellipses
+temper=30           # randomness to temper with the preset orientation of recruiting ellipses
 ntheta=12           # number of angles simulated
 ex=10               #  # of example plots
 p2s=40.0            # estimated converting scale from connection strength to resulting PSP
