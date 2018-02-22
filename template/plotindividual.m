@@ -2613,6 +2613,7 @@ end
     %%    all Tuning curve together
     evenOdd = mod(ntheta,2);
     relTheta = (-(ntheta+evenOdd)/2:(ntheta+evenOdd)/2)*dtheta;
+    itheta = ntheta/2 + 1;
     rasterTC = zeros(ntheta+1,ntotal,contrastLevel)-1;
     EmeanTC = zeros(ntheta+1,contrastLevel)-1;
     EquaLTC = zeros(ntheta+1,contrastLevel)-1;
@@ -2720,11 +2721,14 @@ end
     
             subplot(contrastLevel,6,(i-1)*6+1)
             %errorbar(relTheta, EmeanTCgI(:,i),std(TCgI(:,epick,i),1,2),'Color','b');
+            eepick = 1:p.nv1e;
             if i==contrastLevel
-                objectMax = max(EmeanTCgI(:,i));
+                objectMax = EmeanTCgI(itheta,i);
                 hold on
                 for j=1:contrastLevel-1
-                    plot(relTheta, EmeanTCgI(:,j)*objectMax/max(EmeanTCgI(:,j)),LineScheme{j},'Color','b');
+                    MeanNormTCgI = TCgI(:,eepick,j)./(ones(size(TCgI,1),1)*TCgI(itheta,eepick,j));
+                    MeanNormTCgI = mean(MeanNormTCgI,2);
+                    plot(relTheta, MeanNormTCgI*objectMax,LineScheme{j},'Color','b');
                 end
                 plot(relTheta, EmeanTCgI(:,i),LineScheme{i},'Color','b');
                 legend(conLabel);
@@ -2786,10 +2790,13 @@ end
             subplot(contrastLevel,6,(i-1)*6+4)
             errorbar(relTheta, ImeanTCgI(:,i),std(TCgI(:,ipick,i),1,2),'Color','b');
             if i==contrastLevel
-                objectMax = max(ImeanTCgI(:,i));
+                objectMax = ImeanTCgI(itheta,i);
                 hold on
+                iipick = p.nv1e + (1:p.nv1i);
                 for j=1:contrastLevel-1
-                    plot(relTheta, ImeanTCgI(:,j)*objectMax/max(ImeanTCgI(:,j)),LineScheme{j},'Color','b');
+                    MeanNormTCgI = TCgI(:,iipick,j)./(ones(size(TCgI,1),1)*TCgI(itheta,iipick,j));
+                    MeanNormTCgI = mean(MeanNormTCgI,2);
+                    plot(relTheta, MeanNormTCgI*objectMax,LineScheme{j},'Color','b');
                 end
                 plot(relTheta, ImeanTCgI(:,i),'Color','b');
             end
@@ -2802,20 +2809,31 @@ end
         
         subplot(2,6,3)
         hold on
-        maxEmeanTC = ones(ntheta+1,1) * max(EmeanTC);
-        maxEmeanTCgLGN = ones(ntheta+1,1) * max(EmeanTCgLGN);
-        maxEmeanTCgLGN_F1 = ones(ntheta+1,1) * max(EmeanTCgLGN_F1);
-        maxEmeanTCgE = ones(ntheta+1,1) * max(EmeanTCgE);
-        maxEmeanTCgI = ones(ntheta+1,1) * max(EmeanTCgI);
+
+        eepick = 1:p.nv1e;
         for i = 1:contrastLevel
-            plot(relTheta, EmeanTCgLGN(:,i)./maxEmeanTCgLGN(:,i),LineScheme{i},'Color','g');
-            plot(relTheta, EmeanTCgLGN_F1(:,i)./maxEmeanTCgLGN(:,i),LineScheme{i},'Color','m');
-            plot(relTheta, EmeanTCgE(:,i)./maxEmeanTCgE(:,i),LineScheme{i},'Color','r');
-            plot(relTheta, EmeanTC(:,i)./maxEmeanTC(:,i),LineScheme{i},'Color','k');
+            MeanNormTC = rasterTC(:,eepick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,eepick,i));
+            MeanNormTC = mean(MeanNormTC,2)
+
+            mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,eepick,i);
+            MeanNormTCgLGN = TCgLGN(:,eepick,i)./mTmp;
+            MeanNormTCgLGN = mean(MeanNormTCgLGN,2);
+
+            MeanNormTCgLGN_F1 = TCgLGN_F1(:,eepick,i)./mTmp;
+            MeanNormTCgLGN_F1 = mean(MeanNormTCgLGN_F1,2);
+
+            MeanNormTCgE = TCgE(:,eepick,i)./(ones(size(TCgE,1),1)*TCgE(itheta,eepick,i));
+            MeanNormTCgE = mean(MeanNormTCgE,2);
+
+            plot(relTheta, MeanNormTCgLGN,LineScheme{i},'Color','g');
+            plot(relTheta, MeanNormTCgLGN_F1,LineScheme{i},'Color','m');
+            plot(relTheta, MeanNormTCgE,LineScheme{i},'Color','r');
+            plot(relTheta, MeanNormTC,LineScheme{i},'Color','k');
         end
         ylabel('normalized to max');
-        yy = ylim();
-        ylim([0,yy(2)]);
+        %yy = ylim();
+        %ylim([0,yy(2)]);
+        ylim([0,1]);
         xticks = -90:30:90;
         xlim([relTheta(1),relTheta(end)]);
         set(gca,'XTick',xticks,'XTickLabel',num2str(xticks'));
@@ -2861,20 +2879,31 @@ end
     
         subplot(2,6,6)
         hold on
-        maxImeanTC = ones(ntheta+1,1) * max(ImeanTC);
-        maxImeanTCgLGN = ones(ntheta+1,1) * max(ImeanTCgLGN);
-        maxImeanTCgLGN_F1 = ones(ntheta+1,1) * max(ImeanTCgLGN_F1);
-        maxImeanTCgE = ones(ntheta+1,1) * max(ImeanTCgE);
-        maxImeanTCgI = ones(ntheta+1,1) * max(ImeanTCgI);
+        
+        iipick = p.nv1e + (1:p.nv1i);
         for i = 1:contrastLevel
-            plot(relTheta, ImeanTCgLGN(:,i)./maxImeanTCgLGN(:,i),LineScheme{i},'Color','g');
-            plot(relTheta, ImeanTCgLGN_F1(:,i)./maxImeanTCgLGN(:,i),LineScheme{i},'Color','m');
-            plot(relTheta, ImeanTCgE(:,i)./maxImeanTCgE(:,i),LineScheme{i},'Color','r');
-            plot(relTheta, ImeanTC(:,i)./maxImeanTC(:,i),LineScheme{i},'Color','k');
+            MeanNormTC = rasterTC(:,iipick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,iipick,i));
+            MeanNormTC = mean(MeanNormTC,2)
+
+            mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,iipick,i);
+            MeanNormTCgLGN = TCgLGN(:,iipick,i)./mTmp;
+            MeanNormTCgLGN = mean(MeanNormTCgLGN,2);
+
+            MeanNormTCgLGN_F1 = TCgLGN_F1(:,iipick,i)./mTmp;
+            MeanNormTCgLGN_F1 = mean(MeanNormTCgLGN_F1,2);
+
+            MeanNormTCgE = TCgE(:,iipick,i)./(ones(size(TCgE,1),1)*TCgE(itheta,iipick,i));
+            MeanNormTCgE = mean(MeanNormTCgE,2);
+
+            plot(relTheta, MeanNormTCgLGN,LineScheme{i},'Color','g');
+            plot(relTheta, MeanNormTCgLGN_F1,LineScheme{i},'Color','m');
+            plot(relTheta, MeanNormTCgE,LineScheme{i},'Color','r');
+            plot(relTheta, MeanNormTC,LineScheme{i},'Color','k');
         end
         ylabel('normalized to max');
-        yy = ylim();
-        ylim([0,yy(2)]);
+        %yy = ylim();
+        %ylim([0,yy(2)]);
+        ylim([0,1]);
         title('Inh');
         xticks = -90:30:90;
         xlim([relTheta(1),relTheta(end)]);
@@ -2887,7 +2916,6 @@ end
         ax2 = axes('Position',axesPos,'YAxisLocation','right');
         axes(ax1);
         for i=1:contrastLevel
-            
             hold(ax1,'on')
             plot(relTheta, ImeanTC(:,i),LineScheme{i},'Color','k');
         end
