@@ -2813,7 +2813,8 @@ end
         eepick = 1:p.nv1e;
         for i = 1:contrastLevel
             MeanNormTC = rasterTC(:,eepick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,eepick,i));
-            MeanNormTC = mean(MeanNormTC,2)
+            pick = rasterTC(itheta,eepick,i)>0;
+            MeanNormTC = mean(MeanNormTC(:,pick),2);
 
             mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,eepick,i);
             MeanNormTCgLGN = TCgLGN(:,eepick,i)./mTmp;
@@ -2883,7 +2884,8 @@ end
         iipick = p.nv1e + (1:p.nv1i);
         for i = 1:contrastLevel
             MeanNormTC = rasterTC(:,iipick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,iipick,i));
-            MeanNormTC = mean(MeanNormTC,2)
+            pick = rasterTC(itheta,iipick,i)>0;
+            MeanNormTC = mean(MeanNormTC(:,pick),2);
 
             mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,iipick,i);
             MeanNormTCgLGN = TCgLGN(:,iipick,i)./mTmp;

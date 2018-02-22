@@ -233,7 +233,7 @@ function VsFR(lgnfile,theme,ntheta,contrastLevel,ndperiod,loadData,format,dir)
         VsID_I = zeros(p.nv1i,contrastLevel,ntheta);
         VsCID_E = zeros(p.nv1e,contrastLevel,ntheta);
         VsCID_I = zeros(p.nv1i,contrastLevel,ntheta);
-        thetaRange = [1,7];
+        thetaRange = [7];
         contrastRange = [1,2,3,4];
         nc = length(contrastRange);
         if heat
@@ -625,26 +625,24 @@ end
 function heatVsStdFr(VsEdge,sVsEdge,rate,rateStd,ax1,ax2)
     nbinVs = length(VsEdge)-1;
     nbinsVs = length(sVsEdge)-1;
-    imagesc([1,nbinVs],[nbinsVs,1],rate','Parent',ax1);
+    imagesc([1,nbinVs],[1,nbinsVs],rate','Parent',ax1);
     colormap('hot');
     colorbar('peer',ax1);
     box off
-
+    axis xy
     dVsEdge = VsEdge(2) - VsEdge(1);
     %xtick = [1,ceil(nbinVs/2),nbinVs];
     xtick = get(ax1,'xtick');
-    xticklabel = num2str(VsEdge(1) + (xtick'-1)*dVsEdge);
-    xtick = xtick-0.5;
+    xticklabel = num2str(VsEdge(1) + xtick'*dVsEdge);
+    %xtick = xtick-0.5;
     set(ax1,'XTick',xtick,'XTickLabel',xticklabel);
 
     dsVsEdge = sVsEdge(2) - sVsEdge(1);
     %ytick = [1,ceil(nbinsVs/2),nbinsVs];
     ytick = get(ax1,'ytick');
-    yticklabel = num2str(sVsEdge(1) + (ytick'-1)*dsVsEdge);
-    ytick = ytick-0.5;
-    set(ax1,'YTick',ytick,'YTickLabel',flipud(yticklabel));
-    xlim([0,nbinVs+1])
-    ylim([0,nbinsVs+1])
+    yticklabel = num2str(sVsEdge(1) + ytick'*dsVsEdge);
+    %ytick = ytick-0.5;
+    set(ax1,'YTick',ytick,'YTickLabel',yticklabel);
 
     if nargin ==6 && ~isempty(ax2)
         imagesc([1,nbinVs],[nbinsVs,1],rateStd','Parent',ax2);
