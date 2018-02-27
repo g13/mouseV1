@@ -108,13 +108,10 @@ p.multi = 1;
 
 azimuth = [-25,150]./180.*pi;
 altitude = [-50,25]./180.*pi;
-p.fdr = ['lgn2v1map/',p.name];
+p.fdr = ['lgn2v1map'];
 if ~exist(p.fdr,'dir')
     mkdir(p.fdr);
 end
-delete(['lgn2v1map/',p.name,'/*.png']);
-copyfile('gMap2.m',['lgn2v1map/',p.name]);
-copyfile('lgn2v1Map_beta.m',['lgn2v1map/',p.name]);
 
 p.pinwheel = [];
 p.rlgn = 0.1555;
@@ -353,9 +350,9 @@ axis auto
 if ~isempty(p.h)
     set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
     if strcmp(p.h,'fig')
-        saveas(h,['lgn2v1map/',p.name,'/',p.name,'-presets.',p.h]);
+        saveas(h,['lgn2v1map/',p.name,'-presets.',p.h]);
     else
-        print(h,['lgn2v1map/',p.name,'/',p.name,'-presets.',p.h],printDriver,dpi);
+        print(h,['lgn2v1map/',p.name,'-presets.',p.h],printDriver,dpi);
     end
 end
 %% from FWHM to sigma
@@ -363,12 +360,8 @@ p.esigma = p.esigma./(2*sqrt(2*log(2)));
 p.isigma = p.isigma./(2*sqrt(2*log(2)));
 
 [p,etheta, itheta, sp, nLGN, nSubLGN, v1Map, LGNpos, lgnStrength] = lgn2v1Map_beta(p);
-save(['lgn2v1map/',p.name,'.mat'],'p','etheta','itheta','sp','nLGN','nSubLGN','v1Map','LGNpos', 'lgnStrength');
+save([p.name,'.mat'],'p','etheta','itheta','sp','nLGN','nSubLGN','v1Map','LGNpos', 'lgnStrength');
 meanLGNe = mean(nLGN(1:p.nv1e,1));
 meanLGNi = mean(nLGN(p.nv1e+(1:p.nv1i),1));
 disp(['nLGN i over e = ', num2str(meanLGNi*p.si/(meanLGNe*p.se))]);
 disp(p.name);
-copyfile('gMap2.m',[p.fdr,'/']);
-copyfile('lgn2v1Map_beta.m',[p.fdr,'/']);
-copyfile(['lgn2v1map/',p.name,'.mat'],['./']);
-copyfile(['lgn2v1map/lgnmap.out-',p.name],['./']);

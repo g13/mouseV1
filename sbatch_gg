@@ -1,0 +1,76 @@
+#!/bin/bash
+
+## pre copy
+walltime=0:40:00
+mem=30G
+fdr='test'              # target simulation folder
+theme='ndi305-40'       # lgn mapping name, pls set the p.suffix to the same value in gMap2.m
+TYPE='o'                # additional type name for RFcoeff, OP difference and cortical connection
+conmat=conMat-$theme'_'$TYPE  # name for connection matrix
+coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
+EPSPprofile='logNormal'     # type of distribution for EPSP
+edist='coGauss'             # E-E connection strength type
+eiSpecific='true'          # E<-I connection specificity over orientation preference
+threads=12          # number of threads used in parpool for RFcoef_O_beta.m
+antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
+reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
+drawInh='true'      # if draw inhibitory example; 
+ld='false'          # don't re-generate lgn to v1 map
+ldRF='false'          # don't re-generate lgn to V1 RF
+
+tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
+temper=30           # randomness to temper with the preset orientation of recruiting ellipses
+ntheta=12           # number of angles simulated
+ex=10               #  # of example plots
+p2s=40.0            # estimated converting scale from connection strength to resulting PSP
+mu=0.45             # average EPSP in mV
+ieSpecific='false'  # keep it false, its coMat is not implemented in RFcoeff_O_beta.m (set I<-E specific connection over oriention preference)
+sig=1.16           # standard deviation for a lognormal distribution
+mu0=0.45           # with a mean value of mu0
+nsig=3             # cutoff EPSP histogram at # of std 
+nbins=30            # number of bins for EPSP distribution
+spread='false'      # unrelated test variable, assign EPSP value to E->E connections by subregion normalized distance, ignore.
+lowestRatio=0.02    # related to variable "spread", ignore.
+reverse=2           # different types weight contribution see RFcoeff_O_beta.m, outdated!
+
+setupFdr='Setup_'$theme'_'$TYPE
+if [ ! -d "$setupFdr" ]; then
+    mkdir $setupFdr
+else
+    cd $setupFdr
+    rm -rf *
+    cd ../
+fi
+cp *.m gg.slurm $setupFdr/
+
+cd $setupFdr
+
+export fdr
+export TYPE
+export theme
+export conmat
+export coMa
+export EPSPprofile
+export edist
+export eiSpecific
+export antiphase
+export reciprocal
+export drawInh
+export ld
+export ldRF
+export threads
+export tw
+export temper
+export ntheta
+export ex
+export p2s
+export mu
+export ieSpecific
+export sig
+export mu0
+export nsig
+export nbins
+export spread
+export lowestRatio
+export reverse
+sbatch --export=ALL --mem=$mem --time=$walltime gg.slurm

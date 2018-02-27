@@ -328,7 +328,7 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
         end
     end
     %% output to lgnmat.out for simulation
-    fid = fopen(['lgn2v1map/lgnmap','.out-',p.name],'w+');
+    fid = fopen(['lgnmap','.out-',p.name],'w+');
     lofexplanation = 9;
     fprintf(fid,'*********************** \n');
     if p.pick
@@ -813,9 +813,9 @@ function q = roll(type,subregion,sigma,aspectRatio,peakDistance,prescribedTheta,
         if ~isempty(format)
             set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
             if strcmp(format,'fig')
-                savefig(f,['lgn2v1map/',suffix,'/',type,'.',format]);
+                savefig(f,['lgn2v1map/',suffix,'_',type,'.',format]);
             else
-                print(f,['lgn2v1map/',suffix,'/',type,'.',format],printDriver,dpi);
+                print(f,['lgn2v1map/',suffix,'_',type,'.',format],printDriver,dpi);
             end
         end
     end

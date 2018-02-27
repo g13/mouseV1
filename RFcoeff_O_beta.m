@@ -40,7 +40,7 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
 			pool = parpool(threads);
 		end
 	end
-    addpath(genpath('./matlab_Utilities'));
+    addpath(genpath('../matlab_Utilities'));
     pPosition = [0, 0, 1280, 720];
     if ~isempty(format)
         if strcmp(format,'psc2')
