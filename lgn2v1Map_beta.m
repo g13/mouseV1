@@ -1,6 +1,5 @@
 function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] = lgn2v1Map_beta(p)
-    global dLGNpos LGNpos pick rfx rfy ttt rlgn rho gauss se si sbounde sboundi cbounde cboundi dlgn uniform profile printDriver dpi pPosition uniformStrength FWHM HWHM Yidx nCORF
-    nCORF = 0;
+    global dLGNpos LGNpos pick rfx rfy ttt rlgn rho gauss se si sbounde sboundi cbounde cboundi dlgn uniform profile printDriver dpi pPosition uniformStrength FWHM HWHM Yidx
     FontSize = 14;
     set(0,'DefaultAxesFontSize',FontSize);
     pPosition = [18, 180, 1200, 900];
@@ -157,15 +156,18 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
     ev1pos = [reshape(ev1posx,[p.nv1e,1]),reshape(ev1posy,[p.nv1e,1])];
     iv1pos = [reshape(iv1posx,[p.nv1i,1]),reshape(iv1posy,[p.nv1i,1])];
     v1pos = [ev1pos; iv1pos];
-    [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, ORF, itermax, etheta, itheta] = gRF(p,etheta,itheta,v1pos);
+    [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, ORF, itermax, etheta, itheta, iCRF] = gRF(p,etheta,itheta,v1pos);
     disp(['maximum iterations: ',num2str(max(itermax))]);
     p.sp = sp;
     sp = sp/pi*180;
     p.ORF = ORF;
-    % specifies ORF and SRF Exc
+    p.CRF = iCRF;
+    % specifies ORF, SRF and CRF Exc
     pick2e = [p.eSubregion == 2; false(p.nv1i,1)];
-    p.typeE(ORF & pick2e) = p.ntypeE-1;
-    p.typeE(~ORF & pick2e) = p.ntypeE;
+    p.typeE(ORF & pick2e) = 1;
+    p.typeE(~ORF & pick2e) = 2; 
+    p.typeE(iCRF & pick2e) = 3;
+    assert(sum(ORF-iCRF<0)==0);
     clear pick2e;
     %% plot
     figure(h);
@@ -409,7 +411,7 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
     pLGN = LGNpos;
     p.lgnmin = min(nLGN(:,1));
     fclose(fid);
-    disp(['# Complete ORF = ',num2str(nCORF)]);
+    disp(['# Complete ORF = ',num2str(sum(iCRF))]);
 %%% homogeneous LGN input
 %    figure
 %    hist(lgninput,10);
@@ -417,8 +419,8 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
 %%%
 end
 
-function [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, iORF, itermax, etheta, itheta] = gRF(p,etheta,itheta,v1pos)
-    global pick cbounde cboundi se si sbounde sboundi nCORF
+function [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, iORF, itermax, etheta, itheta, iCRF] = gRF(p,etheta,itheta,v1pos)
+    global pick cbounde cboundi se si sbounde sboundi
 	
     etheta = reshape(etheta,[p.nv1e,1]);
     maxSubgregion = max([p.eSubregion;p.iSubregion]);
@@ -426,6 +428,7 @@ function [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, iORF, itermax, etheta, i
     lgnStrength = cell(p.nv1,maxSubgregion);
     sp = zeros(p.nv1,1);
     iORF = false(p.nv1,1);
+    iCRF = false(p.nv1,1);
     nLGN = zeros(p.nv1,4);
     nSubLGN = cell(p.nv1,1);
     itermax = zeros(p.nv1,1);
@@ -457,7 +460,7 @@ function [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, iORF, itermax, etheta, i
                     theta,p.nlgn,v1pos(i,:),ex,p.pOn,p.h,p.name,p.average,cbounde,se,sbounde,true);
             if length(q.v1Map{1}) == length(q.v1Map{2})
                 if sum(q.v1Map{1}+q.v1Map{2}) == 0
-                    nCORF = nCORF + 1;
+                    iCRF(i) = true;
                 end
             end
             v1Map(i,1:p.eSubregion(i)) = q.v1Map; 

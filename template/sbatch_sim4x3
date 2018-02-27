@@ -1,18 +1,17 @@
 #!/bin/bash
-theme='ndl305-40'       # LGN setup name
-walltime=0:30:00
-analysisTime=0:30:00
-TYPE='t0'               # type of cortical connection
+theme='ndi305-40'       # LGN setup name
+walltime=2:00:00
+analysisTime=0:45:00
+TYPE='o'                # type of cortical connection
 ######## Please find the following variable description in pA.slurm ########
-NAME='t'                   # raw data folder name
-PRESET=$theme         # lgn presets file
+NAME='iii8'                 # raw data folder name
+PRESET=$theme          # lgn presets file
 FORMAT='png'               # figure format for saving
 individOnly="false"        # plot individual neurons’ figures only
 statsOnly="true"           # plot populational figures only
-rt=1                      #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT 
+rt=20                     #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT 
 npool=12                   # number of cpus used to fit tuning curves
 thres=0.25                 # a gauge of firing rate threshold for active, non-active, non-active neurons were not included in some of the plots
-fit="true"
 NTHETA="12"                # number of angles in simulation
 CONTRASTS="4"              # number of constrast used in simulation
 fit="true"                 # fit the tuning curves for width.

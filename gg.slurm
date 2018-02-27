@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --mem=20G
+#SBATCH --mem=10G
 #SBATCH --time=1:00:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=4
 #SBATCH --job-name=gg
 #SBATCH -o gg_%J.out
 #SBATCH --mail-user=wd554@nyu.edu
@@ -23,7 +23,7 @@ reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0
 drawInh='true'      # if draw inhibitory example; 
 ld='true'          # don't re-generate lgn to v1 map
 ldRF='false'          # don't re-generate lgn to V1 RF
-threads=12          # number of threads used in parpool for RFcoef_O_beta.m
+threads=4          # number of threads used in parpool for RFcoef_O_beta.m
 
 tw=0.5             # weight of contributions from orientation preference and RFcoeff to connection preference, dependent on "reverse", examine in RFcoeff_O_beta.m
 temper=30           # randomness to temper with the preset orientation of recruiting ellipses
@@ -42,10 +42,10 @@ reverse=2           # different types weight contribution see RFcoeff_O_beta.m, 
 
 if [ "$ld" == 'false' ]; then
     matlab -nosplash -nodesktop -r "gMap2;exit"
-    cp lgn2v1map/$theme/gMap2.m $fdr/gMap2-$theme.m
-    cp lgn2v1map/$theme/lgn2v1Map_beta.m $fdr/lgn2v1Map_beta-$theme.m
-    cp $theme.mat $fdr/
 fi
+cp lgn2v1map/$theme/gMap2.m $fdr/gMap2-$theme.m
+cp lgn2v1map/$theme/lgn2v1Map_beta.m $fdr/lgn2v1Map_beta-$theme.m
+cp $theme.mat $fdr/
 # pre copy
 cp generateConMat.m $fdr/generateConMat-$theme'_'$TYPE.m
 cp gg.slurm $fdr/gg-$theme'_'$TYPE.slurm

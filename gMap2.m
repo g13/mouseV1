@@ -3,22 +3,25 @@ drawSpecific = false;
 p = struct;
 p.YoudensIndex = 0.32;
 p.profile = 'u'         % 'u' for uniform(single-value) profile for LGN connection strength, 'g' for gaussian
-p.name = 'ndl305-305';
+p.name = 'ndi305-40';
 enorm = 0.305; 
-inorm = 0.305; 
+inorm = 0.40; 
 enormStd = 0.1016;
 inormStd = 0.1016;
 p.h = 'png';
 p.esigma0 = [10.5,0.1];
-p.isigma0 = [12.0,0.2];
-%p.isigma0 = p.esigma0;
+p.isigma0 = [15.0,0.1];
+%p.isigma0 = p.esigma0 * 1.1;
 p.eAspectR0 = [1.2;0.012];
-p.iAspectR0 = [1.5;0.015];
-%p.iAspectR0 = p.eAspectR0;
+%p.iAspectR0 = [1.5;0.015];
+p.iAspectR0 = p.eAspectR0*1.19;
 p.se = 1;  % connection strength
-%p.si = 2;      %s
-p.si = 1;    %l
+p.si = 1;      %s
+%p.si = 1;    %l
 %p.si = 1;       %b
+CRF = 0.0;
+pMono = 0;
+ep = [0, pMono,	1-CRF]; % 27% 3-Stripes Niell & Stryker 2008
 FontSize = 14;
 set(0,'DefaultAxesFontSize',FontSize);
 pPosition = [18, 180, 1200, 900];
@@ -57,7 +60,7 @@ rng(p.seed);
 p.average = 3;
 % guassian end
 p.cbounde = sqrt(2);
-p.cboundi = p.cbounde*1.0;
+p.cboundi = p.cbounde*1.1;
 % p.cboundi = p.cbounde*1.0;
 p.sbounde = 1;
 p.sboundi = 1;
@@ -77,8 +80,7 @@ p.drawOrientation = false;
 %	percentage of ON/OFF dominating, 0.27 for layer2/3, 0.73 for layer4
 % pMono = 0.4167; % combined Layer 2 and 3
 % pMono = 0.27; % Layer 2 and 3 only
-pMono = 0;
-ep = [0,	pMono*1,	1]; % 27% 3-Stripes Niell & Stryker 2008
+%ep = [0,	pMono*1,	0.73]; % 27% 3-Stripes Niell & Stryker 2008
 % p.YoudensIndex = 0.5; % 0.32 for Liu et al 2010 online method
 perORF = 0.55;
 ip = [0,    0,  1];
@@ -88,7 +90,11 @@ p.ntypeE = 2;
 p.nSubTypeE = [2,2];
 % p.Etypes = {' ON-OFF',' ORF',' SRF',' 3-Stripes'};
 % p.Etypes = {' ON-OFF',' ORF',' SRF'};
-p.Etypes = {' ORF',' SRF'};
+if CRF==0
+    p.Etypes = {' ORF',' SRF'};
+else
+    p.Etypes = {' ORF',' SRF','CRF'};
+end
 p.Etypes = strcat('Exc',p.Etypes);
 p.ntypeI = 1;
 p.nSubTypeI = [2];
@@ -160,56 +166,77 @@ p.eAspectRatio(ir,1) = temp;
 p.typeE(ir) = 1;
 end
 %%%%%%%%%%%%%% SRF/ORF
-ir = (p_subregion > ep(2) & p_subregion <= ep(3));
-nir = sum(ir);
-p.eSubregion(ir) = 2;
+    ir = (p_subregion > ep(2) & p_subregion <= ep(3));
+    nir = sum(ir);
+    p.eSubregion(ir) = 2;
+    
+    % on-off axis
+    p.esigma(ir,1) = (p.esigma0(1) + randn([nir,1])*p.esigma0(2))./180.*pi;
+    p.esigma(ir,2) = p.esigma(ir,1);
+    % peak distance
+    % normDistance(ir) = 0.1 + rand(nir,1)*0.75;
+    temp = zeros(nir,1)-1;
+    % figure(100);
+    nnn = 0;
+    % nn0 = 0;
+    % binranges = -0.2:0.05:1;
+    % nbins = length(binranges);
+    % binranges(nbins) = 1.1;
+    while nnn < nir
+        unpicked = temp<0;
+        temp(unpicked) = enorm + randn(nir-nnn,1)*enormStd;
+    %     nn0 = nn0 + nir - nnn;
+        temp(temp<0.0) = -1;
+        nnn = nnn + sum(temp>0);
+    end
+    % b = histc(temp,binranges);
+    % b = b(1:nbins-1);
+    % 
+    % b0 = histc(0.3+randn(nn0,1)*0.15,binranges);
+    % b0 = b0(1:nbins-1);
+    % plot(binranges(1:nbins-1),[b,b0],'*');
+    
+    % temp(temp<0) = 0;
+    
+    p.enormDistance(ir) = temp; 
+    % normDistance(ir) = 0.0 + rand(nir,1)*(YoudensIndex/perORF);
+    p.ePeakDistance(ir,1) = 0.5*p.enormDistance(ir) .* (p.esigma(ir,1)+p.esigma(ir,2));
+    
+    % orth
+    % p.eAspectRatio(ir,1) = (1.2 + randn([nir,1])*0.07);
+    % p.eAspectRatio(ir,2) = p.eAspectRatio(ir,1);
+    temp = (p.eAspectR0(1) + randn([nir,1])*p.eAspectR0(2));
+    temp(temp<1) = 1.0;
+    p.eAspectRatio(ir,1) = temp;
+    p.eAspectRatio(ir,2) = temp;
 
-% on-off axis
-p.esigma(ir,1) = (p.esigma0(1) + randn([nir,1])*p.esigma0(2))./180.*pi;
-p.esigma(ir,2) = p.esigma(ir,1);
-% peak distance
-% normDistance(ir) = 0.1 + rand(nir,1)*0.75;
-temp = zeros(nir,1)-1;
-% figure(100);
-nnn = 0;
-% nn0 = 0;
-% binranges = -0.2:0.05:1;
-% nbins = length(binranges);
-% binranges(nbins) = 1.1;
-while nnn < nir
-    unpicked = temp<0;
-    temp(unpicked) = enorm + randn(nir-nnn,1)*enormStd;
-%     nn0 = nn0 + nir - nnn;
-    temp(temp<0.0) = -1;
-    nnn = nnn + sum(temp>0);
-end
-% b = histc(temp,binranges);
-% b = b(1:nbins-1);
-% 
-% b0 = histc(0.3+randn(nn0,1)*0.15,binranges);
-% b0 = b0(1:nbins-1);
-% plot(binranges(1:nbins-1),[b,b0],'*');
+    if pMono>0
+        p.typeE(ir & p.enormDistance > p.YoudensIndex) = 3;
+        p.typeE(ir & p.enormDistance <= p.YoudensIndex) = 2;
+    else
+        p.typeE(ir & p.enormDistance > p.YoudensIndex) = 2;
+        p.typeE(ir & p.enormDistance <= p.YoudensIndex) = 1;
+    end
 
-% temp(temp<0) = 0;
+%%%%%%%%%%%%%% CRF
+    ir = (p_subregion > ep(3) & p_subregion <= 1);
+    nir = sum(ir);
+    p.eSubregion(ir) = 2;
+    
+    % on-off axis
+    p.esigma(ir,1) = (p.esigma0(1) + randn([nir,1])*p.esigma0(2))./180.*pi;
+    p.esigma(ir,2) = p.esigma(ir,1);
+    % peak distance
+    p.enormDistance(ir) = 0.0;
+    p.ePeakDistance(ir,1) = 0.5*p.enormDistance(ir) .* (p.esigma(ir,1)+p.esigma(ir,2));
+    
+    % orth
+    temp = (p.eAspectR0(1) + randn([nir,1])*p.eAspectR0(2));
+    temp(temp<1) = 1.0;
+    p.eAspectRatio(ir,1) = temp;
+    p.eAspectRatio(ir,2) = temp;
+    p.typeE(ir) = 3;
 
-p.enormDistance(ir) = temp; 
-% normDistance(ir) = 0.0 + rand(nir,1)*(YoudensIndex/perORF);
-p.ePeakDistance(ir,1) = 0.5*p.enormDistance(ir) .* (p.esigma(ir,1)+p.esigma(ir,2));
-
-% orth
-% p.eAspectRatio(ir,1) = (1.2 + randn([nir,1])*0.07);
-% p.eAspectRatio(ir,2) = p.eAspectRatio(ir,1);
-temp = (p.eAspectR0(1) + randn([nir,1])*p.eAspectR0(2));
-temp(temp<1) = 1.0;
-p.eAspectRatio(ir,1) = temp;
-p.eAspectRatio(ir,2) = temp;
-if pMono>0
-p.typeE(ir & p.enormDistance > p.YoudensIndex) = 3;
-p.typeE(ir & p.enormDistance <= p.YoudensIndex) = 2;
-else
-p.typeE(ir & p.enormDistance > p.YoudensIndex) = 2;
-p.typeE(ir & p.enormDistance <= p.YoudensIndex) = 1;
-end
 
 %% distribute RF in inh neuron
 p_subregion = rand([p.nv1i,1]);

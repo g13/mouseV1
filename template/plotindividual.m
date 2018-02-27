@@ -1,4 +1,4 @@
-function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,contrastLevel,ntheta,individOnly,outputfdr,ranking,thres,statsOnly,neuronlistOnly,dataRead,rt,fit,npool)
+function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,contrastLevel,ntheta,individOnly,outputfdr,ranking,thres,statsOnly,neuronlistOnly,dataRead,rt,fit,npool,MeanNorm)
 % position =[500,150,1000,650];set(0, 'OuterPosition', position);
 % position = [50,50,1400,900];set(0, 'DefaultFigurePosition', position);
 addpath(genpath('../matlab_Utilities'));
@@ -19,34 +19,37 @@ set(groot,'defaultTextFontSize',FontSize);
 LegendOffset = 1;
 set(groot,'defaultLegendFontSize',FontSize-LegendOffset);
 pPosition = [0, 0, 1280, 720];
-if nargin < 16
-    npool = 12;
-    if nargin < 15
-        fit = true;
-        if nargin < 14
-            rt = 5;
-            if nargin < 13
-                dataRead = false;
-                if nargin < 12
-                    neuronlistOnly = false;
-                    if nargin < 11
-                        statsOnly = false;
-                        if nargin < 10
-                            thres = 0.0; % gauge for active
-                            if nargin < 9
-                                ranking = {};
-                                if nargin < 8
-                                    outputfdr = theme;
-                                    if nargin < 7
-                                        individOnly = false;
-                                        if nargin < 6
-                                            ntheta = 12;      
-                                            if nargin < 5
-                                                contrastLevel = 4;
-                                                if nargin < 4                  
-                                                    format = '';
-                                                    if nargin < 3
-                                                        neuronlist = [];
+if nargin < 17
+    MeanNorm = false;
+    if nargin < 16
+        npool = 12;
+        if nargin < 15
+            fit = true;
+            if nargin < 14
+                rt = 5;
+                if nargin < 13
+                    dataRead = false;
+                    if nargin < 12
+                        neuronlistOnly = false;
+                        if nargin < 11
+                            statsOnly = false;
+                            if nargin < 10
+                                thres = 0.0; % gauge for active
+                                if nargin < 9
+                                    ranking = {};
+                                    if nargin < 8
+                                        outputfdr = theme;
+                                        if nargin < 7
+                                            individOnly = false;
+                                            if nargin < 6
+                                                ntheta = 12;      
+                                                if nargin < 5
+                                                    contrastLevel = 4;
+                                                    if nargin < 4                  
+                                                        format = '';
+                                                        if nargin < 3
+                                                            neuronlist = [];
+                                                        end
                                                     end
                                                 end
                                             end
@@ -2636,6 +2639,8 @@ end
     EmeanTCgI = EmeanTC;
     ImeanTCgI = ImeanTC;
     io = {'i','o'};
+    operiod = true;
+    contrastRange = [2,4];
     for ij = 1:2
         if ~operiod && ij == 2
             continue
@@ -2723,12 +2728,16 @@ end
             %errorbar(relTheta, EmeanTCgI(:,i),std(TCgI(:,epick,i),1,2),'Color','b');
             eepick = 1:p.nv1e;
             if i==contrastLevel
-                objectMax = EmeanTCgI(itheta,i);
+                objectMax = max(EmeanTCgI(:,i));
                 hold on
                 for j=1:contrastLevel-1
-                    MeanNormTCgI = TCgI(:,eepick,j)./(ones(size(TCgI,1),1)*TCgI(itheta,eepick,j));
-                    MeanNormTCgI = mean(MeanNormTCgI,2);
-                    plot(relTheta, MeanNormTCgI*objectMax,LineScheme{j},'Color','b');
+                    if MeanNorm
+                        normTCgI = TCgI(:,eepick,j)./(ones(size(TCgI,1),1)*max(TCgI(:,eepick,j)));
+                        normTCgI = mean(normTCgI,2);
+                    else
+                        normTCgI = EmeanTCgI(:,j)./max(EmeanTCgI(:,j));
+                    end
+                    plot(relTheta, normTCgI*objectMax,LineScheme{j},'Color','b');
                 end
                 plot(relTheta, EmeanTCgI(:,i),LineScheme{i},'Color','b');
                 legend(conLabel);
@@ -2790,13 +2799,17 @@ end
             subplot(contrastLevel,6,(i-1)*6+4)
             errorbar(relTheta, ImeanTCgI(:,i),std(TCgI(:,ipick,i),1,2),'Color','b');
             if i==contrastLevel
-                objectMax = ImeanTCgI(itheta,i);
+                objectMax = max(ImeanTCgI(:,i));
                 hold on
                 iipick = p.nv1e + (1:p.nv1i);
                 for j=1:contrastLevel-1
-                    MeanNormTCgI = TCgI(:,iipick,j)./(ones(size(TCgI,1),1)*TCgI(itheta,iipick,j));
-                    MeanNormTCgI = mean(MeanNormTCgI,2);
-                    plot(relTheta, MeanNormTCgI*objectMax,LineScheme{j},'Color','b');
+                    if MeanNorm
+                        normTCgI = TCgI(:,iipick,j)./(ones(size(TCgI,1),1)*max(TCgI(:,iipick,j)));
+                        normTCgI = mean(normTCgI,2);
+                    else
+                        normTCgI = ImeanTCgI(:,j)./max(ImeanTCgI(:,j));
+                    end
+                    plot(relTheta, normTCgI*objectMax,LineScheme{j},'Color','b');
                 end
                 plot(relTheta, ImeanTCgI(:,i),'Color','b');
             end
@@ -2812,24 +2825,35 @@ end
 
         eepick = 1:p.nv1e;
         for i = 1:contrastLevel
-            MeanNormTC = rasterTC(:,eepick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,eepick,i));
-            pick = rasterTC(itheta,eepick,i)>0;
-            MeanNormTC = mean(MeanNormTC(:,pick),2);
+            if MeanNorm
+                normTC = rasterTC(:,eepick,i)./(ones(size(rasterTC,1),1)*max(rasterTC(:,eepick,i)));
+                pick = rasterTC(itheta,eepick,i)>0;
+                normTC = mean(normTC(:,pick),2);
 
-            mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,eepick,i);
-            MeanNormTCgLGN = TCgLGN(:,eepick,i)./mTmp;
-            MeanNormTCgLGN = mean(MeanNormTCgLGN,2);
+                mTmp = ones(size(TCgLGN,1),1)*max(TCgLGN(:,eepick,i));
+                normTCgLGN = TCgLGN(:,eepick,i)./mTmp;
+                normTCgLGN = mean(normTCgLGN,2);
 
-            MeanNormTCgLGN_F1 = TCgLGN_F1(:,eepick,i)./mTmp;
-            MeanNormTCgLGN_F1 = mean(MeanNormTCgLGN_F1,2);
+                normTCgLGN_F1 = TCgLGN_F1(:,eepick,i)./mTmp;
+                normTCgLGN_F1 = mean(normTCgLGN_F1,2);
 
-            MeanNormTCgE = TCgE(:,eepick,i)./(ones(size(TCgE,1),1)*TCgE(itheta,eepick,i));
-            MeanNormTCgE = mean(MeanNormTCgE,2);
+                normTCgE = TCgE(:,eepick,i)./(ones(size(TCgE,1),1)*max(TCgE(:,eepick,i)));
+                normTCgE = mean(normTCgE,2);
+            else
+                normTC = EmeanTC(:,i)./max(EmeanTC(:,i));
 
-            plot(relTheta, MeanNormTCgLGN,LineScheme{i},'Color','g');
-            plot(relTheta, MeanNormTCgLGN_F1,LineScheme{i},'Color','m');
-            plot(relTheta, MeanNormTCgE,LineScheme{i},'Color','r');
-            plot(relTheta, MeanNormTC,LineScheme{i},'Color','k');
+                mTmp = max(EmeanTCgLGN(:,i));
+                normTCgLGN = EmeanTCgLGN(:,i)./mTmp;
+
+                normTCgLGN_F1 = EmeanTCgLGN_F1(:,i)./mTmp;
+
+                normTCgE = EmeanTCgE(:,i)./max(EmeanTCgE(:,i));
+            end
+
+            plot(relTheta, normTCgLGN,LineScheme{i},'Color','g');
+            plot(relTheta, normTCgLGN_F1,LineScheme{i},'Color','m');
+            plot(relTheta, normTCgE,LineScheme{i},'Color','r');
+            plot(relTheta, normTC,LineScheme{i},'Color','k');
         end
         ylabel('normalized to max');
         %yy = ylim();
@@ -2883,24 +2907,35 @@ end
         
         iipick = p.nv1e + (1:p.nv1i);
         for i = 1:contrastLevel
-            MeanNormTC = rasterTC(:,iipick,i)./(ones(size(rasterTC,1),1)*rasterTC(itheta,iipick,i));
-            pick = rasterTC(itheta,iipick,i)>0;
-            MeanNormTC = mean(MeanNormTC(:,pick),2);
+            if MeanNorm
+                normTC = rasterTC(:,iipick,i)./(ones(size(rasterTC,1),1)*max(rasterTC(:,iipick,i)));
+                pick = rasterTC(itheta,iipick,i)>0;
+                normTC = mean(normTC(:,pick),2);
 
-            mTmp = ones(size(TCgLGN,1),1)*TCgLGN(itheta,iipick,i);
-            MeanNormTCgLGN = TCgLGN(:,iipick,i)./mTmp;
-            MeanNormTCgLGN = mean(MeanNormTCgLGN,2);
+                mTmp = ones(size(TCgLGN,1),1)*max(TCgLGN(:,iipick,i));
+                normTCgLGN = TCgLGN(:,iipick,i)./mTmp;
+                normTCgLGN = mean(normTCgLGN,2);
 
-            MeanNormTCgLGN_F1 = TCgLGN_F1(:,iipick,i)./mTmp;
-            MeanNormTCgLGN_F1 = mean(MeanNormTCgLGN_F1,2);
+                normTCgLGN_F1 = TCgLGN_F1(:,iipick,i)./mTmp;
+                normTCgLGN_F1 = mean(normTCgLGN_F1,2);
 
-            MeanNormTCgE = TCgE(:,iipick,i)./(ones(size(TCgE,1),1)*TCgE(itheta,iipick,i));
-            MeanNormTCgE = mean(MeanNormTCgE,2);
+                normTCgE = TCgE(:,iipick,i)./(ones(size(TCgE,1),1)*max(TCgE(:,iipick,i)));
+                normTCgE = mean(normTCgE,2);
+            else
+                normTC = ImeanTC(:,i)./max(ImeanTC(:,i));
 
-            plot(relTheta, MeanNormTCgLGN,LineScheme{i},'Color','g');
-            plot(relTheta, MeanNormTCgLGN_F1,LineScheme{i},'Color','m');
-            plot(relTheta, MeanNormTCgE,LineScheme{i},'Color','r');
-            plot(relTheta, MeanNormTC,LineScheme{i},'Color','k');
+                mTmp = max(ImeanTCgLGN(:,i));
+                normTCgLGN = ImeanTCgLGN(:,i)./mTmp;
+
+                normTCgLGN_F1 = ImeanTCgLGN_F1(:,i)./mTmp;
+
+                normTCgE = ImeanTCgE(:,i)./max(ImeanTCgE(:,i));
+            end
+
+            plot(relTheta, normTCgLGN,LineScheme{i},'Color','g');
+            plot(relTheta, normTCgLGN_F1,LineScheme{i},'Color','m');
+            plot(relTheta, normTCgE,LineScheme{i},'Color','r');
+            plot(relTheta, normTC,LineScheme{i},'Color','k');
         end
         ylabel('normalized to max');
         %yy = ylim();
@@ -2954,6 +2989,35 @@ end
                 print(hTCall,[outputfdr,'/','TCall',io{ij},'-',theme,'.',format],printDriver,dpi);
             end
         end
+        % absolute conductance level
+        hCondLevel = figure;
+        hold on
+        plot(1:2,[EmeanTCgLGN(itheta,contrastRange(1)),EmeanTCgLGN(itheta,contrastRange(2))],'g');
+        plot(3:4,[ImeanTCgLGN(itheta,contrastRange(1)),ImeanTCgLGN(itheta,contrastRange(2))],'g');
+        plot(1:2,[EmeanTCgLGN_F1(itheta,contrastRange(1)),EmeanTCgLGN_F1(itheta,contrastRange(2))],'om');
+        plot(3:4,[ImeanTCgLGN_F1(itheta,contrastRange(1)),ImeanTCgLGN_F1(itheta,contrastRange(2))],'om');
+        plot(1:2,[EmeanTCgE(itheta,contrastRange(1)),EmeanTCgE(itheta,contrastRange(2))],'r');
+        plot(3:4,[ImeanTCgE(itheta,contrastRange(1)),ImeanTCgE(itheta,contrastRange(2))],'r');
+        plot(1:2,[EmeanTCgI(itheta,contrastRange(1)),EmeanTCgI(itheta,contrastRange(2))],'b');
+        plot(3:4,[ImeanTCgI(itheta,contrastRange(1)),ImeanTCgI(itheta,contrastRange(2))],'b');
+
+        xlim([0,5]);
+        ylim([0,inf]);
+        set(gca,'XTick',[1,2,3,4],'XTickLabel',{'25%','100%','25%','100%'});
+        xlabel('Exc       Inh');
+        ylabel('Conductance (s^{-1})');
+        if ~isempty(format)
+            set(gcf,'Renderer','Painters')
+            %set(gcf,'Renderer','zbuffer')
+            %set(gcf,'Renderer','OpenGL')
+            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition.*2.5);
+            if strcmp(format,'fig')
+                saveas(hCondLevel,[outputfdr,'/','CondLvl',io{ij},'-',theme,'.',format]);
+            else
+                print(hCondLevel,[outputfdr,'/','CondLvl',io{ij},'-',theme,'.',format],printDriver,dpi);
+            end
+        end
+
         %% TC of types
         hTypeTC = figure;
 
@@ -3063,8 +3127,9 @@ end
                 print(hTypeTC,[outputfdr,'/','TypeTC',io{ij},'-',theme,'.',format],printDriver,dpi);
             end
         end
-    end
 
+    end
+    
     hFRThetaHeat = figure;
     ORF = p.typeE==1;
     SRF = p.typeE==2;

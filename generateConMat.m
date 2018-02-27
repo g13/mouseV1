@@ -91,7 +91,7 @@ load([suffix,'.mat']);
 if strcmp(eSpecific,'coGauss')
     eeSigCoeff = 0.50;
     if eiSpecific
-        eiSigCoeff = 0.60;
+        eiSigCoeff = 0.80;
     end
     if ieSpecific
         ieSigCoeff = 0.50;

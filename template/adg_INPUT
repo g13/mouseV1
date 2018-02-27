@@ -2,8 +2,8 @@
            Parameters for Integrate and Fire Neurons
        ----------------------------------------------
 
-        dt		tfinal	tstep1	tstep2	tstep3	tstep4 iperiod	iseed
-        0.0001    11      1.0	1.0		1.0		1.0		25		211359
+        dt	tfinal	tstep1	tstep2	tstep3	tstep4 iperiod	iseed
+    0.0002   21      1.0	1.0		1.0		1.0		25		211359
 
 	Vthres	Vreset	Vexcit	Vinhib	Gleak	DeltaT  vTheta  GleakI
 	 1.0	 0	    2.8     -0.4	50.0    0.4375  4.375   70.0
@@ -12,16 +12,16 @@
  	 0.001	0.0016666666666	0.002	0.080	 0.007	0.001
 
 	dE		dI		rdexc	raexc	rdinh	rainh	 gIIc	 gEIc
-	6.515	13.03	100.	100.0	100.0	100.0	 00.0	 00.0
+	6.515	13.03	100.	100.0	100.0	100.0	 15.0	 03.5
 
 	eps		g0	   gfail	rI0		tau0	tau1	  recordAllspikes
-	04		4.5    1.0	    1.0		0.003	 0.005    0.0
+	04		5.0    1.0	    1.0		0.003	 0.005    0.0
 
 	omega	k		theta	phi		tstart	twindow	  taulgn  xScale	yScale
 	 4.0	2.2918	4		0.0 	0.25	 01.0	  0.014	  0.05923	0.875
 
 	See		Sie		Cee		Cie		Sei		Sii		Cei		Cii		Unitary nProfile
-	1.00    0.090	1.00    0.090	0.022	0.050	0.022	0.050	0.5		31
+	0.60    0.090	1.00    0.090	0.021	0.040	0.021	0.040	0.5		31
 
 	 rk		frtlgn0	 jlgn	rstart	lgnlinear  nsample transient 
 	 2		109.5	 256	  1.0		0		10     0.25
@@ -33,16 +33,16 @@
 	 297	1.00		592		1.00	1.0      1
 
 	 neffEI	synfailEI neffEE synfailEE  spotaE  spotaI
-	 87		1.00		59		1.00    0.0     0.0
+	 87		1.00		59		1.00    0.0     2.0
 
 	 fnmdatE fnmdacE fnmdanE   fnmdatI	fnmdacI fnmdanI	   fgaba
 	 0.00	  0.0	  0.0		0.0		0.0		 0.0		0.0
 
 rk4: tau_e    tau_i    tnrise  tndamp  tau0   tau1   tau2    tau_ar  tau_ad
-     0.00045  0.00045   0.001   0.080   0.003  0.005  0.004  0.500   1.500 
+     0.00045  0.00045   0.001   0.080   0.003  0.005  0.004  0.0016666666   0.005 
 
     frtexc_e   ce0_e  frtinh_e	ci0_e   frtexc_i   ce0_i  frtinh_i	ci0_i
-     000.0	   0.02	  000.0	    0.08     000.0	   0.02	  000.0	    0.08
+     000.0	   0.01	  000.0	    0.07     000.0	   0.01	  000.0	    0.07
 
      SiRatio   SeRatio
      1.0        1.0
