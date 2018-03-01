@@ -9,7 +9,7 @@
 1. Set parameters in gMap2.m for generating LGN to V1 mapping
 2. Set parameters in generateConMat.m for generating connection and strength between V1 neurons
 3. Find other global parameters in gg.slurm and submit the setup job with
-    $ sbatch gg.slurm
+    $ ./sbatch_gg
 4. Create a folder and copy the code in template/ to it.
 5. Set global name in sbatch_sim4x3, note that here 12 jobs were submitted, each with 4 cpus.
     (If you want to use different number of cpus, and you are familiar with openmp in FORTRAN, go ahead and modify any of the EIFSep*.f in src/)

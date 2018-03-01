@@ -3,25 +3,26 @@ drawSpecific = false;
 p = struct;
 p.YoudensIndex = 0.32;
 p.profile = 'u'         % 'u' for uniform(single-value) profile for LGN connection strength, 'g' for gaussian
-p.name = 'ndi305-40';
+p.name = 'nd305-25s1-2';
 enorm = 0.305; 
-inorm = 0.40; 
+inorm = 0.25; 
 enormStd = 0.1016;
 inormStd = 0.1016;
 p.h = 'png';
 p.esigma0 = [10.5,0.1];
-p.isigma0 = [15.0,0.1];
+p.isigma0 = [10.5,0.1];
 %p.isigma0 = p.esigma0 * 1.1;
 p.eAspectR0 = [1.2;0.012];
-%p.iAspectR0 = [1.5;0.015];
-p.iAspectR0 = p.eAspectR0*1.19;
+p.iAspectR0 = [1.4;0.014];
+%p.iAspectR0 = p.eAspectR0*1.19;
 p.se = 1;  % connection strength
-p.si = 1;      %s
+%p.si = 2;
+p.si = 4/3.2875;
 %p.si = 1;    %l
 %p.si = 1;       %b
-CRF = 0.0;
+p.pCRF = 0.0;
 pMono = 0;
-ep = [0, pMono,	1-CRF]; % 27% 3-Stripes Niell & Stryker 2008
+ep = [0, pMono,	1-p.pCRF]; % 27% 3-Stripes Niell & Stryker 2008
 FontSize = 14;
 set(0,'DefaultAxesFontSize',FontSize);
 pPosition = [18, 180, 1200, 900];
@@ -82,24 +83,24 @@ p.drawOrientation = false;
 % pMono = 0.27; % Layer 2 and 3 only
 %ep = [0,	pMono*1,	0.73]; % 27% 3-Stripes Niell & Stryker 2008
 % p.YoudensIndex = 0.5; % 0.32 for Liu et al 2010 online method
-perORF = 0.55;
 ip = [0,    0,  1];
-p.ntypeE = 2;
 % p.nSubTypeE = [1,2,2,3];
 % p.nSubTypeE = [1,2,2];
-p.nSubTypeE = [2,2];
 % p.Etypes = {' ON-OFF',' ORF',' SRF',' 3-Stripes'};
 % p.Etypes = {' ON-OFF',' ORF',' SRF'};
-if CRF==0
+if p.pCRF==0
     p.Etypes = {' ORF',' SRF'};
+    p.nSubTypeE = [2,2];
 else
-    p.Etypes = {' ORF',' SRF','CRF'};
+    p.Etypes = {' ORF',' SRF',' CRF'};
+    p.nSubTypeE = [2,2,2];
 end
 p.Etypes = strcat('Exc',p.Etypes);
-p.ntypeI = 1;
-p.nSubTypeI = [2];
+p.ntypeE = length(p.Etypes);
 p.Itypes = {' ORF'};
+p.nSubTypeI = [2];
 p.Itypes = strcat('Inh',p.Itypes);
+p.ntypeI = length(p.Itypes);
 p.pOn = 0.85;
 core = 26.06*multi;
 % core = 5;
@@ -216,6 +217,7 @@ end
     end
 
 %%%%%%%%%%%%%% CRF
+if p.pCRF>0
     ir = (p_subregion > ep(3) & p_subregion <= 1);
     nir = sum(ir);
     p.eSubregion(ir) = 2;
@@ -233,7 +235,7 @@ end
     p.eAspectRatio(ir,1) = temp;
     p.eAspectRatio(ir,2) = temp;
     p.typeE(ir) = 3;
-
+end
 
 %% distribute RF in inh neuron
 p_subregion = rand([p.nv1i,1]);

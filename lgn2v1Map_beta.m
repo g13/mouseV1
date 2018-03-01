@@ -166,7 +166,9 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
     pick2e = [p.eSubregion == 2; false(p.nv1i,1)];
     p.typeE(ORF & pick2e) = 1;
     p.typeE(~ORF & pick2e) = 2; 
-    p.typeE(iCRF & pick2e) = 3;
+    if p.pCRF > 0
+        p.typeE(iCRF & pick2e) = 3;
+    end
     assert(sum(ORF-iCRF<0)==0);
     clear pick2e;
     %% plot

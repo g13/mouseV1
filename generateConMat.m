@@ -306,6 +306,11 @@ if logP.spread
 else
     mee = subMat(src,tar,q,logP); 
 end
+if eSpecific=='coGauss'
+    if p.pCRF > 0
+        mee(:,p.CRF)=(mee(:,p.CRF)>0)*(logP.nbins+2);
+    end
+end
 disp('EE finished');
 toc;
 m(1:p.nv1e,1:p.nv1e) = mee;

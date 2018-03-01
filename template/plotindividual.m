@@ -324,11 +324,13 @@ else
         %tmpCV(:,i) = nP(i).cv;
         tmpPriA(:,i) = nP(i).priA;
     end
-    [rmax,smax,sigfsq2] = fitTuningCurve_Quick(tmpFr,tmpPriA,contrastLevel,p.nv1,theme,ntheta,npool,theme);
+    %[rmax,smax,D] = fitTuningCurve_Quick(tmpFr,tmpPriA,contrastLevel,p.nv1,theme,ntheta,npool,theme);
+    [r0, rmax,smax, D] = fitVonMises(tmpFr,tmpPriA,contrastLevel,p.nv1,theme,ntheta,npool,theme);
     tcReady = true;
 end
 if tcReady
-    width = sigfsq2*sqrt(log(2));
+    %width = D*sqrt(log(2));
+    width = (90.0/pi)*acos(1+D.*log((1+exp(-2./D))/2));
 end
 disp('data loaded');
     if pOSI
@@ -398,8 +400,8 @@ if ~statsOnly || neuronlistOnly
 %             neuronlist(end-sn+1:end) = CVsortedID(candidates([length(candidates),floor(length(candidates)/2),1]),level);
 %         end
     %%  choose over types
-        %[~,widthSortedID] = sort(sigfsq2);
-        %[~,dWidthsortedID] = sort(sigfsq2(4,:)-sigfsq2(2,:));
+        %[~,widthSortedID] = sort(width);
+        %[~,dWidthsortedID] = sort(width(4,:)-width(2,:));
         %sortedID = widthSortedID';
         %dsortedID = dWidthsortedID;
         sortedID = CVsortedID;
@@ -656,7 +658,8 @@ for nn = 1:length(neuronlist)
             else 
                 s0 = s0 - 90;
             end
-            r = rmax(il,k)*exp(-((s-s0)./sigfsq2(il,k)).^2);
+            %r = rmax(il,k)*exp(-((s-s0)./D(il,k)).^2);
+            r = r0(il,k)+rmax(il,k)*exp((cos(2*(s-s0)/180*pi)-1)./D(il,k));
             plot(s,r,LineScheme{il},'Color','g','LineWidth',2);
         end
     end
@@ -1464,7 +1467,7 @@ if ~isempty(format)
     end
 end
 
-hInput = figure;
+hInput = figure; % input currents to exc pop
 alignedPhase = (halfNdperiod + mod(halfNdperiod,2))/2;
 for i =1:contrastLevel
     tLGN = zeros(ndperiod,2); 
@@ -1479,19 +1482,19 @@ for i =1:contrastLevel
         [~,imax] = max(ipC(i).cLGN(pe,:),[],2);
         for j = 1:p.nv1e
             shift = alignedPhase-imax(j);
-            tLGN(:,1) = tLGN(:,1) - circshift(ipC(i).cLGN(j,:),shift,2)';
+            tLGN(:,1) = tLGN(:,1) + circshift(ipC(i).cLGN(j,:),shift,2)';
             tLGN(:,2) = tLGN(:,2) + circshift(ipC(i).cLGNstd(j,:),shift,2)';
-            tE(:,1) = tE(:,1) - circshift(ipC(i).cE(j,:),shift,2)';
+            tE(:,1) = tE(:,1) + circshift(ipC(i).cE(j,:),shift,2)';
             tE(:,2) = tE(:,2) + circshift(ipC(i).cEstd(j,:),shift,2)';
-            tI(:,1) = tI(:,1) - circshift(ipC(i).cI(j,:),shift,2)';
+            tI(:,1) = tI(:,1) + circshift(ipC(i).cI(j,:),shift,2)';
             tI(:,2) = tI(:,2) + circshift(ipC(i).cIstd(j,:),shift,2)';
-            tP(:,1) = tP(:,1) - circshift(ipC(i).cP(j,:),shift,2)';
+            tP(:,1) = tP(:,1) + circshift(ipC(i).cP(j,:),shift,2)';
             tP(:,2) = tP(:,2) + circshift(ipC(i).cPstd(j,:),shift,2)';
-            tEn(:,1) = tEn(:,1) - circshift(ipC(i).cEn(j,:),shift,2)';
+            tEn(:,1) = tEn(:,1) + circshift(ipC(i).cEn(j,:),shift,2)';
             tEn(:,2) = tEn(:,2) + circshift(ipC(i).cEnstd(j,:),shift,2)';
-            tIn(:,1) = tIn(:,1) - circshift(ipC(i).cIn(j,:),shift,2)';
+            tIn(:,1) = tIn(:,1) + circshift(ipC(i).cIn(j,:),shift,2)';
             tIn(:,2) = tIn(:,2) + circshift(ipC(i).cInstd(j,:),shift,2)';
-            tL = tL - gL*(circshift(ipC(i).V(j,:),shift,2)-vrest)';
+            tL = tL + gL*(circshift(ipC(i).V(j,:),shift,2)-vrest)';
         end
         tL = tL./p.nv1e; tLGN = tLGN./p.nv1e; tE = tE./p.nv1e; tI = tI./p.nv1e; tEn = tEn./p.nv1e; tIn = tIn./p.nv1e; tP= tP./p.nv1e;
         x = (0:ndperiod-1).*360/ndperiod;
@@ -1510,11 +1513,11 @@ for i =1:contrastLevel
     subplot(contrastLevel,3,(i-1)*3+2)
     hold on
         target = ipC(i).cLGN(pe,:) + ipC(i).cE(pe,:) + ipC(i).cI(pe,:) + ipC(i).cP(pe,:) + ipC(i).cEn(pe,:) + ipC(i).cIn(pe,:) + gL*(ipC(i).V(pe,:)-vrest);
-        [Allcounts,Alledges] = histcounts(mean(-target),'Normalization','pdf');
-        [Ecounts,Eedges] = histcounts(mean(-ipC(i).cE(pe,:)),'Normalization','pdf');
-        [Icounts,Iedges] = histcounts(mean(-ipC(i).cI(pe,:)),'Normalization','pdf');
-        [Pcounts,Pedges] = histcounts(mean(-ipC(i).cP(pe,:)),'Normalization','pdf');
-        [LGNcounts,LGNedges] = histcounts(mean(-ipC(i).cLGN(pe,:)),'Normalization','pdf');
+        [Allcounts,Alledges] = histcounts(mean(target),'Normalization','pdf');
+        [Ecounts,Eedges] = histcounts(mean(ipC(i).cE(pe,:)),'Normalization','pdf');
+        [Icounts,Iedges] = histcounts(mean(ipC(i).cI(pe,:)),'Normalization','pdf');
+        [Pcounts,Pedges] = histcounts(mean(ipC(i).cP(pe,:)),'Normalization','pdf');
+        [LGNcounts,LGNedges] = histcounts(mean(ipC(i).cLGN(pe,:)),'Normalization','pdf');
         plot((Eedges(1:end-1)+Eedges(2:end))./2,Ecounts,'r');
         plot((Iedges(1:end-1)+Iedges(2:end))./2,Icounts,'b');
         plot((Pedges(1:end-1)+Pedges(2:end))./2,Pcounts,':k');
@@ -1527,11 +1530,11 @@ for i =1:contrastLevel
     subplot(contrastLevel,3,(i-1)*3+3)
     hold on
         target = ioC(i).cLGN(pe,:) + ioC(i).cE(pe,:) + ioC(i).cI(pe,:) + ioC(i).cP(pe,:) + ioC(i).cEn(pe,:) + ioC(i).cIn(pe,:) + gL*(ioC(i).V(pe,:)-vrest);
-        [Allcounts,Alledges] = histcounts(mean(-target),'Normalization','pdf');
-        [Ecounts,Eedges] = histcounts(mean(-ioC(i).cE(pe,:)),'Normalization','pdf');
-        [Icounts,Iedges] = histcounts(mean(-ioC(i).cI(pe,:)),'Normalization','pdf');
-        [Pcounts,Pedges] = histcounts(mean(-ioC(i).cP(pe,:)),'Normalization','pdf');
-        [LGNcounts,LGNedges] = histcounts(mean(-ioC(i).cLGN(pe,:)),'Normalization','pdf');
+        [Allcounts,Alledges] = histcounts(mean(target),'Normalization','pdf');
+        [Ecounts,Eedges] = histcounts(mean(ioC(i).cE(pe,:)),'Normalization','pdf');
+        [Icounts,Iedges] = histcounts(mean(ioC(i).cI(pe,:)),'Normalization','pdf');
+        [Pcounts,Pedges] = histcounts(mean(ioC(i).cP(pe,:)),'Normalization','pdf');
+        [LGNcounts,LGNedges] = histcounts(mean(ioC(i).cLGN(pe,:)),'Normalization','pdf');
         plot((Eedges(1:end-1)+Eedges(2:end))./2,Ecounts,'-r');
         plot((Iedges(1:end-1)+Iedges(2:end))./2,Icounts,'-b');
         plot((Pedges(1:end-1)+Pedges(2:end))./2,Pcounts,':k');
@@ -2396,27 +2399,30 @@ end
 %% width
 if tcReady
     hTCwidth = figure;
+    dist = true;
     p2 = contrastLevel; p1 = contrastLevel-2;
     pick = nP(contrastLevel).ei>0.5 & nP(p1).pkrate>thres;
-    if (0)
-    subplot(2,4,1); hold on;
-        edges = 0:5:90;
-        pickedWidth = width(p1,pick);
-        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('25%');
-        xlabel('half width (\theta)')
-        ylabel('% exc neurons')
-        xlim([0,90]);
-    subplot(2,4,2); hold on;
-        edges = 0:5:90;
-        pickedWidth = width(p2,pick);
-        histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
-        title('100%');
-        xlabel('half width (\theta)')
-        ylabel('% exc neurons')
-        xlim([0,90]);
+    if (dist)
+        subplot(2,4,1); hold on;
+            edges = 0:5:90;
+            pickedWidth = width(p1,pick);
+            histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
+            title('25%');
+            xlabel('half width (\theta)')
+            ylabel('% exc neurons')
+            xlim([0,90]);
+        subplot(2,4,2); hold on;
+            edges = 0:5:90;
+            pickedWidth = width(p2,pick);
+            histogram(pickedWidth,edges,'Normalization','probability','FaceColor','r');
+            title('100%');
+            xlabel('half width (\theta)')
+            ylabel('% exc neurons')
+            xlim([0,90]);
+        hExcWidth = subplot(2,2,2);
+    else
+        hExcWidth = subplot(1,2,1);
     end
-    hExcWidth = subplot(1,2,1);
         ctrs = cell(2,1);
         if sum(pick) > 0
             pair1 = width(p1,pick);
@@ -2455,7 +2461,7 @@ if tcReady
 
     pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate>thres;
     %pick = nP(contrastLevel).ei<0.5 & nP(p1).pkrate> nP(1).br & nP(p2).pkrate> nP(1).br & nP(p1).pkrate>thres & nP(p2).pkrate>thres;
-    if (0)
+    if (dist)
     subplot(2,4,5); hold on;
         edges = 0:10:180;
         pickedWidth = width(p1,pick);
@@ -2472,14 +2478,15 @@ if tcReady
         xlabel('half width (\theta)')
         ylabel('% inh neurons')
         xlim([0,720]);
-    end
-    pick = pick & width(p2,:)' < 200 & width(p1,:)' < 200;
-
+    hInhWidth = subplot(2,2,4); 
+    else
     hInhWidth = subplot(1,2,2); 
+    end
         idTick = 6;
         ctrs = cell(2,1);
         dTick = 60;
-        tickLim = [0,200];
+        tickLim = [0,90];
+        pick = pick & width(p2,:)' < tickLim & width(p1,:)' < tickLim(2);
 
         if sum(pick) > 0
             pair1 = width(p1,pick);
@@ -2640,7 +2647,7 @@ end
     ImeanTCgI = ImeanTC;
     io = {'i','o'};
     operiod = true;
-    contrastRange = [2,4];
+    contrastRange = [1,2,3,4];
     for ij = 1:2
         if ~operiod && ij == 2
             continue
@@ -2979,7 +2986,7 @@ end
         set(ax1,'XTick',xticks,'XTickLabel',num2str(xticks'));
         set(ax2,'XTick',[],'XTickLabel','','XTickLabelMode','manual');
         if ~isempty(format)
-            set(gcf,'Renderer','Painters')
+            set(gcf,'Renderer','Painters') 
             %set(gcf,'Renderer','zbuffer')
             %set(gcf,'Renderer','OpenGL')
             set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition*1.5);
@@ -2991,21 +2998,36 @@ end
         end
         % absolute conductance level
         hCondLevel = figure;
-        hold on
-        plot(1:2,[EmeanTCgLGN(itheta,contrastRange(1)),EmeanTCgLGN(itheta,contrastRange(2))],'g');
-        plot(3:4,[ImeanTCgLGN(itheta,contrastRange(1)),ImeanTCgLGN(itheta,contrastRange(2))],'g');
-        plot(1:2,[EmeanTCgLGN_F1(itheta,contrastRange(1)),EmeanTCgLGN_F1(itheta,contrastRange(2))],'om');
-        plot(3:4,[ImeanTCgLGN_F1(itheta,contrastRange(1)),ImeanTCgLGN_F1(itheta,contrastRange(2))],'om');
-        plot(1:2,[EmeanTCgE(itheta,contrastRange(1)),EmeanTCgE(itheta,contrastRange(2))],'r');
-        plot(3:4,[ImeanTCgE(itheta,contrastRange(1)),ImeanTCgE(itheta,contrastRange(2))],'r');
-        plot(1:2,[EmeanTCgI(itheta,contrastRange(1)),EmeanTCgI(itheta,contrastRange(2))],'b');
-        plot(3:4,[ImeanTCgI(itheta,contrastRange(1)),ImeanTCgI(itheta,contrastRange(2))],'b');
-
-        xlim([0,5]);
-        ylim([0,inf]);
-        set(gca,'XTick',[1,2,3,4],'XTickLabel',{'25%','100%','25%','100%'});
-        xlabel('Exc       Inh');
-        ylabel('Conductance (s^{-1})');
+        %plot(1:4,[EmeanTCgLGN(itheta,contrastRange(1)),EmeanTCgLGN(itheta,contrastRange(2))],'-og');
+        %plot(3:4,[ImeanTCgLGN(itheta,contrastRange(1)),ImeanTCgLGN(itheta,contrastRange(2))],'g');
+        %plot(1:4,[EmeanTCgLGN_F1(itheta,contrastRange(1)),EmeanTCgLGN_F1(itheta,contrastRange(2))],'-om');
+        %plot(3:4,[ImeanTCgLGN_F1(itheta,contrastRange(1)),ImeanTCgLGN_F1(itheta,contrastRange(2))],'om');
+        %plot(1:4,[EmeanTCgE(itheta,contrastRange(1)),EmeanTCgE(itheta,contrastRange(2))],'-or');
+        %plot(3:4,[ImeanTCgE(itheta,contrastRange(1)),ImeanTCgE(itheta,contrastRange(2))],'r');
+        %plot(1:4,[EmeanTCgI(itheta,contrastRange(1)),EmeanTCgI(itheta,contrastRange(2))],'-ob');
+        %plot(3:4,[ImeanTCgI(itheta,contrastRange(1)),ImeanTCgI(itheta,contrastRange(2))],'b');
+        subplot(1,2,1)
+            hold on
+            plot(1:4,ImeanTCgLGN(itheta,:),'-og');
+            plot(1:4,ImeanTCgLGN_F1(itheta,:),'-om');
+            plot(1:4,ImeanTCgE(itheta,:),'-or');
+            plot(1:4,ImeanTCgI(itheta,:),'-ob');
+            xlim([0,5]);
+            ylim([0,inf]);
+            set(gca,'XTick',[1,2,3,4],'XTickLabel',{'12.5%','25%','50%','100%'});
+            xlabel('Contrast');
+            ylabel('Conductance (s^{-1})');
+        subplot(1,2,2)
+            hold on
+            plot(1:4,EmeanTCgLGN(itheta,:),'-og');
+            plot(1:4,EmeanTCgLGN_F1(itheta,:),'-om');
+            plot(1:4,EmeanTCgE(itheta,:),'-or');
+            plot(1:4,EmeanTCgI(itheta,:),'-ob');
+            xlim([0,5]);
+            ylim([0,inf]);
+            set(gca,'XTick',[1,2,3,4],'XTickLabel',{'12.5%','25%','50%','100%'});
+            xlabel('Contrast');
+            ylabel('Conductance (s^{-1})');
         if ~isempty(format)
             set(gcf,'Renderer','Painters')
             %set(gcf,'Renderer','zbuffer')

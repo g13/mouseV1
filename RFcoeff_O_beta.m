@@ -1,14 +1,14 @@
-function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format,ld,temper,reverse,OnOff,ie,antiphase,threads)
+function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format,ld,temper,temperGrad,ie,antiphase,threads,wC)
     if nargin < 16
-        threads = 1;
+        wC = 1;
         if nargin < 15
-            antiphase = false;
+            threads = 1;
             if nargin < 14
-                ie = false;
+                antiphase = false;
                 if nargin < 13
-                    OnOff = false;
+                    ie = false;
                     if nargin < 12
-                        reverse = 1;
+                        temperGrad = 1;
                         if nargin < 11
                             temper = 0.0;
                             if nargin < 10
@@ -59,10 +59,15 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
     SepRFdist = maxd;
     %SepRFdist = max([0.64,max(p.enormDistance)]);
     set(0,'DefaultAxesFontSize',14);
-    %wE = p.enormDistance;
-    %wE(wE>=SepRFdist) = 1;
-    %wORF =wE(wE<SepRFdist);
-    %wE(wE<SepRFdist) = (wORF-mind)./SepRFdist;
+    if temperGrad
+        wE = p.enormDistance;
+        wE(wE>=SepRFdist) = 1;
+        wORF =wE(wE<SepRFdist);
+        wE(wE<SepRFdist) = (wORF-mind)./SepRFdist;
+    end
+    if p.pCRF > 0
+        wE(p.CRF) = wC;
+    end
 
     %SepRFdist = max([0.64,max(p.inormDistance)]);
     %wI = p.inormDistance;
@@ -74,7 +79,7 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
     %    case 1
     %        w = wE*tw;
     %    case 2
-            w = ones(n,1)*tw;
+             w = ones(n,1)*tw;
     %    case -1 
     %        w = (1-wE)*tw;
     %    case -2
@@ -85,8 +90,11 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
     oneMinusWmat = ones(p.nv1,1)*oneMinusW';
 
     if temper > 0 % for ORF, more overlap -> more blurness in dTheta gauge
-        %temperMat = ones(m,1) * (1-wE)' * temper;
-        temperMat = ones(m,n) * temper;
+        if temperGrad
+            temperMat = ones(m,1) * (1-wE)' * temper;
+        else
+            temperMat = ones(m,n) * temper;
+        end
         s = rng;
         temperMat = randn(m,n) .* temperMat * pi/180;
     else
@@ -146,12 +154,13 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
         gtheta(~pickTheta) = theta(~pickTheta) + pi/2;
         RFcorrMat = ones(m,n);
         tic;
-        nmZ = (Z-ones(ngrid,1)*mean(Z,1))./(ones(ngrid,1)*std(Z,1,1));
+        stdZ = std(Z,1,1);
+        nmZ = (Z-ones(ngrid,1)*mean(Z,1))./(ones(ngrid,1)*stdZ);
         disp('data normalized');
         toc;
         tic;
         parfor i=1:n
-            if sum(nmZ(:,i)) == 0.0
+            if stdZ(i) == 0
                 AORF(i) = true;
                 RFcorrMat(:,i) = zeros(m,1);
             else
@@ -202,6 +211,7 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
         disp('coMat finished');
         toc;
         nAORF = sum(AORF);
+        assert(sum(AORF(p.CRF))==sum(p.CRF))
     else
         load([filename,'_more']);
         if temper > 0
@@ -664,90 +674,90 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
             end
         end
         if nAORF > 0
-        hORF = figure;
-        subplot(2,1,1)
-        hold on
-        sel = AORF;
-        nsel = sum(sel);
-        binranges = -1:0.1:1;
-        nbins = length(binranges);
-        binranges(nbins) = 1.1;
-        sbC = zeros(nbins-1,4);
+            hORF = figure;
+            subplot(2,1,1)
+            hold on
+            sel = AORF;
+            nsel = sum(sel);
+            binranges = -1:0.1:1;
+            nbins = length(binranges);
+            binranges(nbins) = 1.1;
+            sbC = zeros(nbins-1,4);
 
-        tmp = coMat(1:p.nv1e,sel);
-        bC = histc(tmp,binranges);
-        sbC(:,1) = sum(bC(1:nbins-1,:),2);
+            tmp = coMat(1:p.nv1e,sel);
+            bC = histc(tmp,binranges);
+            sbC(:,1) = sum(bC(1:nbins-1,:),2);
 
-        tmp = RFcorrMat(1:p.nv1e,sel);
-        bC = histc(tmp,binranges);
-        sbC(:,2) = sum(bC(1:nbins-1,:),2);
+            tmp = RFcorrMat(1:p.nv1e,sel);
+            bC = histc(tmp,binranges);
+            sbC(:,2) = sum(bC(1:nbins-1,:),2);
 
-        tmp = coMat(p.nv1e+(1:p.nv1i),sel);
-        bC = histc(tmp,binranges);
-        sbC(:,3) = sum(bC(1:nbins-1,:),2);
+            tmp = coMat(p.nv1e+(1:p.nv1i),sel);
+            bC = histc(tmp,binranges);
+            sbC(:,3) = sum(bC(1:nbins-1,:),2);
 
-        tmp = RFcorrMat(p.nv1e+(1:p.nv1i),sel);
-        bC = histc(tmp,binranges);
-        sbC(:,4) = sum(bC(1:nbins-1,:),2);
-        plot(binranges(1:nbins-1),sbC,'*','LineStyle','-');
+            tmp = RFcorrMat(p.nv1e+(1:p.nv1i),sel);
+            bC = histc(tmp,binranges);
+            sbC(:,4) = sum(bC(1:nbins-1,:),2);
+            plot(binranges(1:nbins-1),sbC,'*','LineStyle','-');
 
-        legend({'coMatE','RFcorrE','coMatI','RFcorrI'});
+            legend({'coMatE','RFcorrE','coMatI','RFcorrI'});
 
-        hExc = subplot(2,2,3);
-        dCoeff = 0.05;
-        ctrs = cell(2,1);
-        ctrs{1} = linspace(0,pi/2,7);
-        ctrs{2} = -1:dCoeff:1;
-        lctrsx = length(ctrs{1});
-        lctrsy = length(ctrs{2});
-        ctrs{2}(end) = 1+dCoeff;
-        dTickX = 1/lctrsx;
-        TickY = 0.1;
-        tickPosX = linspace(0.5,lctrsx-1+0.5,lctrsx);
-        tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
-        tickLabelX = num2str((linspace(0,90,length(tickPosX)))');
-        tickLabelY = flipud(num2str((linspace(-1,1,length(tickPosY)))'));
+            hExc = subplot(2,2,3);
+            dCoeff = 0.05;
+            ctrs = cell(2,1);
+            ctrs{1} = linspace(0,pi/2,7);
+            ctrs{2} = -1:dCoeff:1;
+            lctrsx = length(ctrs{1});
+            lctrsy = length(ctrs{2});
+            ctrs{2}(end) = 1+dCoeff;
+            dTickX = 1/lctrsx;
+            TickY = 0.1;
+            tickPosX = linspace(0.5,lctrsx-1+0.5,lctrsx);
+            tickPosY = 0.5:lctrsy*dTickY:lctrsy+0.5;
+            tickLabelX = num2str((linspace(0,90,length(tickPosX)))');
+            tickLabelY = flipud(num2str((linspace(-1,1,length(tickPosY)))'));
 
-        tmp = coMat(1:p.nv1e,sel);
-        tmp = reshape(tmp,[p.nv1e*nsel,1]);
-        tmpTheta = dThetaMat(1:p.nv1e,sel);
-        tmpTheta = reshape(tmpTheta,[p.nv1e*nsel,1]);
-        RFpair = [tmpTheta,tmp];
-        denRFpair = hist3(RFpair,ctrs);
-        denRFpair = denRFpair(1:lctrsx-1,1:lctrsy-1);
-        maxDen = max(max(denRFpair));
-        denRFpair = denRFpair/maxDen;
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denRFpair');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('\Delta\theta');
-        ylabel('Coeff');
-        title('exc');
-        colormap(hExc,redOnly);
-        hInh = subplot(2,2,4);
+            tmp = coMat(1:p.nv1e,sel);
+            tmp = reshape(tmp,[p.nv1e*nsel,1]);
+            tmpTheta = dThetaMat(1:p.nv1e,sel);
+            tmpTheta = reshape(tmpTheta,[p.nv1e*nsel,1]);
+            RFpair = [tmpTheta,tmp];
+            denRFpair = hist3(RFpair,ctrs);
+            denRFpair = denRFpair(1:lctrsx-1,1:lctrsy-1);
+            maxDen = max(max(denRFpair));
+            denRFpair = denRFpair/maxDen;
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denRFpair');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('\Delta\theta');
+            ylabel('Coeff');
+            title('exc');
+            colormap(hExc,redOnly);
+            hInh = subplot(2,2,4);
 
-        tmp = coMat(p.nv1e+(1:p.nv1i),sel);
-        tmp = reshape(tmp,[p.nv1i*nsel,1]);
-        tmpTheta = dThetaMat(p.nv1e+(1:p.nv1i),sel);
-        tmpTheta = reshape(tmpTheta,[p.nv1i*nsel,1]);
-        RFpair = [tmpTheta,tmp];
-        denRFpair = hist3(RFpair,ctrs);
-        denRFpair = denRFpair(1:lctrsx-1,1:lctrsy-1);
-        maxDen = max(max(denRFpair));
-        denRFpair = denRFpair/maxDen;
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denRFpair');
-        set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
-        xlabel('\Delta\theta');
-        ylabel('Coeff');
-        title('inh');
-        colormap(hInh,blueOnly);
-        if ~isempty(format)
-            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            if strcmp(format,'fig')
-                saveas(hORF,['Pop_O_beta_ORF-dTheta',num2str(tw*100),'%-',lgnfile,'.fig']);
-            else
-                print(hORF,['Pop_O_beta_ORF-dTheta',num2str(tw*100),'%-',lgnfile,'.',format],printDriver,dpi);
+            tmp = coMat(p.nv1e+(1:p.nv1i),sel);
+            tmp = reshape(tmp,[p.nv1i*nsel,1]);
+            tmpTheta = dThetaMat(p.nv1e+(1:p.nv1i),sel);
+            tmpTheta = reshape(tmpTheta,[p.nv1i*nsel,1]);
+            RFpair = [tmpTheta,tmp];
+            denRFpair = hist3(RFpair,ctrs);
+            denRFpair = denRFpair(1:lctrsx-1,1:lctrsy-1);
+            maxDen = max(max(denRFpair));
+            denRFpair = denRFpair/maxDen;
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denRFpair');
+            set(gca,'YTickLabel',tickLabelY,'YTick',tickPosY,'XTickLabel',tickLabelX,'XTick',tickPosX);
+            xlabel('\Delta\theta');
+            ylabel('Coeff');
+            title('inh');
+            colormap(hInh,blueOnly);
+            if ~isempty(format)
+                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                if strcmp(format,'fig')
+                    saveas(hORF,['Pop_O_beta_ORF-dTheta',num2str(tw*100),'%-',lgnfile,'.fig']);
+                else
+                    print(hORF,['Pop_O_beta_ORF-dTheta',num2str(tw*100),'%-',lgnfile,'.',format],printDriver,dpi);
+                end
             end
-        end
         end
     end
 end

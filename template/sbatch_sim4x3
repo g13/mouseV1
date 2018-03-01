@@ -1,10 +1,10 @@
 #!/bin/bash
 theme='ndi305-40'       # LGN setup name
-walltime=2:00:00
+walltime=1:00:00
 analysisTime=0:45:00
-TYPE='o'                # type of cortical connection
+TYPE='6'                # type of cortical connection
 ######## Please find the following variable description in pA.slurm ########
-NAME='iii8'                 # raw data folder name
+NAME='iii-6'                 # raw data folder name
 PRESET=$theme          # lgn presets file
 FORMAT='png'               # figure format for saving
 individOnly="false"        # plot individual neurons’ figures only
@@ -28,7 +28,6 @@ fname=$theme'_'$TYPE
 mkdir $NAME/sim_package_backup
 cp conMat-$fname.mat conMat.mat
 cp profile-$fname.out $NAME/profile.out
-cp generateConMat-$fname.m gg-$fname.slurm logNormalProfile-$fname.m RFcoeff_O_beta-$fname.m lgn2v1Map_beta-$theme.m gMap2-$theme.m $NAME/sim_package_backup/
 cp logNormalProfile-$theme'_'$TYPE.mat $NAME/logNormalProfile.mat
 cp lgnmap.out-$theme $NAME/lgnmap.out
 
