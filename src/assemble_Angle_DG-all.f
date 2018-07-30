@@ -43,6 +43,7 @@
           read(fdr,*) eps
           if (i.EQ.1) fdr0 = fdr
           write(*,'(A11,F5.1,A1)') 'contrast = ',eps/10.0,'%'
+          print *, 'in', fdr, ' and ', fdr0
           call assemble(fdr0,fdr,n,nlgni,lgnmax,nr,lgnmin,iperiod)
       enddo
       close(1111)
@@ -132,6 +133,7 @@
             fdat(n+1) = fdr0//'/'//thetafdr//'/i-and-f.dat1'
             call system('mv '//trim(fdat(n+1))//' '
      1      //trim(theta_wise)//'/'//thetafdr//'-i-and-f.dat1')
+            print *,fdat(n+1),' moved'
         endif
         theta_wise = 'processed/theta_wise/'//fdr0
         fdat(n+1)=trim(theta_wise)//'/'//thetafdr//'-i-and-f.dat1' 

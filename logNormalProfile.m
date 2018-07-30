@@ -25,7 +25,11 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
 %     nsig = max(ceil(sigma/mu),nsig);   
     strengthID = zeros(n,1);
     A = 2/erfc(-(log(nsig*sig)-m)/(sig*sqrt(2)));
-    logNormalCDF = @(x,m,sig) 1/2*erfc(-(log(x)-m)/(sig*sqrt(2)))*A;
+    if A == inf
+        logNormalCDF = @(x,m,sig) ones(1,length(x));
+    else
+        logNormalCDF = @(x,m,sig) 1/2*erfc(-(log(x)-m)/(sig*sqrt(2)))*A;
+    end
     
     %slist = zeros(nbins,1);
     %nbins0 = round(0.6*nbins);
@@ -36,7 +40,11 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
     x0max = min(log(4.0),m+nsig*sig);
     x0min = max(log(5e-3),m-nsig*sig);
 %     x0max = m + nsig*sig;
-    x0 = exp(linspace(x0min,x0max,nbins));
+    if A == inf
+        x0 = zeros(1,nbins)+exp(m); 
+    else
+        x0 = exp(linspace(x0min,x0max,nbins));
+    end
     slist = x0;
 %     x00 = [0,x0];
 %     slist = (x00(1:nbins) + x00(2:nbins+1))/2;
@@ -75,26 +83,30 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
         figure;
         logNormal = @(x,m,sig) 1./(x*sqrt(2*pi)*sig).*exp(-(log(x)-m).^2/(2*sig^2));
         pick = npick>0;
-        x = slist(pick);
+        x = slist(pick)
         y = npick(pick);
         nx = sum(pick);
         dx = zeros(1,nx);
-        for i = 1:nx
-            switch i
-                case 1
-                    dx(i) = x(i+1)-x(i);
-                case nx
-                    dx(i) = x(i) - x(i-1);
-                otherwise
-                    dx(i) = 0.5*(x(i+1)-x(i-1));
+        if A~=inf
+            for i = 1:nx
+                switch i
+                    case 1
+                        dx(i) = x(i+1)-x(i);
+                    case nx
+                        dx(i) = x(i) - x(i-1);
+                    otherwise
+                        dx(i) = 0.5*(x(i+1)-x(i-1));
+                end
             end
-            
+            yprob = logNormal(x,m,sig).*dx;
+            yprob = yprob./sum(yprob);
+        else
+            yprob = 1;
         end
-        yprob = logNormal(x,m,sig).*dx;
-        yprob = yprob./sum(yprob);
+
 
         subplot(2,1,1);
-        semilogx(x,yprob*n);
+        semilogx(x,yprob*n,'-*');
         xlabel('PSP');
         ylabel('#');
         hold on
@@ -108,7 +120,7 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
                 ['x=',num2str(min(x)),'~',num2str(max(x))]})
 
         subplot(2,1,2);
-        plot(x,yprob*n);
+        plot(x,yprob*n,'-*');
         hold on
 
         plot(x,y);

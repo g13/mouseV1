@@ -47,25 +47,27 @@ fclose(fid);
 
 filepath = [DIR, '/', 'curr.dat'];
 fid = fopen(filepath);
-tuningCurve.currEt = fread(fid, [n, 2*ntheta+1],'double');
-tuningCurve.currEc = fread(fid, [n, 2*ntheta+1],'double');
-tuningCurve.currIc = fread(fid, [n, 2*ntheta+1],'double');
-tuningCurve.currEn = fread(fid, [n, 2*ntheta+1],'double');
-tuningCurve.currIn = fread(fid, [n, 2*ntheta+1],'double');
-currEt2 = fread(fid, [n, 2*ntheta+1],'double');
-currEc2 = fread(fid, [n, 2*ntheta+1],'double');
-currIc2 = fread(fid, [n, 2*ntheta+1],'double');
-currEn2 = fread(fid, [n, 2*ntheta+1],'double');
-currIn2 = fread(fid, [n, 2*ntheta+1],'double');
-tuningCurve.currP = fread(fid, [n, 2*ntheta+1],'double');
-currP2 = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cLGN = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cLGNsc = zeros(n,ntheta);
+tuningCurve.cE = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cEsc = zeros(n,ntheta);
+tuningCurve.cI = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cEn = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cIn = fread(fid, [n, 2*ntheta+1],'double');
+cLGN2 = fread(fid, [n, 2*ntheta+1],'double');
+cE2 = fread(fid, [n, 2*ntheta+1],'double');
+cI2 = fread(fid, [n, 2*ntheta+1],'double');
+cEn2 = fread(fid, [n, 2*ntheta+1],'double');
+cIn2 = fread(fid, [n, 2*ntheta+1],'double');
+tuningCurve.cP = fread(fid, [n, 2*ntheta+1],'double');
+cP2 = fread(fid, [n, 2*ntheta+1],'double');
 fclose(fid);
-tuningCurve.currEtstd = sqrt(currEt2-tuningCurve.currEt.^2);
-tuningCurve.currEcstd = sqrt(currEc2-tuningCurve.currEc.^2);
-tuningCurve.currIcstd = sqrt(currIc2-tuningCurve.currIc.^2);
-tuningCurve.currEnstd = sqrt(currEn2-tuningCurve.currEn.^2);
-tuningCurve.currInstd = sqrt(currIn2-tuningCurve.currIn.^2);
-tuningCurve.currPstd = sqrt(currP2-tuningCurve.currP.^2);
+tuningCurve.cLGNstd = sqrt(cLGN2-tuningCurve.cLGN.^2);
+tuningCurve.cEstd = sqrt(cE2-tuningCurve.cE.^2);
+tuningCurve.cIstd = sqrt(cI2-tuningCurve.cI.^2);
+tuningCurve.cEnstd = sqrt(cEn2-tuningCurve.cEn.^2);
+tuningCurve.cInstd = sqrt(cIn2-tuningCurve.cIn.^2);
+tuningCurve.cPstd = sqrt(cP2-tuningCurve.cP.^2);
 
 filepath = [DIR, '/', 'intra2.dat'];
 fid = fopen(filepath);
@@ -138,6 +140,7 @@ for i=1:ntheta
 end
 fclose(fid);
 
+allCycle.Vstd = sqrt(cvm2-cvm.*cvm);
 allCycle.gtotstd = sqrt(cal2-cal.*cal);
 allCycle.Itotstd = sqrt(cbe2-cbe.*cbe);
 allCycle.Veffstd = sqrt(cvs2-cvs.*cvs);

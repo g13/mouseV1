@@ -64,6 +64,8 @@
       dimension clgn2(nmax,25),cexc2(nmax,25),cinh2(nmax,25)
       dimension cnexc(nmax,25),cninh(nmax,25)
       dimension cnexc2(nmax,25),cninh2(nmax,25)
+      dimension dlgnD1o(nlgn),dlgnFo(nlgn)
+      dimension dlgnD1f(nlgn),dlgnFf(nlgn)
 
       dimension tspike(nmax),ispike(nmax)
       dimension tsonpoi(nlgn),ionpoi(nlgn)
@@ -222,7 +224,7 @@
       common / prestatics/ npEE, npEI, npIE, npII
       common / lgnGain / tmpphi,conAmp,g0,frtlgn0,treflgn,
      1   gphi, tstart, gfail,cond0
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF
       common / files / f1,f2,f3,f4,fn,fo,thetafdr,str
       common / noises / ce0_e,ci0_e,frtinh_e,frtexc_e,
      1   ce0_i,ci0_i,frtinh_i,frtexc_i
@@ -240,6 +242,7 @@
       common / fnspikes / fspn,fonpoin,foffpoin,fenoin,finoin
       common / indRate / erate
       common / EIFconst / DeltaT,vTheta,phiVAS
+      common / lgnAdap / dlgnD1o,dlgnFo,dlgnD1f,dlgnFf
 !$OMP THREADPRIVATE(
 !$OMP& /chaino/, /chaino2/, /chainf/, /chainf2/,/ctats/,
 !$OMP& /chainx/, /chainy/,  /chainn/, /chainm/,/ctats2/,
@@ -248,7 +251,7 @@
 !$OMP& /chaine/,/chaine2/,/chaini/,/chainj/,/rhs/,/lgnIndivid/,
 !$OMP& /lgncnd/,/spikes/,/isi/,/avgs/,/avgsi/,/files/,/volt/,
 !$OMP& /fspikes/,/stats/,/stats2/,/onpoi/,/offpoi/,/enoi/,
-!$OMP& /inoi/,/fnspikes/,/persp/,/indRate/)
+!$OMP& /inoi/,/fnspikes/,/persp/,/indRate/,/lgnAdap/)
 !------------------------------------------------------------
 !
 !  Some (not all) INPUT & OUTPUT file declarations
@@ -281,13 +284,13 @@
       read(13,*) vthres,vreset,vexcit,vinhib,gleak,DeltaT,vTheta,gleakI
       read(13,*)
       read(13,*)
-      read(13,*) tau_e,tau_i,tnrise,tndamp,tau2,treflgn
+      read(13,*) tau_e,tau_i,tnrise,tndamp,tau2,treflgn,dlD,dlF
       read(13,*)
       read(13,*)
       read(13,*) dE,dI,denexc,axnexc,deninh,axninh,gIIc,gEIc
       read(13,*)
       read(13,*)
-      read(13,*) ignore,g0,gfail,rI0,tau0,tau1,rall
+      read(13,*) ignore,g0,gfail,rI0,tau0,tau1,rall,tauD1,tauF
       read(13,*)
       read(13,*)
       read(13,*) omega,gk,ntheta,gphi,tstart,twindow,taulgn,xS,yS
@@ -843,7 +846,7 @@
 !------------------------------------------------------------
       do intheta = 1,nntheta
           iid = OMP_GET_THREAD_NUM()
-          iseed = iseed + iid
+          iseed = iseed + 2*ntheta + iid
           gtheta = dtheta*(intheta-1+2*ntheta)
           if (intheta.EQ.ntheta+1) then
             eps = 0.D0
@@ -1008,6 +1011,10 @@
       slfn1(i) = 0.D0
       slfn2(i) = 0.D0
       slfn3(i) = 0.D0
+      dlgnD1o(i) = 1.D0
+      dlgnD1f(i) = 1.D0
+      dlgnFo(i) = 1.D0
+      dlgnFf(i) = 1.D0
       enddo
       do i=1,nmax
       v(i) = 0.D0
@@ -2235,6 +2242,8 @@
       dimension tsenoi(nmax),ienoi(nmax)
       dimension tsinoi(nmax),iinoi(nmax)
       dimension nlgni(nmax)
+      dimension dlgnD1o(nlgn),dlgnFo(nlgn)
+      dimension dlgnD1f(nlgn),dlgnFf(nlgn)
       logical excite(nmax)
       integer iseed
       data iword / 8 /
@@ -2258,17 +2267,18 @@
      1   fnmdanE, fnmdanI, fgaba
       common / neuron / excite,nlgni,trefE,trefI,nr,
      1   lgnmax,lgnmin,meanlgn
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi
       common / offpoi / tsoffpoi,ioffpoi,noffpoi
       common / enoi / tsenoi,ienoi,nenoi
       common / inoi / tsinoi,iinoi,ninoi
+      common / lgnAdap / dlgnD1o,dlgnFo,dlgnD1f,dlgnFf
       real*8 lgnsatur
       !INTEGER*4 nonsp,noffsp,nensp,ninsp
 !$OMP THREADPRIVATE(/chaino/,/chaino2/,/chainf/,/chainf2/,
 !$OMP& /chainx/,/chainy/,/chainn/,/chainm/,/lgnIndivid/,
-!$OMP& /onpoi/,/offpoi/,/enoi/,/inoi/)
+!$OMP& /onpoi/,/offpoi/,/enoi/,/inoi/,/lgnAdap/)
       iword2 = iword/2
       !omegat = omega*(t-tstart)
       omegat = omega*t
@@ -2323,18 +2333,26 @@
 !--------- t + dt -- dt
 
 !--------- before spike | 0 --*--> dtt -----> dt
+!--------- adap
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
+       dlFD = dlgnFo(i)*dlgnD1o(i)
+       dlgnD1o(i) = dlgnD1o(i) * dlD
+       dlgnFo(i) = dlgnFo(i) + dlF
 !--------- ampa exc
 
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
-       slo3(i) = slo3(i) + cond0
+       slo3(i) = slo3(i) + dlFD*cond0
 !--------- nmda exc 
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
-         slon3(i) = slon3(i) + cond0*tau_e/tnrise
+         slon3(i) = slon3(i) + dlFD*cond0*tau_e/tnrise
        endif 
 
 !--------- after spike | 0 -----> dtt --*--> dt
        dtt = dt - dtt
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
@@ -2342,6 +2360,8 @@
 !--------- add by daiwei--------------------------------
        else
        dtt = dt
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
@@ -2391,20 +2411,29 @@
         ioffpoi(noffpoi) = i
       endif
 !------------------------------------
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
+      dlFD = dlgnD1f(i)*dlgnFf(i)
+      dlgnD1f(i) = dlgnD1f(i) * dlD
+      dlgnFf(i) = dlgnFf(i) + dlF
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
-      slf3(i) = slf3(i) + cond0
+      slf3(i) = slf3(i) + dlFD*cond0
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
-          slfn3(i) = slfn3(i) + cond0*tau_e/tnrise
+          slfn3(i) = slfn3(i) + dlFD*cond0*tau_e/tnrise
       endif
 
       dtt = dt - dtt
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
       endif
       else
       dtt = dt
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
@@ -2599,8 +2628,14 @@
       se  = se * ete
       return
       end
-      subroutine decay1_d(ge,se,trise,tdamp,deltat)
+      subroutine adap(a,tau_a,deltat)
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N) 
+      t = deltat/tau_a
+      a = 1.D0 - (1.D0-a)*exp(-t)
+      return
+      end
+      subroutine decay1_d(ge,se,trise,tdamp,deltat)
+      IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
       !print *,'before ge ', ge,'se ',se
       tr  = deltat/trise
       etr = exp(-tr)
@@ -3574,7 +3609,7 @@
      1   fnmdanE, fnmdanI, fgaba
       common / neuron / excite,nlgni,trefE,trefI,nr,
      1   lgnmax,lgnmin,meanlgn
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi
       common / offpoi / tsoffpoi,ioffpoi,noffpoi
@@ -4405,7 +4440,7 @@
 !    don't know how to perform this convolution
 !------------------------------------------------------------
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF
 !------------------------------------------------------------
 !     xlgn, ylgn: center of each LGN RF
 !     siga, sigb: sigma of each Gaussian (RF = diff of 2 Gaussians)

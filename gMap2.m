@@ -3,9 +3,9 @@ drawSpecific = false;
 p = struct;
 p.YoudensIndex = 0.32;
 p.profile = 'u'         % 'u' for uniform(single-value) profile for LGN connection strength, 'g' for gaussian
-p.name = 'nd305-25s1-2';
+p.name = 'ndi305-40';
 enorm = 0.305; 
-inorm = 0.25; 
+inorm = 0.40; 
 enormStd = 0.1016;
 inormStd = 0.1016;
 p.h = 'png';
@@ -16,11 +16,12 @@ p.eAspectR0 = [1.2;0.012];
 p.iAspectR0 = [1.4;0.014];
 %p.iAspectR0 = p.eAspectR0*1.19;
 p.se = 1;  % connection strength
-%p.si = 2;
+%p.si = 1;
 p.si = 4/3.2875;
 %p.si = 1;    %l
 %p.si = 1;       %b
-p.pCRF = 0.0;
+aliasing = false;
+p.pCRF = 0.0; % percentage of pure complex cells, full overlap LGN input
 pMono = 0;
 ep = [0, pMono,	1-p.pCRF]; % 27% 3-Stripes Niell & Stryker 2008
 FontSize = 14;
@@ -180,12 +181,18 @@ end
     % binranges = -0.2:0.05:1;
     % nbins = length(binranges);
     % binranges(nbins) = 1.1;
-    while nnn < nir
-        unpicked = temp<0;
-        temp(unpicked) = enorm + randn(nir-nnn,1)*enormStd;
-    %     nn0 = nn0 + nir - nnn;
-        temp(temp<0.0) = -1;
-        nnn = nnn + sum(temp>0);
+    if aliasing
+        temp = enorm + randn(nir-nnn,1)*enormStd;
+        neg = temp<0;
+        temp(neg) = -temp(neg);
+    else
+        while nnn < nir
+            unpicked = temp<0;
+            temp(unpicked) = enorm + randn(nir-nnn,1)*enormStd;
+        %     nn0 = nn0 + nir - nnn;
+            temp(temp<0.0) = -1;
+            nnn = nnn + sum(temp>0);
+        end
     end
     % b = histc(temp,binranges);
     % b = b(1:nbins-1);

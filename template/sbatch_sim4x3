@@ -1,21 +1,23 @@
 #!/bin/bash
-theme='ndi305-40'       # LGN setup name
-walltime=1:00:00
+set -e
+theme='nd305-40s1-2'       # LGN setup name
+walltime=01:00:00
 analysisTime=0:45:00
-TYPE='6'                # type of cortical connection
+TYPE='8'                # type of cortical connection
 ######## Please find the following variable description in pA.slurm ########
-NAME='iii-6'                 # raw data folder name
-PRESET=$theme          # lgn presets file
+NAME='s12-8-iv1'             # folder name for this simulation
+PRESET=$theme            # lgn presets file
 FORMAT='png'               # figure format for saving
 individOnly="false"        # plot individual neurons’ figures only
 statsOnly="true"           # plot populational figures only
-rt=20                     #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT 
-npool=12                   # number of cpus used to fit tuning curves
+rt=10                     #   run time of simulation (exclude the warm-up time), some plots will give wrong firing rate if not set correctly as in adg_INPUT 
+fit="false"                 # fit the tuning curves for width.
+npool=1                   # number of cpus used to fit tuning curves, set to 1 if fit=="false"
 thres=0.25                 # a gauge of firing rate threshold for active, non-active, non-active neurons were not included in some of the plots
 NTHETA="12"                # number of angles in simulation
 CONTRASTS="4"              # number of constrast used in simulation
-fit="true"                 # fit the tuning curves for width.
 ld="false"                 #   default to false, if already acquired sim data as ".mat" file, set to true
+MeanNorm="true"
 
 if [ ! -d "$NAME" ]; then
 	mkdir $NAME
@@ -65,5 +67,6 @@ export thres
 export fit
 export NTHETA
 export CONTRASTS
+export MeanNorm
 
-sbatch --export=ALL -p serial --time=$analysisTime --dependency=afterany$jobList plotAll4.slurm
+sbatch --export=ALL -p serial --time=$analysisTime --cpus-per-task=$npool --dependency=afterok$jobList plotAll4.slurm

@@ -42,7 +42,7 @@
       dimension gf(nmax),sf1(nmax),sf2(nmax),sf3(nmax)
       dimension gi(nmax),si1(nmax),si2(nmax),si3(nmax)
       dimension gj(nmax),sj1(nmax),sj2(nmax),sj3(nmax)
-      dimension slist(256,nex*ney)
+      dimension slist(256,nmax)
       dimension aa_ee(nmax),aa_ei(nmax),aa_ie(nmax),aa_ii(nmax)
       dimension xlgn(nlgn),ylgn(nlgn)
       dimension nonlgn(nmax),noflgn(nmax),nlgni(nmax)
@@ -294,7 +294,7 @@
       read(13,*)
       read(13,*)
       read(13,*)seemax,siemax,ceemax,ciemax,seimax,siimax,ceimax,ciimax,
-     1    unitary,nProfile
+     1    unitary,nProfile,cr
       read(13,*)
       read(13,*)
       read(13,*) rk, frtlgn0, jlgn, rstart, linear, nsample, trans
@@ -459,8 +459,10 @@
         do i=1,nProfile
           read(14,*) profile(i)
         enddo
+        profile(nProfile) = profile(nProfile)*cr
       endif
       if (dabs(unitary-0.6D0).lt.1e-14)then
+        print *,'using different spread of EPSP'
         amaxslist=0.D0
         do j=1,nex*ney
          do i=1,nProfile
@@ -470,6 +472,11 @@
           amaxslist=slist(i,j)
       endif
          enddo
+        enddo
+        do j=nex*ney+1,nmax
+            do i=1,nProfile
+                slist(i,j) = 1.D0
+            enddo
         enddo
       endif
       close(14)
@@ -1344,14 +1351,14 @@
         vmem(i,ncycle)  = v(i)      + vmem(i,ncycle)
         vmem2(i,ncycle) = v(i)*v(i) + vmem2(i,ncycle)
 
-        clgn(i,ncycle) =  clgn(i,ncycle) - gl(i)*v(i)
+        clgn(i,ncycle) =  clgn(i,ncycle) - gl(i)*ve
         cexc(i,ncycle) =  cexc(i,ncycle) - gei*ve  
         cinh(i,ncycle) =  cinh(i,ncycle) - gii*vi  
         cnexc(i,ncycle) = cnexc(i,ncycle) - gen*ve 
         cninh(i,ncycle) = cninh(i,ncycle) - gin*vi 
         cpota(i,ncycle) = cpota(i,ncycle) - gps*vi 
 
-        clgn2(i,ncycle) = gl(i)*v(i)*gl(i)*v(i) + clgn2(i,ncycle)
+        clgn2(i,ncycle) = gl(i)*ve*gl(i)*ve + clgn2(i,ncycle)
         cexc2(i,ncycle) = gei*ve*gei*ve + cexc2(i,ncycle)
         cinh2(i,ncycle) = gii*vi*gii*vi + cinh2(i,ncycle)
         cnexc2(i,ncycle) = gen*ve*gen*ve + cnexc2(i,ncycle)
@@ -1389,13 +1396,13 @@
             vi = v(i)-vinhib
             currEc(i,ncaj) = currEc(i,ncaj) - gei*ve
             currIc(i,ncaj) = currIc(i,ncaj) - gii*vi
-            currEt(i,ncaj) = currEt(i,ncaj) - gl(i)*v(i)
+            currEt(i,ncaj) = currEt(i,ncaj) - gl(i)*ve
             currEn(i,ncaj) = currEn(i,ncaj) - gen*ve
             currIn(i,ncaj) = currIn(i,ncaj) - gin*vi
             currp(i,ncaj) = currp(i,ncaj) - gps*vi
             currEc2(i,ncaj) = currEc2(i,ncaj) + (gei*ve)**2
             currIc2(i,ncaj) = currIc2(i,ncaj) + (gii*vi)**2
-            currEt2(i,ncaj) = currEt2(i,ncaj) + (gl(i)*v(i))**2
+            currEt2(i,ncaj) = currEt2(i,ncaj) + (gl(i)*ve)**2
             currEn2(i,ncaj) = currEn2(i,ncaj) + (gen*ve)**2
             currIn2(i,ncaj) = currIn2(i,ncaj) + (gin*vi)**2
             currp2(i,ncaj) = currp2(i,ncaj) + (gps*vi)**2
@@ -1794,7 +1801,7 @@
       dimension NpostSynE(nmax), NpostSynI(nmax)
       dimension NpreSynE(nmax), NpreSynI(nmax)
       dimension profile(256),Istrength(nmax,nmax)
-      dimension slist(256,nex*ney)
+      dimension slist(256,nmax)
       real*8 unitary
       integer rk,iseed
       data iword  / 8 /
@@ -1897,7 +1904,7 @@
                 s = profile(Istrength(ij,ijj))
             else
                 if (dabs(unitary-0.6D0).lt.1e-14)then
-                    s = slist(Istrength(ij,ijj),ijj)
+                    s = slist(Istrength(ij,ijj),i)
                 else
                     s = 1.D0;
                 endif
@@ -1957,7 +1964,7 @@
                 s = profile(Istrength(ij,ijj))
             else
                 if (dabs(unitary-0.6D0).lt.1e-14)then
-                    s = slist(Istrength(ij,ijj),ijj)
+                    s = slist(Istrength(ij,ijj),i)
                 else
                     s = 1.D0;
                 endif
@@ -2021,7 +2028,7 @@
                 s = profile(Istrength(ij,ijj))
             else
                 if (dabs(unitary-0.6D0).lt.1e-14)then
-                    s = slist(Istrength(ij,ijj),ijj)
+                    s = slist(Istrength(ij,ijj),i)
                 else
                     s = 1.D0;
                 endif
@@ -2075,7 +2082,7 @@
                 s = profile(Istrength(ij,ijj))
             else
                 if (dabs(unitary-0.6D0).lt.1e-14)then
-                    s = slist(Istrength(ij,ijj),ijj)
+                    s = slist(Istrength(ij,ijj),i)
                 else
                     s = 1.D0;
                 endif

@@ -10,13 +10,15 @@ function [m,h] = subMat(src,tar,p,logP)
         if ~isempty(p.profile)
             if logP.spread
                 minDis = min(logP.normDistance);
-                ratio = logP.lR + (logP.normDistance-minDis)./(max(logP.normDistance)-minDis)*(1-logP.lR);
-
-                profiles = zeros(logP.nbins+1,tar.n);
+                refDis = p.YoudensIndex;
+                pow = log(0.1)/log((exp(0.2)-1)/(exp(refDis)-1));
+                ratio = logP.lR + ((exp(logP.normDistance-minDis)-1)./(exp(refDis)-1)).^pow;
+                ratio(logP.normDistance > refDis) = 1;
+                profiles = zeros(logP.nbins+2,tar.n);
             else
-                [~,slist] = p.profile(neff(1),logP.nbins,logP.mu,logP.sigma,logP.mu0,logP.nsig,logP.p2s,false);
-                fprintf(fid,'%G \n',[1,slist/logP.p2s]');
-                profiles =[1,slist];
+                [~,slist] = p.profile(neff(1),logP.nbins,logP.mu,logP.sigma,logP.mu,logP.nsig,logP.p2s,false);
+                fprintf(fid,'%G \n',[1,slist/logP.p2s,logP.mu0/logP.p2s]');
+                profiles =[1,slist,logP.mu];
             end
         else
             profiles=[1];
@@ -163,14 +165,14 @@ function [m,h] = subMat(src,tar,p,logP)
         if ~isempty(p.profile)
             if logP.spread
                 [~ ,ind] = sort(p.specificMat(pickedID,i)); 
-                [m(pickedID(ind),i),slist] = p.profile(npicked,logP.nbins,logP.mu,logP.sigma*ratio(i),logP.mu0,logP.nsig,logP.p2s,false);
-                fprintf(fid,'%G \n',[1,slist/logP.p2s]');
-                profiles(:,i) =[1;slist'];
+                [m(pickedID(ind),i),slist] = p.profile(npicked,logP.nbins,logP.mu,logP.sigma*ratio(i),logP.mu0*(1-ratio(i))+logP.mu*ratio(i),logP.nsig,logP.p2s,false);
+                fprintf(fid,'%G \n',[1,slist/logP.p2s,logP.mu0/logP.p2s]');
+                profiles(:,i) =[1;slist';logP.mu0];
             else
                 if specific
                     [~ ,ind] = sort(p.specificMat(pickedID,i)); 
                     %[m(pickedID(ind),i),~] = p.profile(npicked,rand(npicked,1));
-                    [m(pickedID(ind),i),~] = p.profile(npicked,logP.nbins,logP.mu,logP.sigma,logP.mu0,logP.nsig,logP.p2s,false);
+                    [m(pickedID(ind),i),~] = p.profile(npicked,logP.nbins,logP.mu,logP.sigma,logP.mu,logP.nsig,logP.p2s,false);
                 else 
                     [ss, ~] = p.profile(npicked,rand(npicked,1));
                     m(pickedID,i) = shuffle(ss);
@@ -193,27 +195,34 @@ function [m,h] = subMat(src,tar,p,logP)
         if logP.spread
             h = figure;
             subplot(2,1,1);
-            ll = 15;
-            edges = linspace(0,ceil(max(logP.normDistance)*10)/10,ll);
-            [~,~,ind] = histcounts(logP.normDistance,edges);
-            EPSPslice = zeros(ll-1,2);
+            ll = 51;
+            edges = linspace(0,ceil(max(logP.normDistance)*100)/100,ll);
+            [Counts,~,ind] = histcounts(logP.normDistance,edges);
+            EPSPslice = zeros(ll-1,3);
             for i = 1:tar.n
                 j = ind(i);
                 neighbor = m(:,i)>0;
                 tmp = profiles(m(neighbor,i),i);
                 EPSPslice(j,1) = EPSPslice(j,1) + mean(tmp(:));
-                EPSPslice(j,2) = EPSPslice(j,2) + std(tmp(:));
+                EPSPslice(j,2) = EPSPslice(j,2) + min(tmp(:));
+                EPSPslice(j,3) = EPSPslice(j,3) + max(tmp(:));
             end
             for j = 1:(ll-1)
                 nind = sum(ind==j);
-                EPSPslice(j,1) = EPSPslice(j,1)./nind;
-                EPSPslice(j,2) = EPSPslice(j,2)./nind;
+                EPSPslice(j,:) = EPSPslice(j,:)./nind;
             end
             xxx = (edges(1:ll-1) + edges(2:ll))./2;
-            errorbar(xxx,EPSPslice(:,1),EPSPslice(:,2));
+            [ax,h1,h2] = plotyy(xxx,EPSPslice(:,1),xxx,Counts);
+            h1.Color='k';
+            h1.LineStyle='-';
+            hold(ax(1));
+            plot(ax(1),xxx,EPSPslice(:,2),':k');
+            plot(ax(1),xxx,EPSPslice(:,3),':k');
+            ylim(ax(1),[0,inf]);
+            ylim(ax(2),[0,inf]);
             subplot(2,1,2);
             histogram(logP.normDistance,edges);
-            xlabel('normalized Distance bwt On-Off Subregio:');
+            xlabel('normalized Distance bwt On-Off Subregion');
         end
     end
 end

@@ -1,5 +1,5 @@
 %% generate connection matrix
-function generateConMat(suffix,theme,preMatProfile,reciprocal,eSpecific,seed,plotout,format,scType,heterogeneous,outputName,eiSpecific,ieSpecific,coMatfile,logP)
+function generateConMat(suffix,theme,preMatProfile,reciprocal,eSpecific,seed,plotout,format,scType,heterogeneous,outputName,eiSpecific,ieSpecific,coMatfile,logP,eiSigCoeff,eeSigCoeff,ieSigCoeff)
 %!!!!!!!!!!!!!!!!!! for scType == 'n' decide connection by relative
 %cortical strength vs lgn strength and portion in total excitation
 if ~exist('conMatFigures','dir')
@@ -7,31 +7,40 @@ if ~exist('conMatFigures','dir')
 end
 assert(exist('conMatFigures')==7);
 pPosition = [18, 180, 1200, 900];
-if nargin < 15
-    disp('no logNormal parameters set, return');
-    return
-    if nargin <14
-        coMatfile ='';
-        if nargin < 13
-            ieSpecific = false;
-            if nargin < 12
-                eiSpecific = false;
-                if nargin <11
-                    outputName = '';
-                    if nargin < 10
-                        heterogeneous = '';
-                        if nargin < 9
-                            scType = 'n';
-                            if nargin < 8
-                                format = '';
-                                if nargin < 7
-                                    plotout = false;
-                                    if nargin < 6
-                                        seed = 0;
-                                        if nargin < 5
-                                            eSpecific = 'none';
-                                            if nargin < 4
-                                                reciprocal = 0.0;
+if nargin < 18
+    ieSigCoeff = 0.5;
+    if nargin < 17
+        eeSigCoeff = 0.5;
+        if nargin < 16
+            eiSigCoeff = 0.6;
+            if nargin < 15
+                disp('no logNormal parameters set, return');
+                return
+                if nargin <14
+                    coMatfile ='';
+                    if nargin < 13
+                        ieSpecific = false;
+                        if nargin < 12
+                            eiSpecific = false;
+                            if nargin <11
+                                outputName = '';
+                                if nargin < 10
+                                    heterogeneous = '';
+                                    if nargin < 9
+                                        scType = 'n';
+                                        if nargin < 8
+                                            format = '';
+                                            if nargin < 7
+                                                plotout = false;
+                                                if nargin < 6
+                                                    seed = 0;
+                                                    if nargin < 5
+                                                        eSpecific = 'none';
+                                                        if nargin < 4
+                                                            reciprocal = 0.0;
+                                                        end
+                                                    end
+                                                end
                                             end
                                         end
                                     end
@@ -44,6 +53,7 @@ if nargin < 15
         end
     end
 end
+
 if ~isempty(format)
 	if strcmp(format,'psc2')
 		printDriver = ['-de',format];
@@ -89,14 +99,6 @@ load([suffix,'.mat']);
 %     etheta = reshape(etheta,[p.nv1e,1]);
 % end
 if strcmp(eSpecific,'coGauss')
-    eeSigCoeff = 0.50;
-    if eiSpecific
-        eiSigCoeff = 0.80;
-    end
-    if ieSpecific
-        ieSigCoeff = 0.50;
-    end
-    %coMatfile = ['coMa-60x60-1xu-nmLDoO-ff3-s911.mat'];
     load([coMatfile,'.mat']);
     size(coMat)
 end
@@ -274,7 +276,7 @@ switch eSpecific
 %		        return
 %        end
     case 'coGauss'
-        tar.sigCoeff = eeSigCoeff;
+        tar.sigCoeff = eeSigCoeff
         q.specificMat = 1-coMat(1:p.nv1e,1:p.nv1e);
         switch preMatProfile
 		    case 'uniform'
@@ -298,15 +300,16 @@ switch eSpecific
 end
 tic;
 if logP.spread
+    q.YoudensIndex = p.YoudensIndex;
     [mee,h] = subMat(src,tar,q,logP); 
     if ~isempty(format)
-        set(h, 'PaperUnits', 'points','PaperPosition', pPosition);
+        set(h,'PaperUnits', 'points','PaperPosition', pPosition);
         print(h,['EPSPoverND','-',matName,'.',format],printDriver,dpi);
     end
 else
     mee = subMat(src,tar,q,logP); 
 end
-if eSpecific=='coGauss'
+if strcmp(eSpecific,'coGauss')
     if p.pCRF > 0
         mee(:,p.CRF)=(mee(:,p.CRF)>0)*(logP.nbins+2);
     end
@@ -403,8 +406,8 @@ else
     if ieSpecific
         switch eSpecific
             case 'coGauss'
-                tar.sigCoeff = ieSigCoeff;
-                q.specificMat = 1-coMat(1:p.nv1e,p.nv1e+(1:p.nv1i));
+                tar.sigCoeff = ieSigCoeff
+                q.specificMat = 1-coMat(p.nv1e+(1:p.nv1i),1:p.nv1e)';
                 switch preMatProfile
                     case 'uniform'
                         q.case = 2;    

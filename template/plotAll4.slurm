@@ -2,8 +2,8 @@
 #SBATCH -p serial 
 #SBATCH --mem=40GB
 #SBATCH --nodes=1
-#SBATCH --time=0:30:00
-#SBATCH --cpus-per-task=12
+#SBATCH --time=0:40:00
+#SBATCH --cpus-per-task=16
 #SBATCH -J pA4
 #SBATCH -o pA4_%J.out
 #SBATCH --mail-user=wd554@nyu.edu
@@ -28,11 +28,13 @@ echo thres=$thres
 echo fit=$fit
 echo NTHETA=$NTHETA
 echo CONTRASTS=$CONTRASTS
+echo MeanNorm=$MeanNorm
 
 date
 ./assa
 
 if [ -d "processed" ]; then
+    ls -alh
     rm -r 0125/ 0250/ 0500/ 1000/
     cp logNormalProfile.mat EPSPsize.mat
     
@@ -43,7 +45,7 @@ if [ -d "processed" ]; then
     
     #matlab -nosplash -nodesktop -r "dbstop if error;plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
     
-    matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt,$fit,$npool);exit"
+    matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA,$individOnly,'$NAME',{},$thres,$statsOnly,false,$ld,$rt,$fit,$npool,$MeanNorm);exit"
     
     #matlab -nosplash -nodesktop -r "plotindividual('$NAME','$PRESET',[],'$FORMAT',$CONTRASTS,$NTHETA);exit"
     #matlab -nosplash -nodesktop -r "plotresult('$NAME','$PRESET',$NTHETA,$CONTRASTS,'$FORMAT');exit"

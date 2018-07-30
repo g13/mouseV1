@@ -62,7 +62,7 @@ function plotFeedBackInh(theme0,theme1,lgnfile,ntheta,format)
     set(ax,'XTick',[1,2,3,4],'XTickLabel',{'o25%','p25%','o100%','p100%'});
 
     if ~isempty(format)
-        fname = [theme,'/FeedBackInh-',theme];
+        fname = ['FeedBackInh-',theme1,'-',theme0];
         saveas(h,fname);
         print(h,[fname,'.',format],printDriver,dpi);
     end
