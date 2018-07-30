@@ -12,8 +12,10 @@ coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
 edist='coGauss'             # E-E connection strength type
 eeSig=1.0           # sigma of ee connection pdf
+eeLift=0.11          # gauss + lift, max(gauss) = 1.0
 eiSpecific='true'          # E<-I connection specificity over orientation preference and RF similarity
 eiSig=0.5           # sigma of eiSpecific connection pdf
+eiLift=0.05
 threads=12          # number of threads used in parpool for RFcoef_O_beta.m
 antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
 reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
@@ -84,5 +86,7 @@ export wC
 export eeSig
 export eiSig
 export ieSig 
+export eeLift
+export eiLift
 export testLGNonly
 sbatch --export=ALL --mem=$mem --time=$walltime --cpus-per-task=$threads gg.slurm

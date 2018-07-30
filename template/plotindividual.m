@@ -127,6 +127,18 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             pC(i).gIn=zeros(ntotal,ndperiod);
             pC(i).V=zeros(ntotal,ndperiod);
             pC(i).gP=zeros(ntotal,ndperiod);
+            pC(i).cLGN=zeros(ntotal,ndperiod);
+            pC(i).cE=zeros(ntotal,ndperiod);
+            pC(i).cI=zeros(ntotal,ndperiod);
+            pC(i).cEn=zeros(ntotal,ndperiod);
+            pC(i).cIn=zeros(ntotal,ndperiod);
+            pC(i).cP=zeros(ntotal,ndperiod);
+            pC(i).cLGNstd=zeros(ntotal,ndperiod);
+            pC(i).cEstd=zeros(ntotal,ndperiod);
+            pC(i).cIstd=zeros(ntotal,ndperiod);
+            pC(i).cEnstd=zeros(ntotal,ndperiod);
+            pC(i).cInstd=zeros(ntotal,ndperiod);
+            pC(i).cPstd=zeros(ntotal,ndperiod);
             if i==1
                 oC = pC; ipC = pC; ioC = pC;
             end
@@ -1759,7 +1771,7 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     dTick = 0.2;
 
     %% just E
-    pick = nP(contrastLevel).ei>0.5; 
+    pick = nP(contrastLevel).ei>0.5;
     hQ = subplot(2,4,1);
     target = tC(p2).cLGN(pick,1:ntheta);
     pair1 = get_gOSI(abs(target))';
@@ -2026,6 +2038,32 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             saveas(hScanzianiHeat,[outputfdr,'/ScanzianiHeat-',theme,'.',format]);
         else
             print(hScanzianiHeat,[outputfdr,'/ScanzianiHeat-',theme,'.',format],printDriver,dpi);
+        end
+    end
+
+    hScanzianiDist = figure;
+    p2 = contrastLevel;
+    
+    pick = nP(contrastLevel).ei>0.5;
+    subplot(1,2,1)
+    [~,cLGNid] = max(pC(p2).cLGN(pick,:),[],2);
+    [~,cEid] = max(pC(p2).cE(pick,:),[],2);
+    deltaPhase = (cEid-cLGNid)./ndperiod*360;
+    histogram(deltaPhase)
+    
+    pick = true(p.nv1,1);
+    subplot(1,2,2)
+    [~,cLGNid] = max(pC(p2).cLGN(pick,:),[],2);
+    [~,cEid] = max(pC(p2).cE(pick,:),[],2);
+    deltaPhase = (cEid-cLGNid)./ndperiod*360;
+    histogram(deltaPhase)
+    
+    if ~isempty(format)
+        set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+        if strcmp(format,'fig')
+            saveas(hScanzianiDist,[outputfdr,'/ScanzianiDist-',theme,'.',format]);
+        else
+            print(hScanzianiDist,[outputfdr,'/ScanzianiDist-',theme,'.',format],printDriver,dpi);
         end
     end
 

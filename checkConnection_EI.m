@@ -65,6 +65,44 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     dbin = 0.05;
     dtheta = pi/ntheta;
     bound = sqrt(2);
+
+    hCossell = figure;
+    pickedNeighbor = mee > 0;
+    RFflat = RFcorrMatE;
+    RFflat_connected = RFcorrMatE(pickedNeighbor);
+    excStr = zeros(p.nv1e);
+    if spread
+        for i = 1:p.nv1e
+            ineighbor = pickedNeighbor(:,i);
+            excStr(ineighbor,i) = profiles(mee(ineighbor,i),i);
+        end
+    else
+        excStr(pickedNeighbor) = profiles(mee(pickedNeighbor));
+    end
+    excStr_connected = excStr(pickedNeighbor);
+    
+    [RFflatC_sorted, ind] = sort(RFflat_connected);
+    excStrC_sorted = excStr_connected(ind);
+    excWeight_count = cumsum(excStr_sorted);
+    connected_count = cumsum(ones(length(excStr_connected),1));
+    dbin = 0.01;
+    binranges = -1.0:dbin:1;
+    nbins = length(binranges);
+    binranges(nbins+1) = 1+dbin;
+    [RFflat_count, ~] = histc(RFflat,binranges)
+    binranges = binranges(1:nbins)+dbin/2;
+    subplot(1,2,1)
+    bar(binranges,RFflat_count);
+    subplot(1,2,2)
+    hold on
+    plot(RFlatC_sorted,excWeight_count);
+    plot(RFlatC_sorted,connected_count);
+    if ~isempty(format)
+        set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+        print(h,['Cossell-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+        saveas(h,['Cossell-',coMatfile,'-',theme,'.fig']);
+    end
+
     if nlist==p.nv1e
         h = figure;
         subplot(1,2,1)
@@ -370,112 +408,112 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     fp = 3;
     disp(['mean coeff ',num2str(mean(mcoeff),fp),'+-',num2str(std(mcoeff),fp)]);
     disp(['std of coeff ',num2str(mean(scoeff),fp),'+-',num2str(std(scoeff),fp)]);
- if Inh
-    if bound > 0
-        ilx = (p.iv1x) * p.dI;
-        ily = (p.iv1y) * p.dI;
-        pix = ones(p.iv1y,1) * (((1:p.iv1x)-0.5).*p.dI);
-        pix = reshape(pix,[p.nv1i,1]);
-        piy = (((1:p.iv1y)-0.5)'.*p.dI) * ones(1,p.iv1x);
-        piy = reshape(piy,[p.nv1i,1]);
+    if Inh
+        if bound > 0
+            ilx = (p.iv1x) * p.dI;
+            ily = (p.iv1y) * p.dI;
+            pix = ones(p.iv1y,1) * (((1:p.iv1x)-0.5).*p.dI);
+            pix = reshape(pix,[p.nv1i,1]);
+            piy = (((1:p.iv1y)-0.5)'.*p.dI) * ones(1,p.iv1x);
+            piy = reshape(piy,[p.nv1i,1]);
 
-        src.x = pix;
-        src.y = piy;
-        src.n = p.nv1i;
-        src.lx = ilx;
-        src.ly = ily;
-        src.raxn = iii.raxn;
-        cR = checkRegion(checklist,src,tar);
-    else
-        cR = true(p.nv1e,nlist);
-    end
-    for k=1:nlist
-        i = checklist(k);
-        pickedNeighbor = mei(:,i) > 0;
-        coeffs = coMatI(:,i);
-        dThetas = dThetaI(:,i);
-        if sum(pickedNeighbor) ~= sum(mei(:,i))
-            [~,bigShots] = sort(mei(:,i),'descend');
-            bigShots = bigShots(1:nn);
+            src.x = pix;
+            src.y = piy;
+            src.n = p.nv1i;
+            src.lx = ilx;
+            src.ly = ily;
+            src.raxn = iii.raxn;
+            cR = checkRegion(checklist,src,tar);
         else
-            [~,bigShots] = sort(coeffs,'descend');
-            sPN = pickedNeighbor(bigShots);
-            bigShots = bigShots(sPN);
-            bigShots = bigShots(1:nn);
+            cR = true(p.nv1e,nlist);
         end
-        if draw
-            h = figure;
-            subplot(ceil((nn-1)/plotPr)+1,3,1);
-            plot(coeffs(pickedNeighbor),profiles(mei(pickedNeighbor,i)),'.');
-            ylabel('IPSP (mV)');
-            xlabel('RFcorr');
-            title({['largest RFcorr:',num2str(max(coeffs))],...
-                ['largest Picked',num2str(max(coeffs(pickedNeighbor)))]});
-            
-            subplot(ceil((nn-1)/plotPr)+1,3,2);
-            binranges = -1.0:dbin:1;
-            nbins = length(binranges)-1;
-            binranges(nbins+1) = 1.1;
-            binCounts0 = histc(coeffs(cR(:,k)),binranges);
-            binCounts0 = binCounts0(1:nbins);
-            [~,ind] = histc(coeffs,binranges);
-            binCounts = histc(coeffs(pickedNeighbor),binranges);
-            binCounts = binCounts(1:nbins);
-            binranges = binranges(1:nbins)+dbin/2;
-            norm_binCounts = binCounts/sum(binCounts)*100;
-            norm_binCounts0 = binCounts0/sum(binCounts0)*100;
-            IPSPslice = zeros(nbins,1);
-            for j = 1:nbins
-                IPSPslice(j) = sum(profiles(mei((ind==j)&pickedNeighbor,i)));
+        for k=1:nlist
+            i = checklist(k);
+            pickedNeighbor = mei(:,i) > 0;
+            coeffs = coMatI(:,i);
+            dThetas = dThetaI(:,i);
+            if sum(pickedNeighbor) ~= sum(mei(:,i))
+                [~,bigShots] = sort(mei(:,i),'descend');
+                bigShots = bigShots(1:nn);
+            else
+                [~,bigShots] = sort(coeffs,'descend');
+                sPN = pickedNeighbor(bigShots);
+                bigShots = bigShots(sPN);
+                bigShots = bigShots(1:nn);
             end
-            IPSPslice = IPSPslice/sum(IPSPslice)*100;
-            plotyy(binranges,[IPSPslice,norm_binCounts,norm_binCounts0],binranges,binCounts*100./binCounts0);
-            ylabel('%');
-            legend({'Cort. Inh.','Pre. Neuron','All Neurons','Prob'},'Location','NorthWest');
-            ylim([0,inf]);
-            xlabel('Coeff');
-            check([i;p.nv1e+bigShots],h,coeffs);
-        %% theta
-            subplot(ceil((nn-1)/plotPr)+1,3,9);
-            binranges = 0.0:dtheta:(pi/2);
-            nbins = length(binranges)-1;
-            binranges(nbins+1) = pi/2+0.1;
-            dThetas(~pickedNeighbor) = binranges(1)-1;
-            [binCounts,ind] = histc(dThetas,binranges);
-            binCounts = binCounts(1:nbins);
-            mbinCounts = binCounts./sum(binCounts)*100;
-            IPSPslice = zeros(nbins,1);
-            mIPSPslice = zeros(nbins,1);
-            for j = 1:nbins
-                %IPSPslice(j) = sum(profiles(mei((ind==j)&pickedNeighbor,i)));
-                tmp = (profiles(mei((ind==j)&pickedNeighbor,i)));
-                mIPSPslice(j) = mean(tmp);
-                IPSPslice(j) = sum(tmp);
+            if draw
+                h = figure;
+                subplot(ceil((nn-1)/plotPr)+1,3,1);
+                plot(coeffs(pickedNeighbor),profiles(mei(pickedNeighbor,i)),'.');
+                ylabel('IPSP (mV)');
+                xlabel('RFcorr');
+                title({['largest RFcorr:',num2str(max(coeffs))],...
+                    ['largest Picked',num2str(max(coeffs(pickedNeighbor)))]});
+                
+                subplot(ceil((nn-1)/plotPr)+1,3,2);
+                binranges = -1.0:dbin:1;
+                nbins = length(binranges)-1;
+                binranges(nbins+1) = 1.1;
+                binCounts0 = histc(coeffs(cR(:,k)),binranges);
+                binCounts0 = binCounts0(1:nbins);
+                [~,ind] = histc(coeffs,binranges);
+                binCounts = histc(coeffs(pickedNeighbor),binranges);
+                binCounts = binCounts(1:nbins);
+                binranges = binranges(1:nbins)+dbin/2;
+                norm_binCounts = binCounts/sum(binCounts)*100;
+                norm_binCounts0 = binCounts0/sum(binCounts0)*100;
+                IPSPslice = zeros(nbins,1);
+                for j = 1:nbins
+                    IPSPslice(j) = sum(profiles(mei((ind==j)&pickedNeighbor,i)));
+                end
+                IPSPslice = IPSPslice/sum(IPSPslice)*100;
+                plotyy(binranges,[IPSPslice,norm_binCounts,norm_binCounts0],binranges,binCounts*100./binCounts0);
+                ylabel('%');
+                legend({'Cort. Inh.','Pre. Neuron','All Neurons','Prob'},'Location','NorthWest');
+                ylim([0,inf]);
+                xlabel('Coeff');
+                check([i;p.nv1e+bigShots],h,coeffs);
+            %% theta
+                subplot(ceil((nn-1)/plotPr)+1,3,9);
+                binranges = 0.0:dtheta:(pi/2);
+                nbins = length(binranges)-1;
+                binranges(nbins+1) = pi/2+0.1;
+                dThetas(~pickedNeighbor) = binranges(1)-1;
+                [binCounts,ind] = histc(dThetas,binranges);
+                binCounts = binCounts(1:nbins);
+                mbinCounts = binCounts./sum(binCounts)*100;
+                IPSPslice = zeros(nbins,1);
+                mIPSPslice = zeros(nbins,1);
+                for j = 1:nbins
+                    %IPSPslice(j) = sum(profiles(mei((ind==j)&pickedNeighbor,i)));
+                    tmp = (profiles(mei((ind==j)&pickedNeighbor,i)));
+                    mIPSPslice(j) = mean(tmp);
+                    IPSPslice(j) = sum(tmp);
+                end
+                %[hAx,h1,h2] = plotyy(dThetas(pickedNeighbor)*180/pi,EPSPs,(binranges(1:nbins)+dtheta/2)*180/pi,IPSPslice);
+                IPSPslice = IPSPslice./sum(IPSPslice)*100;
+                xxxx = (binranges(1:nbins)+dtheta/2)*180/pi; 
+                [hAx,h1,h2] = plotyy(xxxx,mIPSPslice,xxxx,[mbinCounts,IPSPslice]);
+                h1.Marker = '.';
+                h2(1).LineStyle = ':';
+                h2(1).Marker = 'o';
+                h2(2).Marker = 's';
+                ylabel(hAx(1),'IPSP (mV)');
+                ylabel(hAx(2),'%');
+                xlabel('\Delta\theta');
+                legend({'avg IPSP','% Connection','% Total IPSP'});
+                if ~isempty(format)
+                    set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+                    print(h,['EI_RFsimilarity-',num2str(i),'-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+                end
             end
-            %[hAx,h1,h2] = plotyy(dThetas(pickedNeighbor)*180/pi,EPSPs,(binranges(1:nbins)+dtheta/2)*180/pi,IPSPslice);
-            IPSPslice = IPSPslice./sum(IPSPslice)*100;
-            xxxx = (binranges(1:nbins)+dtheta/2)*180/pi; 
-            [hAx,h1,h2] = plotyy(xxxx,mIPSPslice,xxxx,[mbinCounts,IPSPslice]);
-            h1.Marker = '.';
-            h2(1).LineStyle = ':';
-            h2(1).Marker = 'o';
-            h2(2).Marker = 's';
-            ylabel(hAx(1),'IPSP (mV)');
-            ylabel(hAx(2),'%');
-            xlabel('\Delta\theta');
-            legend({'avg IPSP','% Connection','% Total IPSP'});
-            if ~isempty(format)
-                set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-                print(h,['EI_RFsimilarity-',num2str(i),'-',coMatfile,'-',theme,'.',format],printDriver,dpi);
-            end
+            mcoeff(i) = mean(coeffs(bigShots));
+            scoeff(i) = std(coeffs(bigShots));
         end
-        mcoeff(i) = mean(coeffs(bigShots));
-        scoeff(i) = std(coeffs(bigShots));
+        fp = 3;
+        disp(['mean coeff ',num2str(mean(mcoeff),fp),'+-',num2str(std(mcoeff),fp)]);
+        disp(['std of coeff ',num2str(mean(scoeff),fp),'+-',num2str(std(scoeff),fp)]);
     end
-    fp = 3;
-    disp(['mean coeff ',num2str(mean(mcoeff),fp),'+-',num2str(std(mcoeff),fp)]);
-    disp(['std of coeff ',num2str(mean(scoeff),fp),'+-',num2str(std(scoeff),fp)]);
-end
 end
 function cR = checkRegion(list,src,tar)
     nlist = length(list);

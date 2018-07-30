@@ -70,7 +70,7 @@ function [m,h] = subMat(src,tar,p,logP)
             p.specificMat2 = p.specificMat.^2;
             sig2 = tar.sig * HWHM2/(2*log(2));
             sigCoeff2 = tar.sigCoeff.^2;
-            g = @(pp) exp(-0.5*(pp.x2./sig2+pp.c2./sigCoeff2));
+            g = @(pp) exp(-0.5*(pp.x2./sig2))*(exp(-0.5*(pp.c2./sigCoeff2))+pp.lift);
             specific = true;
             needCoMat = true;
         case 4  % uniform, uniform
@@ -128,6 +128,7 @@ function [m,h] = subMat(src,tar,p,logP)
         pp.x2 = d2;
         if needCoMat
             pp.c2 = p.specificMat2(pick,i);
+            pp.lift = tar.lift;
         end
 
         quasi_prob = g(pp);
