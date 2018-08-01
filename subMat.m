@@ -1,5 +1,6 @@
 function [m,h] = subMat(src,tar,p,logP)
-    
+    % debuggin option: plot profile vs connections 
+    dbplot = false;
     if length(src.neff) == 1
         neff = ones(tar.n,1) * src.neff;
     else
@@ -70,7 +71,7 @@ function [m,h] = subMat(src,tar,p,logP)
             p.specificMat2 = p.specificMat.^2;
             sig2 = tar.sig * HWHM2/(2*log(2));
             sigCoeff2 = tar.sigCoeff.^2;
-            g = @(pp) exp(-0.5*(pp.x2./sig2))*(exp(-0.5*(pp.c2./sigCoeff2))+pp.lift);
+            g = @(pp) exp(-0.5*(pp.x2./sig2)).*(exp(-0.5*(pp.c2./sigCoeff2))+pp.lift);
             specific = true;
             needCoMat = true;
         case 4  % uniform, uniform
@@ -96,6 +97,9 @@ function [m,h] = subMat(src,tar,p,logP)
     roll0 = rand(sum(rep),1);
     
     n = 0;
+    if dbplot && p.case == 3
+        hdb = figure;
+    end
     for i=1:tar.n
         %x
         pick = abs(src.x-tar.x(i)) > hlx;
@@ -109,6 +113,9 @@ function [m,h] = subMat(src,tar,p,logP)
         dy(~pick) = src.y(~pick) - tar.y(i);
 
         d2 = dx.^2 + dy.^2;
+        if dbplot && p.case==3
+            d0 = sqrt(d2);
+        end
         % boundary cutoff
         if tar.bound > 0
             pick = d2 < r2;
@@ -162,7 +169,19 @@ function [m,h] = subMat(src,tar,p,logP)
                 disp(['available ',num2str(npick),', ',num2str(npicked),'picked, need ',num2str(neff(i))]);
             end   
         end
-
+        if dbplot && p.case==3
+            subplot(1,2,1)
+            hold on
+            %disp(['c2',num2str(length(pp.c2))])
+            %disp(['pID',num2str(max(pickedID))])
+            %assert(max(pickedID) <= length(p.specificMat(:,i)))
+            %disp(['x2',num2str(length(pp.x2))])
+            %assert(max(pickedID) <= length(d0))
+            histogram(p.specificMat(pickedID,i),'DisplayStyle','stairs')
+            subplot(1,2,2)
+            hold on
+            histogram(d0(pickedID),'DisplayStyle','stairs')
+        end
         if ~isempty(p.profile)
             if logP.spread
                 [~ ,ind] = sort(p.specificMat(pickedID,i)); 
@@ -183,6 +202,11 @@ function [m,h] = subMat(src,tar,p,logP)
             m_logical(pickedID,i) = true;
         end
         n = n + rep(i);
+    end
+    if dbplot && p.case == 3
+        format = 'png';
+        print(hdb,['subEEdb.',format],'-dpng','-r300');
+        saveas(hdb,'subEEdb.fig');
     end
 
     if isempty(p.profile)

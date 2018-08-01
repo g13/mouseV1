@@ -1,18 +1,18 @@
 #!/bin/bash
 
 set -e
-walltime=0:40:00
+walltime=1:00:00
 mem=30G
 load=true          # load new src files to run and delete everything old
 fdr='test'              # target simulation folder
 theme='ndi305-40'       # lgn mapping name, pls set the p.suffix in gMap2.m to the same value 
-TYPE='b'                # additional type name for RFcoeff, OP difference and cortical connection
+TYPE='t'                # additional type name for RFcoeff, OP difference and cortical connection
 conmat=conMat-$theme'_'$TYPE  # name for connection matrix
 coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
 EPSPprofile='logNormal'     # type of distribution for EPSP
 edist='coGauss'             # E-E connection strength type
-eeSig=1.0           # sigma of ee connection pdf
-eeLift=0.11          # gauss + lift, max(gauss) = 1.0
+eeSig=0.5           # sigma of ee connection pdf
+eeLift=0.10          # gauss + lift, max(gauss) = 1.0
 eiSpecific='true'          # E<-I connection specificity over orientation preference and RF similarity
 eiSig=0.5           # sigma of eiSpecific connection pdf
 eiLift=0.05
@@ -22,6 +22,7 @@ reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0
 drawInh='true'      # if draw inhibitory example; 
 ldRF='false'          # don't re-generate lgn to V1 RF
 testLGNonly=false    # test LGN properties, dont generate RF CC and cortical connections
+ldgMap=false
 
 tw=0.0             # weight of contributions from orientation preference and RFcoeff to connection preference
 temper=30           # std of the guassian noise added to temper with the preset orientation of recruiting ellipses
@@ -89,4 +90,7 @@ export ieSig
 export eeLift
 export eiLift
 export testLGNonly
+export ldgMap
 sbatch --export=ALL --mem=$mem --time=$walltime --cpus-per-task=$threads gg.slurm
+#sbatch --export=ALL --mem=$mem --time=$walltime --cpus-per-task=$threads d.slurm
+

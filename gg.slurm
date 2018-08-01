@@ -12,7 +12,9 @@ module purge
 module load matlab/R2015b
 set -e
 date
-matlab -nosplash -nodesktop -r "gMap2;exit"
+if [ "$testLGNonly" == true ] || [ "$ldgMap" == false ]; then
+    matlab -nosplash -nodesktop -r "gMap2;exit"
+fi
 cp lgnmap.out-$theme ../$fdr/
 cp $theme.mat ../$fdr/
 date

@@ -68,7 +68,6 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
 
     hCossell = figure;
     pickedNeighbor = mee > 0;
-    RFflat = RFcorrMatE;
     RFflat_connected = RFcorrMatE(pickedNeighbor);
     excStr = zeros(p.nv1e);
     if spread
@@ -83,24 +82,37 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     
     [RFflatC_sorted, ind] = sort(RFflat_connected);
     excStrC_sorted = excStr_connected(ind);
-    excWeight_count = cumsum(excStr_sorted);
+    excWeight_count = cumsum(excStrC_sorted);
     connected_count = cumsum(ones(length(excStr_connected),1));
-    dbin = 0.01;
+    excWeight_percent = excWeight_count./excWeight_count(end);
+    connected_percent = connected_count./connected_count(end);
+    dbin = 0.02;
     binranges = -1.0:dbin:1;
     nbins = length(binranges);
     binranges(nbins+1) = 1+dbin;
-    [RFflat_count, ~] = histc(RFflat,binranges)
+    [RFflatE_count, ~] = histc(RFcorrMatE(:),binranges);
+    [RFflatI_count, ~] = histc(RFcorrMatI(:),binranges);
     binranges = binranges(1:nbins)+dbin/2;
-    subplot(1,2,1)
-    bar(binranges,RFflat_count);
+    subplot(2,2,1)
+    bar(binranges,RFflatE_count(1:nbins));
+    title('E pool');
+    subplot(2,2,3)
+    bar(binranges,RFflatI_count(1:nbins));
+    title('I pool');
+    xlabel('RFcorr I->E');
     subplot(1,2,2)
     hold on
-    plot(RFlatC_sorted,excWeight_count);
-    plot(RFlatC_sorted,connected_count);
+    plot(RFflatC_sorted,excWeight_percent);
+    plot(RFflatC_sorted,connected_percent);
+    legend({'ExcWeight','connected'});
+    xlabel('RFcorr EE');
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-        print(h,['Cossell-',coMatfile,'-',theme,'.',format],printDriver,dpi);
-        saveas(h,['Cossell-',coMatfile,'-',theme,'.fig']);
+        if strcmp(format,'fig')
+            saveas(hCossell,['Cossell-',coMatfile,'-',theme,'.fig']);
+        else
+            print(hCossell,['Cossell-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+        end
     end
 
     if nlist==p.nv1e
@@ -209,13 +221,13 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
             mEPSPslice = zeros(nbins,1);
             for j = 1:nbins
                 if spread
-                for i = 1:nSel
-                    ineighbor = pickedNeighborT(:,i);
-                    tmp = profilesT(meeT((ind(:,i)==j)&ineighbor,i),i);
-                    EPSPslice(j) = EPSPslice(j) + sum(tmp);
-                    mEPSPslice(j) = mEPSPslice(j) + mean(tmp);
-                end
-                mEPSPslice(j) = mEPSPslice(j)/nSel;
+                    for i = 1:nSel
+                        ineighbor = pickedNeighborT(:,i);
+                        tmp = profilesT(meeT((ind(:,i)==j)&ineighbor,i),i);
+                        EPSPslice(j) = EPSPslice(j) + sum(tmp);
+                        mEPSPslice(j) = mEPSPslice(j) + mean(tmp);
+                    end
+                    mEPSPslice(j) = mEPSPslice(j)/nSel;
                 else
                     tmp = profiles(meeT((ind==j)&pickedNeighborT));
                     EPSPslice(j) = sum(tmp);

@@ -29,17 +29,6 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
             end
         end
     end
-	if threads > 1
-		pool = gcp('nocreate');
-		if ~isempty(pool)
-			if pool.NumWorkers ~= threads  
-				delete(pool);
-				pool = parpool(threads);
-			end
-		else 
-			pool = parpool(threads);
-		end
-	end
     addpath(genpath('../matlab_Utilities'));
     pPosition = [0, 0, 1280, 720];
     if ~isempty(format)
@@ -106,6 +95,18 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
     filename=['coMa-',num2str(nx),'x',num2str(ny),'-',lgnfile,'_',type];
     global Aa Ab siga2 sigb2 X Y
     if ~ld
+	    if threads > 1
+
+	    	pool = gcp('nocreate');
+	    	if ~isempty(pool)
+	    		if pool.NumWorkers ~= threads  
+	    			delete(pool);
+	    			pool = parpool(threads);
+	    		end
+	    	else 
+	    		pool = parpool(threads);
+	    	end
+	    end
         AORF = false(p.nv1e,1);
         FWHM = 2*sqrt(2*log(2));
         Aa = 14.88 * (180/pi)^2;

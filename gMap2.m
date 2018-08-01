@@ -20,7 +20,7 @@ p.se = 1;  % connection strength
 p.si = 4/3.2875;
 %p.si = 1;    %l
 %p.si = 1;       %b
-aliasing = false;
+aliasing = true;
 p.pCRF = 0.0; % percentage of pure complex cells, full overlap LGN input
 pMono = 0;
 ep = [0, pMono,	1-p.pCRF]; % 27% 3-Stripes Niell & Stryker 2008
@@ -89,13 +89,8 @@ ip = [0,    0,  1];
 % p.nSubTypeE = [1,2,2];
 % p.Etypes = {' ON-OFF',' ORF',' SRF',' 3-Stripes'};
 % p.Etypes = {' ON-OFF',' ORF',' SRF'};
-if p.pCRF==0
-    p.Etypes = {' ORF',' SRF'};
-    p.nSubTypeE = [2,2];
-else
-    p.Etypes = {' ORF',' SRF',' CRF'};
-    p.nSubTypeE = [2,2,2];
-end
+p.Etypes = {' ORF',' SRF',' CRF'};
+p.nSubTypeE = [2,2,2];
 p.Etypes = strcat('Exc',p.Etypes);
 p.ntypeE = length(p.Etypes);
 p.Itypes = {' ORF'};
