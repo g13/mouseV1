@@ -211,8 +211,9 @@ function coMat = RFcoeff_O_beta(lgnfile,type,nx,ny,nsig,save2file,tw,draw,format
         coMat = RFcorrMat.*oneMinusWmat + thetaC.*wMat;
         disp('coMat finished');
         toc;
+        AORF = p.CRF | AORF;
+        p.CRF = AORF;
         nAORF = sum(AORF);
-        assert(sum(AORF(p.CRF))==sum(p.CRF))
     else
         load([filename,'_more']);
         if temper > 0

@@ -161,17 +161,16 @@ function [p, etheta, itheta, sp, nLGN, nSubLGN, v1Map, pLGN, lgnStrength,v1pos] 
     p.sp = sp;
     sp = sp/pi*180;
     p.ORF = ORF;
-    p.CRF = iCRF;
+    p.CRF = p.CRF | iCRF;
     % specifies ORF, SRF and CRF Exc
     pick2e = [p.eSubregion == 2; false(p.nv1i,1)];
     p.typeE(ORF & pick2e) = 1;
     p.typeE(~ORF & pick2e) = 2; 
-    if sum(iCRF) > 0
-        p.typeE(iCRF & pick2e) = 3;
-        p.pCRF = sum(iCRF)/p.nv1e;
-    end
-    assert(sum(ORF-iCRF<0)==0);
     clear pick2e;
+    if sum(iCRF) > 0
+        p.typeE(iCRF & p.eSubregion == 2) = 3;
+        p.pCRF = sum(p.CRF)/p.nv1e;
+    end
     %% plot
     figure(h);
     subplot(2,2,1);
@@ -431,7 +430,7 @@ function [v1Map, nLGN, nSubLGN, sp, v1pos, lgnStrength, iORF, itermax, etheta, i
     lgnStrength = cell(p.nv1,maxSubgregion);
     sp = zeros(p.nv1,1);
     iORF = false(p.nv1,1);
-    iCRF = false(p.nv1,1);
+    iCRF = false(p.nv1e,1);
     nLGN = zeros(p.nv1,4);
     nSubLGN = cell(p.nv1,1);
     itermax = zeros(p.nv1,1);
@@ -640,8 +639,9 @@ function q = roll(type,subregion,sigma,aspectRatio,peakDistance,prescribedTheta,
             xcan = (LGNpos(picked,1)-peak(k,1)).*cosgtheta(k) + (LGNpos(picked,2)-peak(k,2)).*singtheta(k);
             ycan = -(LGNpos(picked,1)-peak(k,1)).*singtheta(k) + (LGNpos(picked,2)-peak(k,2)).*cosgtheta(k);
             q.strength{k} = gauss(xcan,ycan,sbound*sigmb(k),sbound*sigma(k));
-            q.strength{k} = q.strength{k}/sum(q.strength{k}) *nactual(k);
         end
+        q.strength{k} = q.strength{k}.*(1+randn(q.isub(k),1)*0.1);
+        q.strength{k} = q.strength{k}/sum(q.strength{k}) *nactual(k);
     end
 % normalize strength to prescribed Neff
     ratio = (prescribedNeff/sum(prescribedNeff)) ./ (nactual/sum(nactual));

@@ -19,12 +19,12 @@ gfortran -O3 -c oADb_parameters.f -o p.o
 #gfortran -O3 -Wall -c assemble_Angle_DG-4.f -o aADG1eps.o
 #gfortran -O3 -Wall -mcmodel=medium -fopenmp -c flags EIFSep.f -o EIFSep.o
 
-#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep1.f -o EIFSep1.o
-#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep2.f -o EIFSep2.o
-#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep3.f -o EIFSep3.o
-gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD1.f -o EIFSep1.o
-gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD2.f -o EIFSep2.o
-gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD3.f -o EIFSep3.o
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep1.f -o EIFSep1.o
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep2.f -o EIFSep2.o
+gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSep3.f -o EIFSep3.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD1.f -o EIFSep1.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD2.f -o EIFSep2.o
+#gfortran -O3 -Wall -mcmodel=medium -fopenmp -c $flags EIFSepTCD3.f -o EIFSep3.o
 #
 gfortran -O3 -Wall -c -mcmodel=medium assemble_Angle_DG-all.f -o aADGa.o
 #################################################################################################

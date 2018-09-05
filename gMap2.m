@@ -13,11 +13,11 @@ p.esigma0 = [10.5,0.1];
 p.isigma0 = [10.5,0.1];
 %p.isigma0 = p.esigma0 * 1.1;
 p.eAspectR0 = [1.2;0.012];
-p.iAspectR0 = [1.4;0.014];
+p.iAspectR0 = [1.55;0.0155];
 %p.iAspectR0 = p.eAspectR0*1.19;
 p.se = 1;  % connection strength
-%p.si = 1;
-p.si = 4/3.2875;
+p.si = 1;
+%p.si = 4/3.2875;
 %p.si = 1;    %l
 %p.si = 1;       %b
 aliasing = true;
@@ -41,8 +41,8 @@ p.lgnx = 16;%*multi;
 p.lgny = 16;%*multi;
 % p.lgnx = 6;
 % p.lgny = 6;
-% p.uniformStrength = false;
 p.uniformStrength = true;
+%p.uniformStrength = true;
 p.ev1x = 60*multi; % column 60
 p.ev1y = 100*multi;	% row 100
 p.iv1x = 30*multi;    % 30
@@ -219,6 +219,7 @@ end
     end
 
 %%%%%%%%%%%%%% CRF
+p.CRF = false(p.nv1e,1);
 if p.pCRF>0
     ir = (p_subregion > ep(3) & p_subregion <= 1);
     nir = sum(ir);
@@ -237,6 +238,7 @@ if p.pCRF>0
     p.eAspectRatio(ir,1) = temp;
     p.eAspectRatio(ir,2) = temp;
     p.typeE(ir) = 3;
+    p.CRF(ir) = true;
 end
 
 %% distribute RF in inh neuron

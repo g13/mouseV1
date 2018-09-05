@@ -14,10 +14,10 @@ set -e
 date
 if [ "$testLGNonly" == true ] || [ "$ldgMap" == false ]; then
     matlab -nosplash -nodesktop -r "gMap2;exit"
+    date
 fi
 cp lgnmap.out-$theme ../$fdr/
 cp $theme.mat ../$fdr/
-date
 
 if [ ! "$testLGNonly" == true ]; then
     matlab -nosplash -nodesktop -r "logP.nbins=$nbins;logP.mu=$mu;logP.sigma=$sig;logP.mu0=$mu0;logP.nsig=$nsig;logP.lR=$lowestRatio;logP.p2s=$p2s;logP.spread=$spread;RFcoeff_O_beta('$theme','$TYPE',60,60,3,true,$tw,true,'png',$ldRF,$temper,$temperGrad,$ieSpecific,$antiphase,$threads,$wC);generateConMat('$theme','t2','gauss',$reciprocal,'$edist',911,true,'png','n','$EPSPprofile','$conmat',$eiSpecific,$ieSpecific,'$coMa',logP,$eiSig,$eeSig,$ieSig,$eiLift,$eeLift);checkConnection_EI('mee-$conmat','$theme','$coMa',randi(8640,1,$ex),9,'png',true,$ntheta,$drawInh,$spread,'$TYPE');checkConnection_EI('mee-$conmat','$theme','$coMa',1:8640,8,'png',true,$ntheta,$drawInh,$spread,'$TYPE');exit"

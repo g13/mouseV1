@@ -14,6 +14,10 @@
       dimension glon(nlgn),slon1(nlgn),slon2(nlgn),slon3(nlgn)
       dimension glf(nlgn), slf1(nlgn), slf2(nlgn), slf3(nlgn)
       dimension glfn(nlgn),slfn1(nlgn),slfn2(nlgn),slfn3(nlgn)
+      dimension gloi(nlgn), slo1i(nlgn), slo2i(nlgn), slo3i(nlgn)
+      dimension gloni(nlgn),slon1i(nlgn),slon2i(nlgn),slon3i(nlgn)
+      dimension glfi(nlgn), slf1i(nlgn), slf2i(nlgn), slf3i(nlgn)
+      dimension glfni(nlgn),slfn1i(nlgn),slfn2i(nlgn),slfn3i(nlgn)
       dimension gl2o(nlgn), sl2o1(nlgn), sl2o2(nlgn), sl2o3(nlgn)
       dimension gl2on(nlgn),sl2on1(nlgn),sl2on2(nlgn),sl2on3(nlgn)
       dimension gl2f(nlgn), sl2f1(nlgn), sl2f2(nlgn), sl2f3(nlgn)
@@ -64,6 +68,10 @@
       dimension clgn2(nmax,25),cexc2(nmax,25),cinh2(nmax,25)
       dimension cnexc(nmax,25),cninh(nmax,25)
       dimension cnexc2(nmax,25),cninh2(nmax,25)
+      dimension dlgnD1o(nlgn),dlgnFo(nlgn)
+      dimension dlgnD1f(nlgn),dlgnFf(nlgn)
+      dimension dlgnD1oi(nlgn),dlgnFoi(nlgn)
+      dimension dlgnD1fi(nlgn),dlgnFfi(nlgn)
 
       dimension tspike(nmax),ispike(nmax)
       dimension tsonpoi(nlgn),ionpoi(nlgn)
@@ -130,6 +138,11 @@
       common / chaino2/ glon,slon1,slon2,slon3
       common / chainf / glf, slf1, slf2, slf3
       common / chainf2/ glfn,slfn1,slfn2,slfn3
+      common / chainoi / gloi,slo1i,slo2i,slo3i
+      common / chaino2i/ gloni,slon1i,slon2i,slon3i
+      common / chainfi / glfi,slf1i,slf2i,slf3i
+      common / chainf2i/ glfni,slfn1i,slfn2i,slfn3i
+!------------------------------------------------
       common / chain2o / gl2o, sl2o1, sl2o2, sl2o3
       common / chain2o2/ gl2on,sl2on1,sl2on2,sl2on3
       common / chain2f / gl2f, sl2f1, sl2f2, sl2f3
@@ -191,7 +204,7 @@
 !
 !------------------------------------------------------------
       common / lgnIndivid / pspon,pspoff,gkx,gky,eps,satur,gtheta
-      common / lgnSat / xS,yS,linear,rI0
+      common / lgnSat / rI0,xS,yS,linear
       common /   rhs  / alpha1,beta1
       common /  avgs  / condavg,curravg,condlgn,condexc,condinh,
      1   geavg,giavg,gpavg
@@ -222,7 +235,8 @@
       common / prestatics/ npEE, npEI, npIE, npII
       common / lgnGain / tmpphi,conAmp,g0,frtlgn0,treflgn,
      1   gphi, tstart, gfail,cond0
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF,
+     1   tauD1i,tauFi,dlDi,dlFi
       common / files / f1,f2,f3,f4,fn,fo,thetafdr,str
       common / noises / ce0_e,ci0_e,frtinh_e,frtexc_e,
      1   ce0_i,ci0_i,frtinh_i,frtexc_i
@@ -240,15 +254,18 @@
       common / fnspikes / fspn,fonpoin,foffpoin,fenoin,finoin
       common / indRate / erate
       common / EIFconst / DeltaT,vTheta,phiVAS
+      common / lgnAdap / dlgnD1o,dlgnFo,dlgnD1f,dlgnFf
+      common / lgnAdapi / dlgnD1oi,dlgnFoi,dlgnD1fi,dlgnFfi
 !$OMP THREADPRIVATE(
-!$OMP& /chaino/, /chaino2/, /chainf/, /chainf2/,/ctats/,
+!$OMP& /chaino/, /chaino2/, /chainf/, /chainf2/,
+!$OMP& /chainoi/,/chaino2i/,/chainfi/,/chainf2i/,/ctats/,
 !$OMP& /chainx/, /chainy/,  /chainn/, /chainm/,/ctats2/,
 !$OMP& /chain2o/,/chain2o2/,/chain2f/,/chain2f2/,
 !$OMP& /chain2x/,/chain2y/, /chain2n/,/chain2m/, /chainp/,
 !$OMP& /chaine/,/chaine2/,/chaini/,/chainj/,/rhs/,/lgnIndivid/,
 !$OMP& /lgncnd/,/spikes/,/isi/,/avgs/,/avgsi/,/files/,/volt/,
 !$OMP& /fspikes/,/stats/,/stats2/,/onpoi/,/offpoi/,/enoi/,
-!$OMP& /inoi/,/fnspikes/,/persp/,/indRate/)
+!$OMP& /inoi/,/fnspikes/,/persp/,/indRate/,/lgnAdap/,/lgnAdapi/)
 !------------------------------------------------------------
 !
 !  Some (not all) INPUT & OUTPUT file declarations
@@ -281,13 +298,15 @@
       read(13,*) vthres,vreset,vexcit,vinhib,gleak,DeltaT,vTheta,gleakI
       read(13,*)
       read(13,*)
-      read(13,*) tau_e,tau_i,tnrise,tndamp,tau2,treflgn
+      read(13,*) tau_e,tau_i,tnrise,tndamp,tau2,treflgn,dlD,dlF,
+     1 dlDi,dlFi
       read(13,*)
       read(13,*)
       read(13,*) dE,dI,denexc,axnexc,deninh,axninh,gIIc,gEIc
       read(13,*)
       read(13,*)
-      read(13,*) ignore,g0,gfail,rI0,tau0,tau1,rall
+      read(13,*) ignore,g0,gfail,rI0,tau0,tau1,rall,tauD1,tauF,
+     1 tauD1i,tauFi
       read(13,*)
       read(13,*)
       read(13,*) omega,gk,ntheta,gphi,tstart,twindow,taulgn,xS,yS
@@ -495,6 +514,10 @@
 !-------------------------------------------------------------
       satur =  lgnsatur(frtlgn0)
       print *, satur
+      print *, 'e adap,',sngl(dlD),',faci,',sngl(dlF)
+      print *, 'i adap,',sngl(dlDi),',faci,',sngl(dlFi)
+      print *, 'et adap,',sngl(tauD1),',faci,',sngl(tauF)
+      print *, 'it adap,',sngl(tauD1i),',faci,',sngl(tauFi)
       cond0  =  g0/satur/tau_e/(1.D0*meanlgn)/gfail
 !-------------------------------------------------------------
 ! linear S between nlgn = 0 & nlgn = 30
@@ -839,7 +862,7 @@
 !------------------------------------------------------------
       do intheta = 1,nntheta
           iid = OMP_GET_THREAD_NUM()
-          iseed = iseed + iid
+          iseed = iseed + ntheta + iid
           gtheta = dtheta*(ntheta+intheta-1)
           eps = epss
           print *, iid ,':',sngl(eps),' angle ',intheta,':',
@@ -1000,6 +1023,30 @@
       slfn1(i) = 0.D0
       slfn2(i) = 0.D0
       slfn3(i) = 0.D0
+      dlgnD1o(i) = 1.D0
+      dlgnD1f(i) = 1.D0
+      dlgnFo(i) = 1.D0
+      dlgnFf(i) = 1.D0
+      gloi(i) = 0.D0
+      slo1i(i) = 0.D0
+      slo2i(i) = 0.D0
+      slo3i(i) = 0.D0
+      gloni(i) = 0.D0
+      slon1i(i) = 0.D0
+      slon2i(i) = 0.D0
+      slon3i(i) = 0.D0
+      glfi(i) = 0.D0
+      slf1i(i) = 0.D0
+      slf2i(i) = 0.D0
+      slf3i(i) = 0.D0
+      glfni(i) = 0.D0
+      slfn1i(i) = 0.D0
+      slfn2i(i) = 0.D0
+      slfn3i(i) = 0.D0
+      dlgnD1oi(i) = 1.D0
+      dlgnD1fi(i) = 1.D0
+      dlgnFoi(i) = 1.D0
+      dlgnFfi(i) = 1.D0
       enddo
       do i=1,nmax
       v(i) = 0.D0
@@ -2184,7 +2231,7 @@
       return
       end
 !************************************************************
-      subroutine visual(t,dt,iseed)
+      subroutine visual(t,dt,iseed,iid)
       use parameters
 !------------------------------------------------------------
 !     Also generate noise (1-1) given firing rates
@@ -2198,6 +2245,10 @@
       dimension glon(nlgn),slon1(nlgn),slon2(nlgn),slon3(nlgn)
       dimension glf(nlgn), slf1(nlgn), slf2(nlgn), slf3(nlgn)
       dimension glfn(nlgn),slfn1(nlgn),slfn2(nlgn),slfn3(nlgn)
+      dimension gloi(nlgn), slo1i(nlgn), slo2i(nlgn), slo3i(nlgn)
+      dimension gloni(nlgn),slon1i(nlgn),slon2i(nlgn),slon3i(nlgn)
+      dimension glfi(nlgn), slf1i(nlgn), slf2i(nlgn), slf3i(nlgn)
+      dimension glfni(nlgn),slfn1i(nlgn),slfn2i(nlgn),slfn3i(nlgn)
       dimension gx(nmax), sx1(nmax), sx2(nmax), sx3(nmax)
       dimension gy(nmax), sy1(nmax), sy2(nmax), sy3(nmax)
       dimension gn(nmax), sn1(nmax), sn2(nmax), sn3(nmax)
@@ -2209,6 +2260,10 @@
       dimension tsenoi(nmax),ienoi(nmax)
       dimension tsinoi(nmax),iinoi(nmax)
       dimension nlgni(nmax)
+      dimension dlgnD1o(nlgn),dlgnFo(nlgn)
+      dimension dlgnD1f(nlgn),dlgnFf(nlgn)
+      dimension dlgnD1oi(nlgn),dlgnFoi(nlgn)
+      dimension dlgnD1fi(nlgn),dlgnFfi(nlgn)
       logical excite(nmax)
       integer iseed
       data iword / 8 /
@@ -2216,6 +2271,10 @@
       common / chaino2/ glon,slon1,slon2,slon3
       common / chainf / glf,slf1,slf2,slf3
       common / chainf2/ glfn,slfn1,slfn2,slfn3
+      common / chainoi / gloi,slo1i,slo2i,slo3i
+      common / chaino2i/ gloni,slon1i,slon2i,slon3i
+      common / chainfi / glfi,slf1i,slf2i,slf3i
+      common / chainf2i/ glfni,slfn1i,slfn2i,slfn3i
       common / chainx / gx,sx1,sx2,sx3
       common / chainy / gy,sy1,sy2,sy3
       common / chainn / gn,sn1,sn2,sn3
@@ -2232,17 +2291,21 @@
      1   fnmdanE, fnmdanI, fgaba
       common / neuron / excite,nlgni,trefE,trefI,nr,
      1   lgnmax,lgnmin,meanlgn
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF,
+     1   tauD1i,tauFi,dlDi,dlFi
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi
       common / offpoi / tsoffpoi,ioffpoi,noffpoi
       common / enoi / tsenoi,ienoi,nenoi
       common / inoi / tsinoi,iinoi,ninoi
+      common / lgnAdap / dlgnD1o,dlgnFo,dlgnD1f,dlgnFf
+      common / lgnAdapi / dlgnD1oi,dlgnFoi,dlgnD1fi,dlgnFfi
       real*8 lgnsatur
       !INTEGER*4 nonsp,noffsp,nensp,ninsp
 !$OMP THREADPRIVATE(/chaino/,/chaino2/,/chainf/,/chainf2/,
+!$OMP& /chainoi/,/chaino2i/,/chainfi/,/chainf2i/,
 !$OMP& /chainx/,/chainy/,/chainn/,/chainm/,/lgnIndivid/,
-!$OMP& /onpoi/,/offpoi/,/enoi/,/inoi/)
+!$OMP& /onpoi/,/offpoi/,/enoi/,/inoi/,/lgnAdap/,/lgnAdapi/)
       iword2 = iword/2
       !omegat = omega*(t-tstart)
       omegat = omega*t
@@ -2285,6 +2348,7 @@
        if (rannum.lt.dt*frate.and.rannum.ge.0.D0
      1      .and.t+dtt.gt.pspon(i)+treflgn) then
 !===========================================================
+       dtsp = t+dtt - pspon(i)
        pspon(i) = t + dtt
 !=============================================================
       if (t.gt.tfinal-twindow) then
@@ -2297,28 +2361,56 @@
 !--------- t + dt -- dt
 
 !--------- before spike | 0 --*--> dtt -----> dt
+!--------- adap
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
+       dlFD = dlgnFo(i)*dlgnD1o(i)
+       dlgnD1o(i) = dlgnD1o(i) * dlD
+       dlgnFo(i) = dlgnFo(i) + dlF
+!----------iadap
+       call adap(dlgnD1oi(i),tauD1i,dtt)
+       call adap(dlgnFoi(i),tauFi,dtt)
+       dlFDi = dlgnFoi(i)*dlgnD1oi(i)
+       dlgnD1oi(i) = dlgnD1oi(i) * dlDi
+       dlgnFoi(i) = dlgnFoi(i) + dlFi
 !--------- ampa exc
 
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
-       slo3(i) = slo3(i) + cond0
+       slo3(i) = slo3(i) + dlFD*cond0
+       call decay1_d(gloi(i),slo3i(i),tau_e,tau0,dtt)
+       slo3i(i) = slo3i(i) + dlFDi*cond0
 !--------- nmda exc 
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
-         slon3(i) = slon3(i) + cond0*tau_e/tnrise
+         slon3(i) = slon3(i) + dlFD*cond0*tau_e/tnrise
+         call decay1_d(gloni(i),slon3i(i),tnrise,tndamp,dtt)
+         slon3i(i) = slon3i(i) + dlFDi*cond0*tau_e/tnrise
        endif 
 
 !--------- after spike | 0 -----> dtt --*--> dt
        dtt = dt - dtt
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
+       call adap(dlgnD1oi(i),tauD1i,dtt)
+       call adap(dlgnFoi(i),tauFi,dtt)
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
+       call decay1_d(gloi(i),slo3i(i),tau_e,tau0,dtt)
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
+         call decay1_d(gloni(i),slon3i(i),tnrise,tndamp,dtt)
        endif
 !--------- add by daiwei--------------------------------
        else
        dtt = dt
+       call adap(dlgnD1o(i),tauD1,dtt)
+       call adap(dlgnFo(i),tauF,dtt)
+       call adap(dlgnD1oi(i),tauD1i,dtt)
+       call adap(dlgnFoi(i),tauFi,dtt)
        call decay1_d(glo(i),slo3(i),tau_e,tau0,dtt)
+       call decay1_d(gloi(i),slo3i(i),tau_e,tau0,dtt)
        if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
          call decay1_d(glon(i),slon3(i),tnrise,tndamp,dtt)
+         call decay1_d(gloni(i),slon3i(i),tnrise,tndamp,dtt)
        endif
 !===========================================================
        endif
@@ -2365,23 +2457,51 @@
         ioffpoi(noffpoi) = i
       endif
 !------------------------------------
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
+      call adap(dlgnD1fi(i),tauD1i,dtt)
+      call adap(dlgnFfi(i),tauFi,dtt)
+      dlFD = dlgnD1f(i)*dlgnFf(i)
+      dlgnD1f(i) = dlgnD1f(i) * dlD
+      dlgnFf(i) = dlgnFf(i) + dlF
+      dlFDi = dlgnD1fi(i)*dlgnFfi(i)
+      dlgnD1fi(i) = dlgnD1fi(i) * dlDi
+      dlgnFfi(i) = dlgnFfi(i) + dlFi
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
-      slf3(i) = slf3(i) + cond0
+      slf3(i) = slf3(i) + dlFD*cond0
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
-          slfn3(i) = slfn3(i) + cond0*tau_e/tnrise
+          slfn3(i) = slfn3(i) + dlFD*cond0*tau_e/tnrise
+      endif
+      call decay1_d(glfi(i),slf3i(i),tau_e,tau0,dtt)
+      slf3i(i) = slf3i(i) + dlFDi*cond0
+      if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
+        call decay1_d(glfni(i),slfn3i(i),tnrise,tndamp,dtt)
+          slfn3i(i) = slfn3i(i) + dlFDi*cond0*tau_e/tnrise
       endif
 
       dtt = dt - dtt
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
+      call adap(dlgnD1fi(i),tauD1i,dtt)
+      call adap(dlgnFfi(i),tauFi,dtt)
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
+      call decay1_d(glfi(i),slf3i(i),tau_e,tau0,dtt)
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
+        call decay1_d(glfni(i),slfn3i(i),tnrise,tndamp,dtt)
       endif
       else
       dtt = dt
+      call adap(dlgnD1f(i),tauD1,dtt)
+      call adap(dlgnFf(i),tauF,dtt)
+      call adap(dlgnD1fi(i),tauD1i,dtt)
+      call adap(dlgnFfi(i),tauFi,dtt)
       call decay1_d(glf(i),slf3(i),tau_e,tau0,dtt)
+      call decay1_d(glfi(i),slf3i(i),tau_e,tau0,dtt)
       if (fnmdatE.GT.0.D0.or.fnmdatI.GT.0.D0) then
         call decay1_d(glfn(i),slfn3(i),tnrise,tndamp,dtt)
+        call decay1_d(glfni(i),slfn3i(i),tnrise,tndamp,dtt)
       endif
       endif
       enddo
@@ -2573,8 +2693,14 @@
       se  = se * ete
       return
       end
-      subroutine decay1_d(ge,se,trise,tdamp,deltat)
+      subroutine adap(a,tau_a,deltat)
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N) 
+      t = deltat/tau_a
+      a = 1.D0 - (1.D0-a)*exp(-t)
+      return
+      end
+      subroutine decay1_d(ge,se,trise,tdamp,deltat)
+      IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
       !print *,'before ge ', ge,'se ',se
       tr  = deltat/trise
       etr = exp(-tr)
@@ -2652,6 +2778,10 @@
       dimension glon(nlgn),slon1(nlgn),slon2(nlgn),slon3(nlgn)
       dimension glf(nlgn),slf1(nlgn),slf2(nlgn),slf3(nlgn)
       dimension glfn(nlgn),slfn1(nlgn),slfn2(nlgn),slfn3(nlgn)
+      dimension gloi(nlgn), slo1i(nlgn), slo2i(nlgn), slo3i(nlgn)
+      dimension gloni(nlgn),slon1i(nlgn),slon2i(nlgn),slon3i(nlgn)
+      dimension glfi(nlgn), slf1i(nlgn), slf2i(nlgn), slf3i(nlgn)
+      dimension glfni(nlgn),slfn1i(nlgn),slfn2i(nlgn),slfn3i(nlgn)
       dimension ge(nmax),se1(nmax),se2(nmax),se3(nmax)
       dimension gf(nmax),sf1(nmax),sf2(nmax),sf3(nmax)
       dimension gi(nmax),si1(nmax),si2(nmax),si3(nmax)
@@ -2690,6 +2820,10 @@
       common / chaino2/ glon,slon1,slon2,slon3
       common / chainf / glf,slf1,slf2,slf3
       common / chainf2/ glfn,slfn1,slfn2,slfn3
+      common / chainoi / gloi,slo1i,slo2i,slo3i
+      common / chaino2i/ gloni,slon1i,slon2i,slon3i
+      common / chainfi / glfi,slf1i,slf2i,slf3i
+      common / chainf2i/ glfni,slfn1i,slfn2i,slfn3i
       common / chaine / ge,se1,se2,se3
       common / chaine2/ gf,sf1,sf2,sf3
       common / chaini / gi,si1,si2,si3
@@ -2716,7 +2850,8 @@
      1   fnmdanE, fnmdanI, fgaba
       common / prestatics/ npEE, npEI, npIE, npII
       common / EIFconst / DeltaT,vTheta,phiVAS
-!$OMP THREADPRIVATE(/chaino/,/chaino2/,/chainf/,/chainf2/,/chainp/,
+!$OMP THREADPRIVATE(/chaino/,/chaino2/,/chainf/,/chainf2/,
+!$OMP& /chainoi/,/chaino2i/,/chainfi/,/chainf2i/,/chainp/,
 !$OMP& /chaine/,/chaine2/,/chaini/,/chainj/,/chainx/,/persp/,
 !$OMP& /chainy/,/chainn/,/chainm/,/rhs/,/isi/,/lgncnd/,/volt/,
 !$OMP& /spikes/,/indRate/)
@@ -2730,6 +2865,7 @@
         glampa(i) = 0.D0
         glnmda2(i) = 0.D0
         glampa2(i) = 0.D0
+      if (excite(i)) then
       do j=1,nonlgn(i)
         glnmda(i) = glnmda(i) + glon(ionlgn(i,j))*sonlgn(i,j)
         glampa(i) = glampa(i) + glo(ionlgn(i,j))*sonlgn(i,j)
@@ -2742,6 +2878,20 @@
         glnmda2(i) = glnmda2(i) + slfn3(ioflgn(i,j))*soflgn(i,j)
         glampa2(i) = glampa2(i) + slf3(ioflgn(i,j))*soflgn(i,j)
       enddo
+      else
+      do j=1,nonlgn(i)
+        glnmda(i) = glnmda(i) + gloni(ionlgn(i,j))*sonlgn(i,j)
+        glampa(i) = glampa(i) + gloi(ionlgn(i,j))*sonlgn(i,j)
+        glnmda2(i) = glnmda2(i) + slon3i(ionlgn(i,j))*sonlgn(i,j)
+        glampa2(i) = glampa2(i) + slo3i(ionlgn(i,j))*sonlgn(i,j)
+      enddo
+      do j=1,noflgn(i)
+        glnmda(i) = glnmda(i) + glfni(ioflgn(i,j))*soflgn(i,j)
+        glampa(i) = glampa(i) + glfi(ioflgn(i,j))*soflgn(i,j)
+        glnmda2(i) = glnmda2(i) + slfn3i(ioflgn(i,j))*soflgn(i,j)
+        glampa2(i) = glampa2(i) + slf3i(ioflgn(i,j))*soflgn(i,j)
+      enddo
+      endif
         ge0(i) = ge(i)
         se30(i) = se3(i)
         gf0(i) = gf(i)
@@ -2762,7 +2912,7 @@
         sp30(i) = sp3(i)
       enddo
 ! thalamic and noises
-      call visual(t,dt,iseed)
+      call visual(t,dt,iseed,iid)
 ! ampa cortical
       call chain1_d(ge,se3,tau_e,tau0,dt,nmax)
 ! nmda cortical 
@@ -2801,12 +2951,12 @@
       gleakk = gleak
       else
       do j=1,nonlgn(i)
-      gl(i) = gl(i) + (1-fnmdatI)*glo(ionlgn(i,j))*sonlgn(i,j)
-     1        + fnmdatI * glon(ionlgn(i,j))*sonlgn(i,j)
+      gl(i) = gl(i) + (1-fnmdatI)*gloi(ionlgn(i,j))*sonlgn(i,j)
+     1        + fnmdatI * gloni(ionlgn(i,j))*sonlgn(i,j)
       enddo
       do j=1,noflgn(i)
-      gl(i) = gl(i) + (1-fnmdatI)*glf(ioflgn(i,j))*soflgn(i,j)
-     1        + fnmdatI * glfn(ioflgn(i,j))*soflgn(i,j)
+      gl(i) = gl(i) + (1-fnmdatI)*glfi(ioflgn(i,j))*soflgn(i,j)
+     1        + fnmdatI * glfni(ioflgn(i,j))*soflgn(i,j)
       enddo
       ginhib  = ((1-fgaba)*gi(i) + fgaba*gj(i))*sii(i) + gIIc
       gexcit  = ((1-fnmdacI)*ge(i) + fnmdacI*gf(i))*sie(i)
@@ -3548,7 +3698,8 @@
      1   fnmdanE, fnmdanI, fgaba
       common / neuron / excite,nlgni,trefE,trefI,nr,
      1   lgnmax,lgnmin,meanlgn
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF,
+     1   tauD1i,tauFi,dlDi,dlFi
       common / ttotal / tfinal,twindow,rstart
       common / onpoi / tsonpoi,ionpoi,nonpoi
       common / offpoi / tsoffpoi,ioffpoi,noffpoi
@@ -4379,7 +4530,8 @@
 !    don't know how to perform this convolution
 !------------------------------------------------------------
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
-      common / lgnConvol / gk2, taulgn, omega
+      common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF,
+     1   tauD1i,tauFi,dlDi,dlFi
 !------------------------------------------------------------
 !     xlgn, ylgn: center of each LGN RF
 !     siga, sigb: sigma of each Gaussian (RF = diff of 2 Gaussians)
@@ -4428,7 +4580,7 @@
 !------------------------------------------------------------
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N) 
 !------------------------------------------------------------
-      common / lgnSat / xS, yS, linear, rI0
+      common / lgnSat / rI0, xS, yS, linear
       rr = xS*x
         if (linear.NE.1) then
       c2 = 0.09827D0

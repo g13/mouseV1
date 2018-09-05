@@ -3,26 +3,25 @@
 set -e
 walltime=1:00:00
 mem=30G
-load=true          # load new src files to run and delete everything old
 fdr='test'              # target simulation folder
 theme='ndi305-40'       # lgn mapping name, pls set the p.suffix in gMap2.m to the same value 
-TYPE='t'                # additional type name for RFcoeff, OP difference and cortical connection
-conmat=conMat-$theme'_'$TYPE  # name for connection matrix
-coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
-EPSPprofile='logNormal'     # type of distribution for EPSP
+TYPE='i81e33n'              # additional type name for RFcoeff, OP difference and cortical connection
+EPSPprofile='None'     # type of distribution for EPSP, (logNormal or None)
 edist='coGauss'             # E-E connection strength type
-eeSig=0.5           # sigma of ee connection pdf
-eeLift=0.10          # gauss + lift, max(gauss) = 1.0
+eeSig=0.3           # sigma of ee connection pdf
+eeLift=0.3          # gauss + lift, max(gauss) = 1.0
 eiSpecific='true'          # E<-I connection specificity over orientation preference and RF similarity
-eiSig=0.5           # sigma of eiSpecific connection pdf
-eiLift=0.05
+eiSig=0.8           # sigma of eiSpecific connection pdf
+eiLift=0.1
 threads=12          # number of threads used in parpool for RFcoef_O_beta.m
 antiphase='false'       # antiphase in terms of on-off subregion, so that RF coefficient is bigger if on-off cross match between two neurons
 reciprocal=0.0          # constraint on percentage of reciprocal connections 0.0 for no constraint
 drawInh='true'      # if draw inhibitory example; 
-ldRF='false'          # don't re-generate lgn to V1 RF
 testLGNonly=false    # test LGN properties, dont generate RF CC and cortical connections
-ldgMap=false
+load=true          # load new src files to run and delete everything old
+ldRF='true'          # don't re-generate lgn to V1 RF
+ldgMap='true'
+cpTYPE='i31e33'
 
 tw=0.0             # weight of contributions from orientation preference and RFcoeff to connection preference
 temper=30           # std of the guassian noise added to temper with the preset orientation of recruiting ellipses
@@ -34,14 +33,17 @@ p2s=40.0            # estimated converting scale from connection strength to res
 mu=0.45             # average EPSP in mV
 ieSpecific='false'  # I<-E connection specificity over orientation preference and RF similarity
 ieSig=1.0           # sigma of I<-E connection pdf
-sig=1.16            # standard deviation for a lognormal distribution
-nsig=3             # cutoff EPSP histogram at # of std 
+sig=4.00            # standard deviation for a lognormal distribution
+nsig=4             # cutoff EPSP histogram at # of std 
 nbins=30            # number of bins for EPSP distribution
 spread='false'      # ORF(smaller normalized distance) have a less spreaded EPSP, sig is mutiplied by a ratio.
 mu0=0.45           # enabled if spread is true, less spreaded but with a higher mean mu0, mu_final = mu*ratio+(1-ratio)*mu0
 lowestRatio=0.0    # lowest ratio of sig allowed when spread is true.
 
 setupFdr='Setup_'$theme'_'$TYPE
+cpFdr='Setup_'$theme'_'$cpTYPE
+conmat=conMat-$theme'_'$TYPE  # name for connection matrix
+coMa='coMa-60x60-'$theme'_'$TYPE   # name for RF pearson coefficient matrix
 if [ ! -d "$setupFdr" ]; then
     mkdir $setupFdr
 fi
@@ -50,9 +52,22 @@ if [ "$load" == true ]; then
     cd $setupFdr
     rm -rf *
     cd ../
-    cp *.m gg.slurm  $setupFdr/
+    cp *.m gg.slurm $setupFdr/
+    cp sbatch_gg $setupFdr/
+    if [ ! "$cpTYPE" == "" ]; then
+        if [ "$ldgMap" == true ]; then
+            cp $cpFdr/${theme}'.mat' $setupFdr
+            cp $cpFdr/'lgnmap.out-'${theme} $setupFdr
+            echo 'lgnmap.out loaded'
+        fi
+        if [ "$ldRF" == 'true' ]; then
+            cp $cpFdr/${theme}'.mat' $setupFdr
+            cp $cpFdr/'coMa-60x60-'${theme}'_'${cpTYPE}'_more.mat' $setupFdr/'coMa-60x60-'${theme}'_'${TYPE}'_more.mat'
+            cp $cpFdr/'coMa-60x60-'${theme}'_'${cpTYPE}'.mat' $setupFdr/'coMa-60x60-'${theme}'_'${TYPE}'.mat'
+            echo 'coef mat loaded'
+        fi
+    fi
 fi
-cp sbatch_gg $setupFdr/
 
 cd $setupFdr
 
@@ -93,4 +108,3 @@ export testLGNonly
 export ldgMap
 sbatch --export=ALL --mem=$mem --time=$walltime --cpus-per-task=$threads gg.slurm
 #sbatch --export=ALL --mem=$mem --time=$walltime --cpus-per-task=$threads d.slurm
-

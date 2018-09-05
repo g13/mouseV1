@@ -24,21 +24,24 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
     sig = sqrt(log(1+sigma^2/mu^2));
 %     nsig = max(ceil(sigma/mu),nsig);   
     strengthID = zeros(n,1);
-    A = 2/erfc(-(log(nsig*sig)-m)/(sig*sqrt(2)));
+    lift = 2.0*exp(m-sig^2);
+    CDF0 = @(x,m,sig,lift) 1/2*erfc(-(log(x)-m)/(sig*sqrt(2)))+log(x)*lift;
+    x0min = max(log(3e-2),m-nsig*sig);
+    A0 = CDF0(exp(x0min),m,sig,lift);
+    A = 1/(CDF0(m+sig*nsig,m,sig,lift) - A0);
     if A == inf
         logNormalCDF = @(x,m,sig) ones(1,length(x));
     else
-        logNormalCDF = @(x,m,sig) 1/2*erfc(-(log(x)-m)/(sig*sqrt(2)))*A;
+        logNormalCDF = @(x,m,sig) (1/2*erfc(-(log(x)-m)/(sig*sqrt(2)))+log(x)*lift-A0)*A;
     end
-    
+    x0max = min(log(4.0),m+nsig*sig);
     %slist = zeros(nbins,1);
     %nbins0 = round(0.6*nbins);
     %x0 = linspace(m-nsig*sig,0,nbins0);
     %slist(1:nbins0) = exp(x0);
     %tmp = linspace(1,mu+nsig*sigma,nbins-nbins0+1);
     %slist(nbins0+1:nbins) = tmp(2:end);
-    x0max = min(log(4.0),m+nsig*sig);
-    x0min = max(log(5e-3),m-nsig*sig);
+
 %     x0max = m + nsig*sig;
     if A == inf
         x0 = zeros(1,nbins)+exp(m); 
@@ -81,9 +84,9 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
     if testProfile
         %% testing
         figure;
-        logNormal = @(x,m,sig) 1./(x*sqrt(2*pi)*sig).*exp(-(log(x)-m).^2/(2*sig^2));
+        logNormal = @(x,m,sig) lift./x+1./(x*sqrt(2*pi)*sig).*exp(-(log(x)-m).^2/(2*sig^2));
         pick = npick>0;
-        x = slist(pick)
+        x = slist(pick);
         y = npick(pick);
         nx = sum(pick);
         dx = zeros(1,nx);
@@ -105,7 +108,7 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
         end
 
 
-        subplot(2,1,1);
+        subplot(1,2,1);
         semilogx(x,yprob*n,'-*');
         xlabel('PSP');
         ylabel('#');
@@ -119,7 +122,7 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
         title({[num2str(meanx),'\pm',num2str(stdx)],['x0=',num2str(min(x0)),'~',num2str(max(x0))],...
                 ['x=',num2str(min(x)),'~',num2str(max(x))]})
 
-        subplot(2,1,2);
+        subplot(1,2,2);
         plot(x,yprob*n,'-*');
         hold on
 
@@ -139,6 +142,7 @@ function [strengthID, slist] = logNormalProfile(n,nbins,mu,sigma,mu0,nsig,p2s,te
         rt = mu0/means;
         xx = x*rt;
         plot(xx,y);
+        legend({'analytical','data','rescaled'});
         edges = 0:0.2:5;
 %         edges=linspace(slist(1),slist(end),nbins);
 %         dedges=edges(2)-edges(1);

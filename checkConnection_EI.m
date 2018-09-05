@@ -2,12 +2,6 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     global Aa Ab siga2 sigb2 x y X Y LGNpos v1Map lgnStrength nSubLGN p etheta itheta rfx rfy ttt FWHM plotPr
     pPosition = [0, 0, 1280, 720];
     plotPr = 5;
-    if nargin < 10
-        spread = false;
-        if nargin < 9
-            Inh = false;
-        end
-    end
     if ~isempty(format)
         if strcmp(format,'psc2')
             printDriver = ['-de',format];
@@ -19,7 +13,7 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     end
     set(0,'DefaultAxesFontSize',14);
     load(lgnfile);
-    load([coMatfile,'_more'],'RFcorrMat','dThetaMat');
+    load([coMatfile,'_more'],'RFcorrMat','dThetaMat','AORF');
     load(coMatfile,'coMat');
     coMatE = coMat(1:p.nv1e,1:p.nv1e);
     RFcorrMatE = RFcorrMat(1:p.nv1e,1:p.nv1e);
@@ -29,7 +23,7 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
         dThetaI = dThetaMat(p.nv1e+(1:p.nv1i),1:p.nv1e);
         RFcorrMatI = RFcorrMat(p.nv1e +(1:p.nv1i),1:p.nv1e);
     end
-    clear RFcorrMatI; 
+    %clear RFcorrMatI; 
     clear dThetaMat;
     load(meefile);
     meifile = meefile;
@@ -66,135 +60,100 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
     dtheta = pi/ntheta;
     bound = sqrt(2);
 
-    hCossell = figure;
-    pickedNeighbor = mee > 0;
-    RFflat_connected = RFcorrMatE(pickedNeighbor);
-    excStr = zeros(p.nv1e);
-    if spread
-        for i = 1:p.nv1e
-            ineighbor = pickedNeighbor(:,i);
-            excStr(ineighbor,i) = profiles(mee(ineighbor,i),i);
-        end
-    else
-        excStr(pickedNeighbor) = profiles(mee(pickedNeighbor));
-    end
-    excStr_connected = excStr(pickedNeighbor);
-    
-    [RFflatC_sorted, ind] = sort(RFflat_connected);
-    excStrC_sorted = excStr_connected(ind);
-    excWeight_count = cumsum(excStrC_sorted);
-    connected_count = cumsum(ones(length(excStr_connected),1));
-    excWeight_percent = excWeight_count./excWeight_count(end);
-    connected_percent = connected_count./connected_count(end);
-    dbin = 0.02;
-    binranges = -1.0:dbin:1;
-    nbins = length(binranges);
-    binranges(nbins+1) = 1+dbin;
-    [RFflatE_count, ~] = histc(RFcorrMatE(:),binranges);
-    [RFflatI_count, ~] = histc(RFcorrMatI(:),binranges);
-    binranges = binranges(1:nbins)+dbin/2;
-    subplot(2,2,1)
-    bar(binranges,RFflatE_count(1:nbins));
-    title('E pool');
-    subplot(2,2,3)
-    bar(binranges,RFflatI_count(1:nbins));
-    title('I pool');
-    xlabel('RFcorr I->E');
-    subplot(1,2,2)
-    hold on
-    plot(RFflatC_sorted,excWeight_percent);
-    plot(RFflatC_sorted,connected_percent);
-    legend({'ExcWeight','connected'});
-    xlabel('RFcorr EE');
-    if ~isempty(format)
-        set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-        if strcmp(format,'fig')
-            saveas(hCossell,['Cossell-',coMatfile,'-',theme,'.fig']);
-        else
-            print(hCossell,['Cossell-',coMatfile,'-',theme,'.',format],printDriver,dpi);
-        end
-    end
 
     if nlist==p.nv1e
+    %% RFCorr
         h = figure;
-        subplot(1,2,1)
+            
         pickedNeighbor = mee>0;
         binranges = -1.0:dbin:1;
         nbins = length(binranges)-1;
-        binranges(nbins+1) = 1.1;
-        [binCounts0,ind] = histc(coMatE,binranges);       
-        binCounts0 = binCounts0(1:nbins,1:p.nv1e);
-        binCounts0 = binCounts0./(ones(nbins,1)*sum(binCounts0,1))*100;
-        binCounts0 = mean(binCounts0,2);
-        
-        coMatE(~pickedNeighbor) = binranges(1)-1;
-        [binCounts,~] = histc(coMatE,binranges);
-        binCounts = binCounts(1:nbins,1:p.nv1e);
-        binCounts = binCounts./(ones(nbins,1)*sum(binCounts,1))*100;
-        binCounts = mean(binCounts,2);
-        
-        EPSPslice = zeros(nbins,1);
-        for j = 1:nbins
+        binranges(nbins+1) = 1+dbin;
+        tt = {'ORF','SRF'};
+        for type = 1:2
+            subplot(2,2,type);
+            sel = p.typeE==type;
+            meeT = mee(:,sel);
+            pickedNeighborT = pickedNeighbor(:,sel);
+            nSel = sum(sel);
+            RFcorr = RFcorrMatE(:,sel);
             if spread
-                for i = 1:p.nv1e
-                    ineighbor = mee(:,i)>0;
-                    EPSPslice(j) = EPSPslice(j) + sum(profiles(mee((ind(:,i)==j)&ineighbor,i),i));
-                end
-                EPSPslice(j) = EPSPslice(j)/p.nv1e;
-            else
-                EPSPslice(j) = sum(profiles(mee((ind==j)&pickedNeighbor)))/p.nv1e;
+                profilesT = profiles(:,sel);
             end
-        end
-        EPSPslice = EPSPslice/sum(EPSPslice)*100;
-        binranges = binranges(1:nbins)+dbin/2;
-        plot(binranges,[cumsum(EPSPslice),cumsum(binCounts),binCounts0./sum(binCounts0)*100]);
-        ylabel('%');
-        xlabel('coMat');
-        legend({'Cort. Exc. CDF.','Connected CDF.','PDF'},'Location','NorthWest');
-        ylim([0,100]);
+            binCounts0 = histc(RFcorr,binranges);
+            binCounts0 = binCounts0(1:nbins,:);
+            RFcorr(~pickedNeighborT) = binranges(1)-1;
+            [binCounts,ind] = histc(RFcorr,binranges);
+            binCounts = binCounts(1:nbins,:);
+            pbinCounts = mean(binCounts./binCounts0*100,2);
+            binCounts = binCounts./(ones(nbins,1)*sum(binCounts,1))*100;
+            mbinCounts = mean(binCounts,2);
+            mbinCounts = mbinCounts./sum(mbinCounts)*100;
 
-        subplot(1,2,2)
-        binranges = -1.0:dbin:1;
-        nbins = length(binranges)-1;
-        binranges(nbins+1) = 1.1;
-        [binCounts0,ind] = histc(RFcorrMatE,binranges);       
-        binCounts0 = binCounts0(1:nbins,1:p.nv1e);
-        binCounts0 = binCounts0./(ones(nbins,1)*sum(binCounts0,1))*100;
-        binCounts0 = mean(binCounts0,2);
-        
-        RFcorrMatE(~pickedNeighbor) = binranges(1)-1;
-        [binCounts,~] = histc(RFcorrMatE,binranges);
-        binCounts = binCounts(1:nbins,1:p.nv1e);
-        binCounts = binCounts./(ones(nbins,1)*sum(binCounts,1))*100;
-        binCounts = mean(binCounts,2);
-        
-        EPSPslice = zeros(nbins,1);
-        for j = 1:nbins
-            if spread
-                for i = 1:p.nv1e
-                    ineighbor = pickedNeighbor(:,i);
-                    EPSPslice(j) = EPSPslice(j) + sum(profiles(mee((ind(:,i)==j)&ineighbor,i),i));
+            EPSPslice = zeros(nbins,1);
+            mEPSPslice = zeros(nbins,1);
+            for j = 1:nbins
+                if spread
+                    for i = 1:nSel
+                        ineighbor = pickedNeighborT(:,i);
+                        tmp = profilesT(meeT((ind(:,i)==j)&ineighbor,i),i);
+                        EPSPslice(j) = EPSPslice(j) + sum(tmp);
+                        mEPSPslice(j) = mEPSPslice(j) + mean(tmp);
+                    end
+                    mEPSPslice(j) = mEPSPslice(j)/nSel;
+                else
+                    tmp = profiles(meeT((ind==j)&pickedNeighborT));
+                    EPSPslice(j) = sum(tmp);
+                    mEPSPslice(j) = mean(tmp);
                 end
-                EPSPslice(j) = EPSPslice(j)/p.nv1e;
-            else
-                EPSPslice(j) = sum(profiles(mee((ind==j)&pickedNeighbor)))/p.nv1e;
             end
+            EPSPslice = EPSPslice./sum(EPSPslice)*100;
+            xxxx = (binranges(1:nbins)+dbin/2);
+            [hAx,h1,h2] = plotyy(xxxx,mEPSPslice,xxxx,[mbinCounts,EPSPslice,pbinCounts]);
+            h1.Marker = '.';
+            h2(1).LineStyle = ':';
+            h2(1).Marker = 'o';
+            h2(2).Marker = 's';
+            h2(3).Marker = 'v';
+            ylabel(hAx(1),'EPSP (mV)');
+            ylabel(hAx(2),'%');
+            ylim(hAx(1),[0,inf]);
+            ylim(hAx(2),[0,inf]);
+            xlabel('RFcorr');
+            legend({'avg EPSP','% Connection','% Total EPSP','in-bin Con. Prob.'});
+            title(tt(type));
         end
-        EPSPslice = EPSPslice/sum(EPSPslice)*100;
-        binranges = binranges(1:nbins)+dbin/2;
-        plot(binranges,[cumsum(EPSPslice),cumsum(binCounts),binCounts0./sum(binCounts0)*100]);
+        subplot(2,1,2);
+        pickedNeighbor = mei>0;
+        RFcorr = RFcorrMatI;
+        RFcorr(~pickedNeighbor) = binranges(1)-1;
+        binCounts = histc(RFcorr,binranges);
+        binCounts = binCounts(1:nbins,:);
+        binCounts = binCounts./(ones(nbins,1)*sum(binCounts,1))*100;
+        mbinCounts = mean(binCounts,2);
+        mbinCounts = mbinCounts./sum(mbinCounts)*100;
+        stdbinCounts = std(binCounts,1,2);
+
+        xxxx = (binranges(1:nbins)+dtheta/2)*180/pi;
+        errorbar(xxxx,mbinCounts,stdbinCounts);
+        ylim([0,inf]);
         ylabel('%');
-        xlabel('RF correlation');
-        legend({'Cort. Exc. CDF.','Connected CDF.','PDF'},'Location','NorthWest');
-        ylim([0,100]);
+        xlabel('RFcorr');
+        legend('% Connection');
+        title('inh');
+
         if ~isempty(format)
             set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            print(h,['Pop_RFsimilarity-',coMatfile,'-',theme,'.',format],printDriver,dpi);
-            saveas(h,['Pop_RFsimilarity-',coMatfile,'-',theme,'.fig']);
+            if strcmp(format,'fig')
+                saveas(h,['Pop_RFcorr-',coMatfile,'-',theme,'.fig']);
+            else
+                print(h,['Pop_RFcorr-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+            end
         end
-        h = figure;
     %% theta
+        h = figure;
             
+        pickedNeighbor = mee>0;
         binranges = 0.0:dtheta:(pi/2);
         nbins = length(binranges)-1;
         binranges(nbins+1) = pi/2+0.1;
@@ -215,7 +174,6 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
             binCounts = binCounts./(ones(nbins,1)*sum(binCounts,1))*100;
             mbinCounts = mean(binCounts,2);
             mbinCounts = mbinCounts./sum(mbinCounts)*100;
-            stdbinCounts = std(binCounts,1,2);
 
             EPSPslice = zeros(nbins,1);
             mEPSPslice = zeros(nbins,1);
@@ -270,8 +228,120 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
 
         if ~isempty(format)
             set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
-            print(h,['Pop_Theta-',coMatfile,'-',theme,'.',format],printDriver,dpi);
-            saveas(h,['Pop_Theta-',coMatfile,'-',theme,'.fig']);
+            if strcmp(format,'fig')
+                saveas(h,['Pop_Theta-',coMatfile,'-',theme,'.fig']);
+            else
+                print(h,['Pop_Theta-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+            end
+        end
+    %% Cossell 2015
+        hCossell = figure;
+        pickedNeighbor = mee > 0;
+        RFflat_connected = RFcorrMatE(pickedNeighbor);
+        excStr = zeros(p.nv1e);
+        if spread
+            for i = 1:p.nv1e
+                ineighbor = pickedNeighbor(:,i);
+                excStr(ineighbor,i) = profiles(mee(ineighbor,i),i);
+            end
+        else
+            excStr(pickedNeighbor) = profiles(mee(pickedNeighbor));
+        end
+        excStr_connected = excStr(pickedNeighbor);
+        
+        [RFflatC_sorted, ind] = sort(RFflat_connected);
+        excStrC_sorted = excStr_connected(ind);
+        excWeight_count = cumsum(excStrC_sorted);
+        connected_count = cumsum(ones(length(excStr_connected),1));
+        excWeight_percent = excWeight_count./excWeight_count(end);
+        connected_percent = connected_count./connected_count(end);
+        dbin = 0.02;
+        binranges = -1.0:dbin:1;
+        nbins = length(binranges)-1;
+        RFflatE_count = histcounts(RFcorrMatE(:),binranges);
+        RFflatI_count = histcounts(RFcorrMatI(:),binranges);
+        RFflatEC_count = histcounts(RFcorrMatE(pickedNeighbor),binranges);
+        RFflatIC_count = histcounts(RFcorrMatI(mei>0),binranges);
+        binranges = binranges(1:nbins)+dbin/2;
+        subplot(2,2,1)
+        hold on
+        plot(binranges,RFflatE_count./sum(RFflatE_count)*100);
+        plot(binranges,RFflatEC_count./sum(RFflatEC_count)*100);
+        title('E pool');
+        subplot(2,2,3)
+        hold on
+        plot(binranges,RFflatI_count./sum(RFflatI_count)*100);
+        plot(binranges,RFflatIC_count./sum(RFflatIC_count)*100);
+        title('I pool');
+        xlabel('RFcorr I->E');
+        subplot(1,2,2)
+        hold on
+        plot(RFflatC_sorted,excWeight_percent);
+        plot(RFflatC_sorted,connected_percent);
+        legend({'ExcWeight','connected'});
+        xlabel('RFcorr EE');
+        if ~isempty(format)
+            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+            if strcmp(format,'fig')
+                saveas(hCossell,['Cossell-',coMatfile,'-',theme,'.fig']);
+            else
+                print(hCossell,['Cossell-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+            end
+        end
+
+    %% Cossell 2015 with coMat
+        hCossell = figure;
+        pickedNeighbor = mee > 0;
+        RFflat_connected = coMatE(pickedNeighbor);
+        excStr = zeros(p.nv1e);
+        if spread
+            for i = 1:p.nv1e
+                ineighbor = pickedNeighbor(:,i);
+                excStr(ineighbor,i) = profiles(mee(ineighbor,i),i);
+            end
+        else
+            excStr(pickedNeighbor) = profiles(mee(pickedNeighbor));
+        end
+        excStr_connected = excStr(pickedNeighbor);
+        
+        [RFflatC_sorted, ind] = sort(RFflat_connected);
+        excStrC_sorted = excStr_connected(ind);
+        excWeight_count = cumsum(excStrC_sorted);
+        connected_count = cumsum(ones(length(excStr_connected),1));
+        excWeight_percent = excWeight_count./excWeight_count(end);
+        connected_percent = connected_count./connected_count(end);
+        dbin = 0.02;
+        binranges = -1.0:dbin:1;
+        nbins = length(binranges)-1;
+        RFflatE_count = histcounts(coMatE(:),binranges);
+        RFflatI_count = histcounts(coMatI(:),binranges);
+        RFflatEC_count = histcounts(coMatE(pickedNeighbor),binranges);
+        RFflatIC_count = histcounts(coMatI(mei>0),binranges);
+        binranges = binranges(1:nbins)+dbin/2;
+        subplot(2,2,1)
+        hold on
+        plot(binranges,RFflatE_count./sum(RFflatE_count)*100);
+        plot(binranges,RFflatEC_count./sum(RFflatEC_count)*100);
+        title('E pool');
+        subplot(2,2,3)
+        hold on
+        plot(binranges,RFflatI_count./sum(RFflatI_count)*100);
+        plot(binranges,RFflatIC_count./sum(RFflatIC_count)*100);
+        title('I pool');
+        xlabel('Sim.Ind. I->E');
+        subplot(1,2,2)
+        hold on
+        plot(RFflatC_sorted,excWeight_percent);
+        plot(RFflatC_sorted,connected_percent);
+        legend({'ExcWeight','connected'});
+        xlabel('Sim.Ind. EE');
+        if ~isempty(format)
+            set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+            if strcmp(format,'fig')
+                saveas(hCossell,['Cossell-simind-',coMatfile,'-',theme,'.fig']);
+            else
+                print(hCossell,['Cossell-simind-',coMatfile,'-',theme,'.',format],printDriver,dpi);
+            end
         end
 
        return
@@ -319,19 +389,14 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
             
             binranges = -1.0:dbin:1;
             nbins = length(binranges)-1;
-            binranges(nbins+1) = 1.1;
-            binCounts = histc(RFcoeffs(pickedNeighbor),binranges);
-            binCounts = binCounts(1:nbins);
-
-            binCounts0 = histc(RFcoeffs(cR(:,k)),binranges);
-            binCounts0 = binCounts0(1:nbins);
-
+            binCounts = histcounts(RFcoeffs(pickedNeighbor),binranges);
+            binCounts0 = histcounts(RFcoeffs(cR(:,k)),binranges);
             if spread
                 EPSPs = profiles(mee(pickedNeighbor,i),i);
             else
                 EPSPs = profiles(mee(pickedNeighbor,i));
             end
-            [Ax,h1,h2] = plotyy(RFcoeffs(pickedNeighbor),EPSPs,binranges(1:nbins)+dbin/2,[100*binCounts./sum(binCounts),100*binCounts0./sum(binCounts0)]);
+            [Ax,h1,h2] = plotyy(RFcoeffs(pickedNeighbor),EPSPs,binranges(1:nbins)+dbin/2,[100*binCounts'./sum(binCounts),100*binCounts0'./sum(binCounts0)]);
             h1.LineStyle = 'none';
             h2(1).LineStyle = '--';
             h2(2).LineStyle = ':';
@@ -349,17 +414,13 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
 
             binranges = -1.0:dbin:1;
             nbins = length(binranges)-1;
-            binranges(nbins+1) = 1.1;
-            binCounts = histc(coeffs(pickedNeighbor),binranges);
-            binCounts = binCounts(1:nbins);
-
-            binCounts0 = histc(coeffs(cR(:,k)),binranges);
-            binCounts0 = binCounts0(1:nbins);
-            [~,ind] = histc(coeffs,binranges);
+            binCounts = histcounts(coeffs(pickedNeighbor),binranges);
+            binCounts0 = histcounts(coeffs(cR(:,k)),binranges);
             
-            binranges = binranges(1:nbins)+dbin/2;
             norm_binCounts = binCounts/sum(binCounts)*100;
             norm_binCounts0 = binCounts0/sum(binCounts0)*100;
+            binranges(nbins+1) = 1.1;
+            [~,ind] = histc(coeffs,binranges);
             EPSPslice = zeros(nbins,1);
             for j = 1:nbins
                 if spread
@@ -369,7 +430,8 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
                 end
             end
             EPSPslice = EPSPslice/sum(EPSPslice)*100;
-            plotyy(binranges,[EPSPslice,norm_binCounts,norm_binCounts0],binranges,binCounts*100./binCounts0);
+            binranges = binranges(1:nbins)+dbin/2;
+            plotyy(binranges,[EPSPslice,norm_binCounts',norm_binCounts0'],binranges,binCounts*100./binCounts0);
             ylabel('%');
             legend({'Cort. Exc.','Pre. Neuron','All Neurons','Prob'},'Location','NorthWest');
             ylim([0,inf]);
@@ -465,21 +527,19 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
                 subplot(ceil((nn-1)/plotPr)+1,3,2);
                 binranges = -1.0:dbin:1;
                 nbins = length(binranges)-1;
-                binranges(nbins+1) = 1.1;
-                binCounts0 = histc(coeffs(cR(:,k)),binranges);
-                binCounts0 = binCounts0(1:nbins);
-                [~,ind] = histc(coeffs,binranges);
-                binCounts = histc(coeffs(pickedNeighbor),binranges);
-                binCounts = binCounts(1:nbins);
-                binranges = binranges(1:nbins)+dbin/2;
+                binCounts0 = histcounts(coeffs(cR(:,k)),binranges);
+                binCounts = histcounts(coeffs(pickedNeighbor),binranges);
                 norm_binCounts = binCounts/sum(binCounts)*100;
                 norm_binCounts0 = binCounts0/sum(binCounts0)*100;
+                binranges(nbins+1) = 1.1;
+                [~,ind] = histc(coeffs,binranges);
                 IPSPslice = zeros(nbins,1);
                 for j = 1:nbins
                     IPSPslice(j) = sum(profiles(mei((ind==j)&pickedNeighbor,i)));
                 end
                 IPSPslice = IPSPslice/sum(IPSPslice)*100;
-                plotyy(binranges,[IPSPslice,norm_binCounts,norm_binCounts0],binranges,binCounts*100./binCounts0);
+                binranges = binranges(1:nbins)+dbin/2;
+                plotyy(binranges,[IPSPslice,norm_binCounts',norm_binCounts0'],binranges,binCounts*100./binCounts0);
                 ylabel('%');
                 legend({'Cort. Inh.','Pre. Neuron','All Neurons','Prob'},'Location','NorthWest');
                 ylim([0,inf]);
@@ -502,7 +562,6 @@ function checkConnection_EI(meefile,lgnfile,coMatfile,checklist,nn,format,draw,n
                     mIPSPslice(j) = mean(tmp);
                     IPSPslice(j) = sum(tmp);
                 end
-                %[hAx,h1,h2] = plotyy(dThetas(pickedNeighbor)*180/pi,EPSPs,(binranges(1:nbins)+dtheta/2)*180/pi,IPSPslice);
                 IPSPslice = IPSPslice./sum(IPSPslice)*100;
                 xxxx = (binranges(1:nbins)+dtheta/2)*180/pi; 
                 [hAx,h1,h2] = plotyy(xxxx,mIPSPslice,xxxx,[mbinCounts,IPSPslice]);

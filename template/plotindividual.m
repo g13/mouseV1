@@ -75,8 +75,8 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     end
     meanTimeLine = true;
     %meanTimeLine = false;
-    % current = true;
-    current = false;
+    current = true;
+    %current = false;
     %operiod = true;
     operiod = false;
     %dThetaSize = true;
@@ -144,8 +144,8 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             end
             for j=1:ntotal
     
-                tC(i).cEsc(j,:) = get_SC(abs(aC.cE(j,:,:)));
-                tC(i).cLGNsc(j,:) = get_SC(abs(aC.cLGN(j,:,:)));
+                tC(i).cE_F1(j,:) = get_SC(aC.cE(j,:,:),true);
+                tC(i).cLGN_F1(j,:) = get_SC(aC.cLGN(j,:,:),true);
     
                 thetaPick = nP(i).indpo(j);
     
@@ -428,44 +428,48 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             sn = 5;
             neuronlist = zeros(sn*(p.ntypeE + p.ntypeI + 8), 1);
             ranking = cell(length(neuronlist),1);
-            for i = 1:p.ntypeE
-                j = (i-1)*sn;
-                type0 = [p.typeE == i; false(p.nv1i,1)];
-                types = type0(sortedID(:,level));
-                candidates = find(efired(sortedID(:,level)) & types);
-                ncand = length(candidates);
-                if ncand>=sn-2
-                    %neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
-                    neuronlist(j + (1:sn-2)) = sortedID(candidates([1, 2, 3]),level);
-                    ranking(j + (1:sn-2)) = {'smallest CV','median CV','largest CV'};
-                end
-                types = type0(PKsortedID(:,level));
-                candidates = find(types);
-                ncand = length(candidates);
-                if ncand>=2
-                    neuronlist(j + (sn-1:sn)) = PKsortedID(candidates([floor(ncand/2),ncand]),level);
-                    ranking(j + (sn-1:sn)) = {'median PK','largest PK'};
+            for level = 1:contrastLevel
+                for i = 1:p.ntypeE
+                    j = (i-1)*sn;
+                    type0 = [p.typeE == i; false(p.nv1i,1)];
+                    types = type0(sortedID(:,level));
+                    candidates = find(efired(sortedID(:,level)) & types);
+                    ncand = length(candidates);
+                    if ncand>=sn-2
+                        %neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
+                        neuronlist(j + (1:sn-2)) = sortedID(candidates([1, 2, 3]),level);
+                        ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},num2str(level));
+                    end
+                    types = type0(PKsortedID(:,level));
+                    candidates = find(types);
+                    ncand = length(candidates);
+                    if ncand>=2
+                        neuronlist(j + (sn-1:sn)) = PKsortedID(candidates([floor(ncand/2),ncand]),level);
+                        ranking(j + (sn-1:sn)) = strcat({'median PK','largest PK'},num2str(level));
+                    end
                 end
             end
             
             ifired = nP(level).pkrate(sortedID(:,level)) > nP(level).br(sortedID(:,level)) & nP(level).ei(sortedID(:,level)) < 0.5 &...
                      nP(level).pkrate(sortedID(:,level)) > thres;
-            for i = 1:p.ntypeI
-                j = p.ntypeE*sn + (i-1)*sn;
-                type0 = [false(p.nv1e,1); p.typeI == i];
-                types = type0(sortedID(:,4));
-                candidates = find(ifired(sortedID(:,4)) & types);
-                ncand = length(candidates);
-                if ncand>=sn-2
-                    neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
-                    ranking(j + (1:sn-2)) = {'smallest CV','median CV','largest CV'};
-                end
-                types = type0(PKsortedID(:,4));
-                candidates = find(types);
-                ncand = length(candidates);
-                if ncand>=2
-                    neuronlist(j + (sn-1:sn)) = PKsortedID(candidates([floor(ncand/2),ncand]),level);
-                    ranking(j + (sn-1:sn)) = {'median PK','largest PK'};
+            for level = 1:contrastLevel
+                for i = 1:p.ntypeI
+                    j = p.ntypeE*sn + (i-1)*sn;
+                    type0 = [false(p.nv1e,1); p.typeI == i];
+                    types = type0(sortedID(:,level));
+                    candidates = find(ifired(sortedID(:,level)) & types);
+                    ncand = length(candidates);
+                    if ncand>=sn-2
+                        neuronlist(j + (1:sn-2)) = sortedID(candidates([1, floor(ncand/2), ncand]),level);
+                        ranking(j + (1:sn-2)) = strcat({'smallest CV','median CV','largest CV'},num2str(level));
+                    end
+                    types = type0(PKsortedID(:,level));
+                    candidates = find(types);
+                    ncand = length(candidates);
+                    if ncand>=2
+                        neuronlist(j + (sn-1:sn)) = PKsortedID(candidates([floor(ncand/2),ncand]),level);
+                        ranking(j + (sn-1:sn)) = strcat({'median PK','largest PK'},num2str(level));
+                    end
                 end
             end
                 
@@ -693,6 +697,12 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
         for i=1:contrastLevel
             cvL(i) = nP(i).cv(k);
             cvLnB(i) = nP(i).cvNoBack(k);
+            gOSI = get_gOSI(tC(i).frate(k,:));
+            scv1 = cvL(i)+gOSI;
+            if abs(scv1-1.0) > 0.01
+                disp(scv1)
+                disp(gOSI)
+            end
         end
         cvLevel = strjoin(cellstr(num2str(cvL,'%1.1f'))'); 
         cvNBLevel = strjoin(cellstr(num2str(cvLnB,'%1.1f'))');
@@ -1083,26 +1093,35 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
         if current
             hCurrent = figure;
             for i=1:contrastLevel
-                subplot(2,2,1)
+                subplot(2,3,1)
                 hold on
                 errorbar(thetas+5*(i-1), tC(i).cLGN(k,half),tC(i).cLGNstd(k,half),'LineStyle',LineScheme{i},'Color','g');
                 if i == 1, title('LGN current');xlim([thetas(1),thetas(end)]);end
                 
-                subplot(2,2,2)
+                subplot(2,3,2)
                 hold on
                 errorbar(thetas+5*(i-1), tC(i).cEn(k,half),tC(i).cEnstd(k,half),'LineStyle',LineScheme{i},'Color','r');
                 errorbar(thetas+5*(i-1), tC(i).cIn(k,half),tC(i).cInstd(k,half),'LineStyle',LineScheme{i},'Color','b');
                 if i == 1, title('E and I noise current');xlim([thetas(1),thetas(end)]);end
                 
-                subplot(2,2,3)
+                subplot(2,3,4)
                 hold on
                 errorbar(thetas+5*(i-1), tC(i).cE(k,half),tC(i).cEstd(k,half),'LineStyle',LineScheme{i},'Color','r');
                 if i == 1, title('Exc Cortical current');xlim([thetas(1),thetas(end)]);end
                 
-                subplot(2,2,4)
+                subplot(2,3,5)
                 hold on
                 errorbar(thetas+5*(i-1), tC(i).cI(k,half),tC(i).cIstd(k,half),'LineStyle',LineScheme{i},'Color','b');
                 if i == 1, title('Inh Cortical current');xlim([thetas(1),thetas(end)]);end
+
+                subplot(2,3,3)
+                errorbar((0:ndperiod-1)./ndperiod*360, ipC(i).cLGN(k,:),ipC(i).cLGNstd(k,:),'LineStyle',LineScheme{i},'Color','g');
+                if i == 1, title('pref lgn current');xlim([0,360]);xlabel('phase'); end
+
+                subplot(2,3,6)
+                errorbar((0:ndperiod-1)./ndperiod*360, ipC(i).cE(k,:),ipC(i).cEstd(k,:),'LineStyle',LineScheme{i},'Color','r');
+                if i == 1, title('pref exc current');xlim([0,360]);xlabel('phase');end
+                
             end
             if ~isempty(format)
                 set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
@@ -1448,36 +1467,55 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     
     hPhase = figure;
     tauCorr = zeros(p.nv1e,ndperiod);
-    edges = (0:ndperiod)*360/ndperiod;
+    binranges = 0:0.1:2;
     for i =1:contrastLevel
-        subplot(contrastLevel,2,(i-1)*2+1)
-            meanEtemp = mean(ipC(i).cE(pe,:),2)*ones(1,ndperiod);
-            meanItemp = mean(ipC(i).cI(pe,:),2)*ones(1,ndperiod);
-            varEtemp = var(ipC(i).cE(pe,:),1,2);
-            varItemp = var(ipC(i).cI(pe,:),1,2);
+        meanEtemp = mean(ipC(i).cE(pe,:),2)*ones(1,ndperiod);
+        meanItemp = mean(ipC(i).cI(pe,:),2)*ones(1,ndperiod);
+        meanLGNtemp = mean(ipC(i).cLGN(pe,:),2)*ones(1,ndperiod);
+        stdEtemp = std(ipC(i).cE(pe,:),1,2)*ones(1,ndperiod);
+        stdItemp = std(ipC(i).cI(pe,:),1,2)*ones(1,ndperiod);
+        stdLGNtemp = std(ipC(i).cLGN(pe,:),1,2)*ones(1,ndperiod);
+        normE = (ipC(i).cE(pe,:)-meanEtemp)./stdEtemp;
+        normI = -(ipC(i).cI(pe,:)-meanItemp)./stdItemp;
+        normLGN = (ipC(i).cLGN(pe,:)-meanLGNtemp)./stdLGNtemp;
+        subplot(contrastLevel,3,(i-1)*3+1)
             for j = 1:ndperiod
-                tauCorr(:,j) = mean((ipC(i).cE(pe,:)-meanEtemp).*circshift(ipC(i).cI(pe,:)-meanItemp,j-1,2),2)./sqrt(varEtemp.*varItemp);
+                tauCorr(:,j) = mean(normE.*circshift(normI,j-1,2),2);
             end
             [~,idphase] = max(tauCorr,[],2);
-            %pt = idphase > halfNdperiod;
-            %idphase(pt) = ndperiod - idphase(pt);
-            histogram(idphase*360/ndperiod,edges);
-            if i==contrastLevel, xlabel('\DeltaPhase');end
-            if i==1, title('Phase maxCorr(E_{input},I_{input})');end
-            ylabel('# Neurons');
-        subplot(contrastLevel,2,(i-1)*2+2);
-            meanEtemp = mean(ipC(i).cLGN(pe,:),2)*ones(1,ndperiod);
-            varEtemp = var(ipC(i).cLGN(pe,:),1,2);
+            phase = (idphase-1) * 360/ndperiod;
+            pick = phase>180;
+            phase(pick) = phase(pick)-360;
+            phaseRange = linspace(-180,180,ndperiod+1);
+            histogram(phase,phaseRange);
+            if i==contrastLevel, xlabel('\DeltaPhase (degree)');end
+            if i==1, title('E_{input} ahead of I_{input}');end
+            ylabel('# neurons');
+        subplot(contrastLevel,3,(i-1)*3+2);
             for j = 1:ndperiod
-                tauCorr(:,j) = mean((ipC(i).cLGN(pe,:)-meanEtemp).*circshift(ipC(i).cI(pe,:)-meanItemp,j-1,2),2)./sqrt(varEtemp.*varItemp);
+                tauCorr(:,j) = mean(normLGN.*circshift(normE,j-1,2),2);
             end
             [~,idphase] = max(tauCorr,[],2);
-            %pt = idphase > halfNdperiod;
-            %idphase(pt) = ndperiod - idphase(pt);
-            histogram(idphase*360/ndperiod,edges);
-            if i==contrastLevel, xlabel('\DeltaPhase');end
-            if i==1, title('(LGN_{input},I_{input})');end
+            phase = (idphase-1) * 360/ndperiod;
+            pick = phase>180;
+            phase(pick) = phase(pick)-360;
+            phaseRange = linspace(-180,180,ndperiod+1);
+            histogram(phase,phaseRange);
+            if i==contrastLevel, xlabel('\DeltaPhase (degree)');end
+            if i==1, title('LGN_{input} ahead of E_{input}');end
+            ylabel('# neurons');
+        subplot(contrastLevel*3,3,(i-1)*9+3);
+            histogram(get_SC(ipC(i).cLGN(pe,:)'),binranges);
+            ylabel('cLGN')
+        subplot(contrastLevel*3,3,(i-1)*9+6);
+            histogram(get_SC(ipC(i).cE(pe,:)'),binranges);
+            ylabel('cE')
+        subplot(contrastLevel*3,3,(i-1)*9+9);
+            histogram(get_SC(ipC(i).cI(pe,:)'),binranges);
+            ylabel('cI')
+            if i==contrastLevel, xlabel('F1/F0');end
     end
+    clear meanEtemp meanItemp meanLGNtemp stdEtemp stdItemp stdLGNtemp normE normI normLGN
     
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
@@ -1498,7 +1536,38 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
         tEn = zeros(ndperiod,2); 
         tIn = zeros(ndperiod,2); 
         tL = zeros(ndperiod,2);
-        subplot(contrastLevel,3,(i-1)*3+1)
+        subplot(contrastLevel,4,(i-1)*4+1)
+        hold on
+            [~,imax] = max(ipC(i).gLGN(pe,:),[],2);
+            for j = 1:p.nv1e
+                shift = alignedPhase-imax(j);
+                tLGN(:,1) = tLGN(:,1) + circshift(ipC(i).gLGN(j,:),shift,2)';
+                tLGN(:,2) = tLGN(:,2) + circshift(ipC(i).gLGNstd(j,:),shift,2)';
+                tE(:,1) = tE(:,1) + circshift(ipC(i).gE(j,:),shift,2)';
+                tE(:,2) = tE(:,2) + circshift(ipC(i).gEstd(j,:),shift,2)';
+                tI(:,1) = tI(:,1) + circshift(ipC(i).gI(j,:),shift,2)';
+                tI(:,2) = tI(:,2) + circshift(ipC(i).gIstd(j,:),shift,2)';
+                tP(:,1) = tP(:,1) + circshift(ipC(i).gP(j,:),shift,2)';
+                tP(:,2) = tP(:,2) + circshift(ipC(i).gPstd(j,:),shift,2)';
+                tEn(:,1) = tEn(:,1) + circshift(ipC(i).gEn(j,:),shift,2)';
+                tEn(:,2) = tEn(:,2) + circshift(ipC(i).gEnstd(j,:),shift,2)';
+                tIn(:,1) = tIn(:,1) + circshift(ipC(i).gIn(j,:),shift,2)';
+                tIn(:,2) = tIn(:,2) + circshift(ipC(i).gInstd(j,:),shift,2)';
+            end
+            tL = tL./p.nv1e; tLGN = tLGN./p.nv1e; tE = tE./p.nv1e; tI = tI./p.nv1e; tEn = tEn./p.nv1e; tIn = tIn./p.nv1e; tP= tP./p.nv1e;
+            x = (0:ndperiod-1).*360/ndperiod;
+            errorbar(x,tLGN(:,1),tLGN(:,2),'-g');
+            errorbar(x,tE(:,1),tE(:,2),'-r');
+            errorbar(x,tI(:,1),tI(:,2),'-b');
+            errorbar(x,tEn(:,1),tEn(:,2),':m','LineWidth',0.5);
+            errorbar(x,tIn(:,1),tIn(:,2),':c','LineWidth',0.5);
+            %errorbar(x,tP(:,1),tP(:,2),':k');
+            %plot(x,tLGN(:,1)+tE(:,1)+tI(:,1)+tEn(:,1)+tIn(:,1)+tP(:,1)+tL(:,1),'-k');
+            xlim([0,360]);
+            xlabel('Phase (deg)');
+            ylabel('Cond');
+
+        subplot(contrastLevel,4,(i-1)*4+2)
         hold on
             [~,imax] = max(ipC(i).cLGN(pe,:),[],2);
             for j = 1:p.nv1e
@@ -1534,7 +1603,7 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     
         nbins = 10;
         dim = 1;
-        subplot(contrastLevel,3,(i-1)*3+2)
+        subplot(contrastLevel,4,(i-1)*4+3)
         hold on
             target = ipC(i).cLGN(pe,:) + ipC(i).cE(pe,:) + ipC(i).cI(pe,:) + ipC(i).cP(pe,:) + ipC(i).cEn(pe,:) + ipC(i).cIn(pe,:) - gL*(ipC(i).V(pe,:)-vrest);
             [Allcounts,Alledges] = histcounts(mean(target,dim),nbins,'Normalization','pdf');
@@ -1553,9 +1622,9 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             ylabel('% Neurons');
             if i==1, title('Pref. Input');end
     
-        subplot(contrastLevel,3,(i-1)*3+3)
+        subplot(contrastLevel,4,(i-1)*4+4)
         hold on
-            target = ioC(i).cLGN(pe,:) + ioC(i).cE(pe,:) + ioC(i).cI(pe,:) + ioC(i).cP(pe,:) + ioC(i).cEn(pe,:) + ioC(i).cIn(pe,:) + gL*(ioC(i).V(pe,:)-vrest);
+            target = ioC(i).cLGN(pe,:) + ioC(i).cE(pe,:) + ioC(i).cI(pe,:) + ioC(i).cP(pe,:) + ioC(i).cEn(pe,:) + ioC(i).cIn(pe,:) - gL*(ioC(i).V(pe,:)-vrest);
             [Allcounts,Alledges] = histcounts(mean(target,dim),nbins,'Normalization','pdf');
             [Ecounts,Eedges] = histcounts(mean(ioC(i).cE(pe,:),dim),nbins,'Normalization','pdf');
             [Icounts,Iedges] = histcounts(mean(ioC(i).cI(pe,:),dim),nbins,'Normalization','pdf');
@@ -1762,7 +1831,7 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     
     hScanzianiHeat = figure;
     
-    p1 =contrastLevel-2; p2 = contrastLevel;
+    p1 =contrastLevel-2; p2 = contrastLevel-1;
     while p1<=0
         p1 = p1 + 1;
     end
@@ -1770,270 +1839,329 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     ctrs = cell(2,1);
     dTick = 0.2;
 
-    %% just E
-    pick = nP(contrastLevel).ei>0.5;
-    hQ = subplot(2,4,1);
-    target = tC(p2).cLGN(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cE(pick,1:ntheta);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsx-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsy-1+0.5);
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Thal}OSI');
-        ylabel('Q_{Cort}OSI');
-        colormap(hQ,redOnly);
-    end
+        %% just E
+        pick = nP(contrastLevel).ei>0.5;
+        hQ = subplot(2,5,1);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI');
+            ylabel('Q_{Cort}OSI');
+            colormap(hQ,redOnly);
+        end
 
-    hTL = subplot(2,4,2);
-    target = tC(p2).cLGN(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cE(pick,1:ntheta)+tC(p2).cLGN(pick,1:ntheta);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsy-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsx-1+0.5);
-        
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Thal}OSI')
-        ylabel('Q_{Tot}OSI')
-        colormap(hTL,redOnly);
-    end
+        hTL = subplot(2,5,2);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE(pick,1:2*ntheta)+tC(p2).cLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('Q_{Tot}OSI')
+            colormap(hTL,redOnly);
+        end
 
-    hF1 = subplot(2,4,3);
-    target = tC(p2).cEsc(pick,:).*tC(p2).cE(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cLGNsc(pick,:).*tC(p2).cLGN(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsy-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+        hF1 = subplot(2,5,3);
+            target = tC(p2).cE_F1(pick,:);
+            pair1 = get_gOSI([target,target])';
+            target = tC(p2).cLGN_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            ylabel('F1_{Thal}OSI')
+            xlabel('F1_{Cort}OSI')
+            colormap(hF1,redOnly);
+        end
         
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        ylabel('F1_{Thal}OSI')
-        xlabel('F1_{Cort}OSI')
-        colormap(hF1,redOnly);
-    end
-    
-    hCort = subplot(2,4,4);
-    target = tC(p2).cE(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cEsc(pick,:).*tC(p2).cE(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsx-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsy-1+0.5);
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Cort}OSI')
-        ylabel('F1_{Cort}OSI')
-        colormap(hCort,redOnly);
-    end
+        hCort = subplot(2,5,4);
+            target = tC(p2).cE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Cort}OSI')
+            ylabel('F1_{Cort}OSI')
+            colormap(hCort,redOnly);
+        end
+
+        hThal = subplot(2,5,5);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cLGN_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('F1_{Thal}OSI')
+            colormap(hThal,redOnly);
+        end
+
     %% whole pop
     pick = true(p.nv1,1);
     
-    hQ = subplot(2,4,5);
-    target = tC(p2).cLGN(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cE(pick,1:ntheta);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsx-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsy-1+0.5);
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Thal}OSI');
-        ylabel('Q_{Cort}OSI');
-        colormap(hQ,redOnly);
-    end
+        hQ = subplot(2,5,6);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI');
+            ylabel('Q_{Cort}OSI');
+            colormap(hQ,redOnly);
+        end
 
-    hTL = subplot(2,4,6);
-    target = tC(p2).cLGN(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cE(pick,1:ntheta)+tC(p2).cLGN(pick,1:ntheta);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsy-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsx-1+0.5);
-        
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Thal}OSI')
-        ylabel('Q_{Tot}OSI')
-        colormap(hTL,redOnly);
-    end
+        hTL = subplot(2,5,7);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE(pick,1:2*ntheta)+tC(p2).cLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('Q_{Tot}OSI')
+            colormap(hTL,redOnly);
+        end
 
-    hF1 = subplot(2,4,7);
-    target = tC(p2).cEsc(pick,:).*tC(p2).cE(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cLGNsc(pick,:).*tC(p2).cLGN(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsy-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+        hF1 = subplot(2,5,8);
+            target = tC(p2).cE_F1(pick,:);
+            pair1 = get_gOSI([target,target])';
+            target = tC(p2).cLGN_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            ylabel('F1_{Thal}OSI')
+            xlabel('F1_{Cort}OSI')
+            colormap(hF1,redOnly);
+        end
         
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        ylabel('F1_{Thal}OSI')
-        xlabel('F1_{Cort}OSI')
-        colormap(hF1,redOnly);
-    end
-    
-    hCort = subplot(2,4,8);
-    target = tC(p2).cE(pick,1:ntheta);
-    pair1 = get_gOSI(abs(target))';
-    target = tC(p2).cEsc(pick,:).*tC(p2).cE(pick,1:ntheta);
-    target = target - repmat(min(target,[],2),[1,size(target,2)]);
-    pair2 = get_gOSI(abs(target))';
-    minCtrs = min(min(pair1),min(pair2));
-    maxCtrs = max(max(pair1),max(pair2));
-    if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
-        [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
-        tickLabel = num2str(tick');
-        lctrsx = (n0-1)*nCV+1;
-        lctrsy = lctrsx;
-        ctrs{1} = linspace(tick(1),tick(end),lctrsx);
-        ctrs{2} = ctrs{1};
-        tickPosY = 0.5:nCV:(lctrsx-1+0.5);
-        tickPosX = 0.5:nCV:(lctrsy-1+0.5);
-        CVpair = [pair1, pair2];
-        denCVpair = hist3(CVpair,ctrs);
-        maxDen = max(max(denCVpair));
-        denCVpair = denCVpair/maxDen;
-        denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
-        imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
-        hold on
-        plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
-        axis image 
-        set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
-        xlabel('Q_{Cort}OSI')
-        ylabel('F1_{Cort}OSI')
-        colormap(hCort,redOnly);
-    end
-    
+        hCort = subplot(2,5,9);
+            target = tC(p2).cE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cE_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Cort}OSI')
+            ylabel('F1_{Cort}OSI')
+            colormap(hCort,redOnly);
+        end
+        
+        hThal = subplot(2,5,10);
+            target = tC(p2).cLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).cLGN_F1(pick,:);
+            pair2 = get_gOSI([target,target])';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('F1_{Thal}OSI')
+            colormap(hThal,redOnly);
+        end
+
     if ~isempty(format)
-        set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
+        pPositionTmp = pPosition;
+        pPositionTmp(3) * 1.25;
+        set(gcf, 'PaperUnits', 'points','PaperPosition', pPositionTmp);
         if strcmp(format,'fig')
             saveas(hScanzianiHeat,[outputfdr,'/ScanzianiHeat-',theme,'.',format]);
         else
@@ -2041,23 +2169,370 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
         end
     end
 
-    hScanzianiDist = figure;
-    p2 = contrastLevel;
+    hgScanzianiHeat = figure;
     
-    pick = nP(contrastLevel).ei>0.5;
-    subplot(1,2,1)
-    [~,cLGNid] = max(pC(p2).cLGN(pick,:),[],2);
-    [~,cEid] = max(pC(p2).cE(pick,:),[],2);
-    deltaPhase = (cEid-cLGNid)./ndperiod*360;
-    histogram(deltaPhase)
-    
+    p1 =contrastLevel-2; p2 = contrastLevel-1;
+    while p1<=0
+        p1 = p1 + 1;
+    end
+    nCV = 8;
+    ctrs = cell(2,1);
+    dTick = 0.2;
+
+        %% just E
+        pick = nP(contrastLevel).ei>0.5;
+        hQ = subplot(2,5,1);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI');
+            ylabel('Q_{Cort}OSI');
+            colormap(hQ,redOnly);
+        end
+
+        hTL = subplot(2,5,2);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gE(pick,1:2*ntheta)+tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('Q_{Tot}OSI')
+            colormap(hTL,redOnly);
+        end
+
+        hF1 = subplot(2,5,3);
+            target = tC(p2).gEsc(pick,1:2*ntheta).*tC(p2).gE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gLGNsc(pick,1:2*ntheta).*tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            ylabel('F1_{Thal}OSI')
+            xlabel('F1_{Cort}OSI')
+            colormap(hF1,redOnly);
+        end
+        
+        hCort = subplot(2,5,4);
+            target = tC(p2).gE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gEsc(pick,1:2*ntheta).*tC(p2).gE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Cort}OSI')
+            ylabel('F1_{Cort}OSI')
+            colormap(hCort,redOnly);
+        end
+
+        hThal = subplot(2,5,5);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gLGNsc(pick,1:2*ntheta).*tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('F1_{Thal}OSI')
+            colormap(hThal,redOnly);
+        end
+
+    %% whole pop
     pick = true(p.nv1,1);
-    subplot(1,2,2)
-    [~,cLGNid] = max(pC(p2).cLGN(pick,:),[],2);
-    [~,cEid] = max(pC(p2).cE(pick,:),[],2);
-    deltaPhase = (cEid-cLGNid)./ndperiod*360;
-    histogram(deltaPhase)
     
+        hQ = subplot(2,5,6);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI');
+            ylabel('Q_{Cort}OSI');
+            colormap(hQ,redOnly);
+        end
+
+        hTL = subplot(2,5,7);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gE(pick,1:2*ntheta)+tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('Q_{Tot}OSI')
+            colormap(hTL,redOnly);
+        end
+
+        hF1 = subplot(2,5,8);
+            target = tC(p2).gEsc(pick,1:2*ntheta).*tC(p2).gE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gLGNsc(pick,1:2*ntheta).*tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsy-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsx-1+0.5);
+            
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            ylabel('F1_{Thal}OSI')
+            xlabel('F1_{Cort}OSI')
+            colormap(hF1,redOnly);
+        end
+        
+        hCort = subplot(2,5,9);
+            target = tC(p2).gE(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gEsc(pick,1:2*ntheta).*tC(p2).gE(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Cort}OSI')
+            ylabel('F1_{Cort}OSI')
+            colormap(hCort,redOnly);
+        end
+        
+        hThal = subplot(2,5,10);
+            target = tC(p2).gLGN(pick,1:2*ntheta);
+            pair1 = get_gOSI(target)';
+            target = tC(p2).gLGNsc(pick,1:2*ntheta).*tC(p2).gLGN(pick,1:2*ntheta);
+            pair2 = get_gOSI(target)';
+        minCtrs = min(min(pair1),min(pair2));
+        maxCtrs = max(max(pair1),max(pair2));
+        if minCtrs~=maxCtrs && ~isnan(minCtrs) && ~isnan(maxCtrs)
+            [tick,n0] = autoAxis(minCtrs,maxCtrs,round(1/dTick),[0,1]);
+            tickLabel = num2str(tick');
+            lctrsx = (n0-1)*nCV+1;
+            lctrsy = lctrsx;
+            ctrs{1} = linspace(tick(1),tick(end),lctrsx);
+            ctrs{2} = ctrs{1};
+            tickPosY = 0.5:nCV:(lctrsx-1+0.5);
+            tickPosX = 0.5:nCV:(lctrsy-1+0.5);
+            CVpair = [pair1, pair2];
+            denCVpair = hist3(CVpair,ctrs);
+            maxDen = max(max(denCVpair));
+            denCVpair = denCVpair/maxDen;
+            denCVpair = denCVpair(1:(lctrsx-1),1:(lctrsy-1));
+            imagesc([1,lctrsx-1],[lctrsy-1,1],denCVpair');
+            hold on
+            plot(lctrsx-0.5:-1:-0.5, 0.5:lctrsy+0.5,'-.k','LineWidth',2);
+            axis image 
+            set(gca,'YTickLabel',flipud(tickLabel),'YTick',tickPosY,'XTickLabel',tickLabel,'XTick',tickPosX);
+            xlabel('Q_{Thal}OSI')
+            ylabel('F1_{Thal}OSI')
+            colormap(hThal,redOnly);
+        end
+
+    if ~isempty(format)
+        pPositionTmp = pPosition;
+        pPositionTmp(3) * 1.25;
+        set(gcf, 'PaperUnits', 'points','PaperPosition', pPositionTmp);
+        if strcmp(format,'fig')
+            saveas(hgScanzianiHeat,[outputfdr,'/gScanzianiHeat-',theme,'.',format]);
+        else
+            print(hgScanzianiHeat,[outputfdr,'/gScanzianiHeat-',theme,'.',format],printDriver,dpi);
+        end
+    end
+    hScanzianiDist = figure;
+    for p2 = 1:contrastLevel
+        phaseRange = linspace(-180,180,ndperiod+1);
+        pick = nP(contrastLevel).ei>0.5;
+        subplot(contrastLevel,2,(p2-1)*2+1)
+        [~,cLGNid] = max(ipC(p2).cLGN(pick,:),[],2);
+        [~,cEid] = max(ipC(p2).cE(pick,:),[],2);
+        deltaPhase = (cEid-cLGNid)./ndperiod*360;
+        pick = deltaPhase<0;
+        deltaPhase(pick) = deltaPhase(pick) + 360;
+        pick = deltaPhase>180;
+        deltaPhase(pick) = deltaPhase(pick) - 360;
+        histogram(deltaPhase,phaseRange)
+        
+        pick = true(p.nv1,1);
+        subplot(contrastLevel,2,(p2-1)*2+2)
+        [~,cLGNid] = max(ipC(p2).cLGN(pick,:),[],2);
+        [~,cEid] = max(ipC(p2).cE(pick,:),[],2);
+        deltaPhase = (cEid-cLGNid)./ndperiod*360;
+        pick = deltaPhase<0;
+        deltaPhase(pick) = deltaPhase(pick) + 360;
+        pick = deltaPhase>180;
+        deltaPhase(pick) = deltaPhase(pick) - 360;
+        histogram(deltaPhase,phaseRange)
+    end
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
         if strcmp(format,'fig')
@@ -2070,7 +2545,9 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
     hCVpair = figure;
     
     cvLGNmean = zeros(highestLGN-lowestLGN+1,contrastLevel,2)-1;
-    %cvLGNstd = cvLGNmean;
+    frLGNmean = zeros(highestLGN-lowestLGN+1,contrastLevel,2)-1;
+    cvLGNstd = cvLGNmean;
+    frLGNstd = frLGNmean;
     p1 =contrastLevel-2; p2 = contrastLevel;
     while p1<=0
         p1 = p1 + 1;
@@ -2086,7 +2563,9 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             pick= nP(contrastLevel).ei>0.5 & nLGN==i & nP(j).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
             if ~isempty(pick)
                 cvLGNmean(i-lowestLGN+1,j,1) = mean(nP(j).cv(pick));
-        %        cvLGNstd(i-lowestLGN+1,j,1) = std(nP(j).cv(pick));
+                cvLGNstd(i-lowestLGN+1,j,1) = std(nP(j).cv(pick));
+                frLGNmean(i-lowestLGN+1,j,1) = mean(nP(j).pkrate(pick));
+                frLGNstd(i-lowestLGN+1,j,1) = std(nP(j).pkrate(pick));
             end
         end
     end
@@ -2105,7 +2584,9 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             pick= nP(contrastLevel).ei<0.5 & nLGN==i & nP(j).pkrate> nP(1).br & nP(contrastLevel).pkrate>thres;
             if ~isempty(pick)
                 cvLGNmean(i-lowestLGN+1,j,2) = mean(nP(j).cv(pick));
-    %            cvLGNstd(i-lowestLGN+1,j,2) = std(nP(j).cv(pick));
+                cvLGNstd(i-lowestLGN+1,j,2) = std(nP(j).cv(pick));
+                frLGNmean(i-lowestLGN+1,j,2) = mean(nP(j).pkrate(pick));
+                frLGNstd(i-lowestLGN+1,j,2) = std(nP(j).pkrate(pick));
             end
         end
     end
@@ -2289,46 +2770,77 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
             print(hCVexc,[outputfdr,'/','ExcC',num2str(p1),'vsC',num2str(p2),'_CVheat-',theme,'.',format],printDriver,dpi);
         end
     end
-    hCVnLGN = figure;
-    subplot(1,2,1); 
+    hCVnFRoverLGN = figure;
+    subplot(2,2,1); 
     hold on;
     % bar(0:lgnmax,cvLGNmean(:,:,1));
-    x = (-0.2:(highestLGN-lowestLGN-0.2));
+    x = lowestLGN:highestLGN;
     for i=1:contrastLevel
     %    x = (-0.2:(highestLGN-lowestLGN-0.2))+0.1*(i-1);
         pick = cvLGNmean(:,i,1)>=0;
-        plot(x(pick),1-cvLGNmean(pick,i,1),'-*','Color',[0.1+0.899*i/contrastLevel,0,0]);
+        errorbar(x(pick),1-cvLGNmean(pick,i,1),cvLGNmean(pick,i,1),'-*','Color',[0.1+0.899*i/contrastLevel,0,0]);
     end
     xlabel('# LGN input');
     ylabel('1-CV');
-    title('active Exc 1-CV');
+    title('active Exc');
     xlim([lgnmin_e, lgnmax_e]);
     ylim([0,inf]);
     yy = ylim();
     ylim([yy(1),yy(2)*1.2]);
     legend(conLabel);
     
-    subplot(1,2,2); 
+    subplot(2,2,2); 
     hold on;
     for i=1:contrastLevel
         pick = cvLGNmean(:,i,2)>=0;
-        plot(x(pick),1-cvLGNmean(pick,i,2),'-*','Color',[0,0,0.1+0.899*i/contrastLevel]);
+        errorbar(x(pick),1-cvLGNmean(pick,i,2),cvLGNstd(pick,i,2),'-*','Color',[0,0,0.1+0.899*i/contrastLevel]);
     end
     xlabel('# LGN input');
     ylabel('1-CV');
-    title('active Inh 1-CV');
+    title('active Inh');
     xlim([lgnmin_i, lgnmax_i]);
     ylim([0,inf]);
     yy = ylim();
     ylim([yy(1),yy(2)*1.2]);
     legend(conLabel);
     
+    subplot(2,2,3); 
+    hold on;
+    % bar(0:lgnmax,cvLGNmean(:,:,1));
+    x = lowestLGN:highestLGN;
+    for i=1:contrastLevel
+    %    x = (-0.2:(highestLGN-lowestLGN-0.2))+0.1*(i-1);
+        pick = frLGNmean(:,i,1)>=0;
+        errorbar(x(pick),frLGNmean(pick,i,1),frLGNstd(pick,i,1),'-*','Color',[0.1+0.899*i/contrastLevel,0,0]);
+    end
+    xlabel('# LGN input');
+    ylabel('FR Hz');
+    xlim([lgnmin_e, lgnmax_e]);
+    ylim([0,inf]);
+    yy = ylim();
+    ylim([yy(1),yy(2)*1.2]);
+    legend(conLabel);
+    
+    subplot(2,2,4); 
+    hold on;
+    for i=1:contrastLevel
+        pick = frLGNmean(:,i,2)>=0;
+        errorbar(x(pick),frLGNmean(pick,i,2),frLGNstd(pick,i,2),'-*','Color',[0,0,0.1+0.899*i/contrastLevel]);
+    end
+    xlabel('# LGN input');
+    ylabel('FR Hz');
+    xlim([lgnmin_i, lgnmax_i]);
+    ylim([0,inf]);
+    yy = ylim();
+    ylim([yy(1),yy(2)*1.2]);
+    legend(conLabel);
+
     if ~isempty(format)
         set(gcf, 'PaperUnits', 'points','PaperPosition', pPosition);
         if strcmp(format,'fig')
-            saveas(hCVnLGN,[outputfdr,'/','CVoverLGN-',theme,'.',format]);
+            saveas(hCVnFRoverLGN,[outputfdr,'/','CVnFRoverLGN-',theme,'.',format]);
         else
-            print(hCVnLGN,[outputfdr,'/','CVoverLGN-',theme,'.',format],printDriver,dpi);
+            print(hCVnFRoverLGN,[outputfdr,'/','CVnFRoverLGN-',theme,'.',format],printDriver,dpi);
         end
     end
     % subplot(1,2,2); hold on;
@@ -2759,7 +3271,7 @@ function [ranking, neuronlist] = plotindividual(theme,lgn,neuronlist,format,cont
         end
     end
     hOriCmp = figure; hold on;
-    p1 = 3; p2 = 4;
+    p1 = 2; p2 = 4;
     shifts = zeros(lgnmax_e-lgnmin_e+1,1);
     subplot(1,2,1); hold on
     % amax = zeros(contrastLevel,nv1);
@@ -3711,26 +4223,47 @@ function [X, Y, Z] = multiLGNspatialKernel(posx,posy,x,y,n,s,scale)
     end
     Z = Z/scale;
 end
-function cv = get_gOSI(d)
+function gOSI = get_gOSI(d)
     d = d';
+    if sum(d(:)>0) == 0
+        d = abs(d);
+    end
     assert(sum(d(:)<0)==0);
+    size(d);
     n = size(d,1);
-    theta = ((1:n)'./n*2*pi);
+    theta = ((0:n-1)'./n*2*pi);
     repmatSize = size(d);
     repmatSize(1) = 1;
 
     theta = repmat(theta,repmatSize);
-    value = sum(d.*exp(1j*theta));
-    cv = squeeze(abs(value./sum(d)));
+    value = sum(d.*exp(2j*theta));
+    gOSI = squeeze(abs(value./sum(d)));
 end
-function sc = get_SC(d)
-    assert(sum(d(:)<0)==0);
+function sc = get_SC(d,f1Only)
+    if nargin < 2
+        f1Only = false;
+    end
     n = size(d,1);
-    angle = ((0:n-1)'./n*2*pi);
+    angle = ((1:n)'./n*2*pi);
     repmatSize = size(d);
     repmatSize(1) = 1;
 
-    theta = repmat(angle,repmatSize);
+    angle = repmat(angle,repmatSize);
     value = sum(d.*exp(1j*angle));
-    sc = squeeze(abs(2*value./sum(d)));
+    if f1Only
+        sc = squeeze(abs(value));
+    else
+        sc = squeeze(abs(2*value./sum(d)));
+    end
+end
+function denPairHist(d1,d2,ctrs,ticks,cm)
+    lctrsx = length(ctrs{1});
+    pair = [d1',d2'];
+    den = hist3(pair,ctrs);
+    den = den(1:ntheta,1:lctrsy-1);
+    maxDen = max(max(den));
+    den = den./maxDen;
+    imagesc([1,lctrsx-1],[lctrsy-1,1],den');
+    set(gca,'YTickLabel',ticks.tickLabelY,'YTick',ticks.tickPosY,'XTickLabel',ticks.tickLabelX,'XTick',ticks.tickPosX);
+    colormap(gca,cm);
 end
