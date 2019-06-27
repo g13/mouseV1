@@ -4526,8 +4526,6 @@
 !------------ DG (Dai Wei) --------------------------------------------
 !    I(y,s) = I_0 [1 + eps sin(omega s - k dotProduct y) ] 
 !        (for drifting grating, expand sin in code, calculate the position part here)
-!* Questions:
-!    don't know how to perform this convolution
 !------------------------------------------------------------
       IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
       common / lgnConvol / gk2,taulgn,omega,tauD1,tauF,dlD,dlF,
